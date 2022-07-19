@@ -103,9 +103,7 @@ methodmap Vector < Pointer
     // Get the vector's magnitude squared.
     public float LengthSqr()
     {
-        float buffer[3];
-        this.GetBuffer(buffer);
-        return this.X * this.X + this.Y * this.Y + this.Z + this.Z;
+        return this.X * this.X + this.Y * this.Y + this.Z * this.Z;
     }
 
     // Get the vector's magnitude.
