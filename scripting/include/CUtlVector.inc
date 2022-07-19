@@ -19,13 +19,14 @@
 // CUTLVECTOR DATA                                                          //
 //////////////////////////////////////////////////////////////////////////////
 
-enum cutlvectorOffsets (+= 0x04)
+enum cutlvectorOffsets
 {
-    CUTLVECTOR_OFFSET_M_MEMORY,
-    CUTLVECTOR_OFFSET_M_SIZE = CUTLMEMORY_SIZE,
-    CUTLVECTOR_OFFSET_M_PELEMENTS,
-    CUTLVECTOR_SIZE
+    CUTLVECTOR_OFFSET_M_MEMORY = 0,     // CAllocator m_Memory; (where CAllocator = CUtlMemory<T>, where T = CUtlVector<T>)
+    CUTLVECTOR_OFFSET_M_SIZE = 12,      // int m_Size;
+    CUTLVECTOR_OFFSET_M_PELEMENTS = 16, // T* m_pElements; (where T = CUtlVector<T>)
+    CUTLVECTOR_SIZE = 20                // sizeof(CUtlVector);
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 // CUTLVECTOR METHODMAP                                                     //
@@ -87,7 +88,7 @@ methodmap CUtlVector < Pointer
     public static CUtlVector Malloc(int growSize = 0, int initialCapacity = 0, int typeSize = 4)
     {
         CUtlVector pointer = malloc(CUTLVECTOR_SIZE);
-        pointer.ctor();
+        pointer.ctor(growSize, initialCapacity, typeSize);
         return pointer;
     }
 

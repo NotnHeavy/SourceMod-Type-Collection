@@ -12,7 +12,7 @@
 
 #define NULL view_as<Pointer>(0) // ((void*)0)
 
-#define V_SWAP(%1,%2,%3) { %1 temp = %2; %2 = %3; %3 = temp; } // Not going to make 500 functions. Can't parse through methodmap properties either (which makes sense tbh). If you really need to use this, don't use an ending semi-colon.
+#define V_SWAP(%1,%2,%3) { %1 temp = %2; %2 = %3; %3 = temp; } // Not going to make 500 functions. Can't parse through methodmap properties either (which makes sense tbh). If you really need to use this, don't use an ending semi-colon. Will consider removing.
 
 #include <smmem>
 

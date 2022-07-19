@@ -18,12 +18,12 @@
 // CUTLMEMORY DATA                                                          //
 //////////////////////////////////////////////////////////////////////////////
 
-enum cutlmemoryOffsets (+= 0x04)
+enum cutlmemoryOffsets
 {
-    CUTLMEMORY_OFFSET_M_PMEMORY,
-    CUTLMEMORY_OFFSET_M_NALLOCATIONCOUNT,
-    CUTLMEMORY_OFFEST_M_NGROWSIZE,
-    CUTLMEMORY_SIZE
+    CUTLMEMORY_OFFSET_M_PMEMORY = 0,          // T* m_pMemory; (where T = CUtlMemory<T>)
+    CUTLMEMORY_OFFSET_M_NALLOCATIONCOUNT = 4, // int m_nAllocationCount;
+    CUTLMEMORY_OFFEST_M_NGROWSIZE = 8,        // int m_nGrowSize;
+    CUTLMEMORY_SIZE = 12                      // sizeof(CUtlMemory);
 };
 
 enum
@@ -87,7 +87,7 @@ methodmap CUtlMemory < Pointer
     public static CUtlMemory Malloc(int growSize = 0, int initialAllocationCount = 0, int typeSize = 4)
     {
         CUtlMemory pointer = malloc(CUTLMEMORY_SIZE);
-        pointer.ctor();
+        pointer.ctor(growSize, initialAllocationCount, typeSize);
         return pointer;
     }
 

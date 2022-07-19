@@ -7,7 +7,7 @@
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_VECTOR
 
-#include "Pointer.inc"
+#include <Pointer>
 
 #pragma semicolon true 
 #pragma newdecls required
@@ -16,12 +16,12 @@
 // VECTOR DATA                                                              //
 //////////////////////////////////////////////////////////////////////////////
 
-enum vectorOffsets (+= 0x04)
+enum vectorOffsets
 {
-    VECTOR_OFFSET_X,
-    VECTOR_OFFSET_Y,
-    VECTOR_OFFSET_Z,
-    VECTOR_SIZE
+    VECTOR_OFFSET_X = 0, // float x;
+    VECTOR_OFFSET_Y = 4, // float y;
+    VECTOR_OFFSET_Z = 8, // float z;
+    VECTOR_SIZE = 12     // sizeof(Vector);
 }
 
 static float accumulator[3];
@@ -84,7 +84,7 @@ methodmap Vector < Pointer
     public static Vector Malloc(float x = 0.00, float y = 0.00, float z = 0.00)
     {
         Vector pointer = malloc(VECTOR_SIZE);
-        pointer.ctor();
+        pointer.ctor(x, y, z);
         return pointer;
     }
 

@@ -1,0 +1,20 @@
+"Games"
+{
+    "tf"
+    {
+        "Offsets"
+        {
+            "CTFPlayer::m_hMyWearables"
+			{
+				"windows" "3520"
+				"linux"   "3540"
+			}
+
+            "CTFWearable::Equip"
+            {
+                "windows" "229"
+                "linux"   "235"
+            }
+        }
+    }
+}
