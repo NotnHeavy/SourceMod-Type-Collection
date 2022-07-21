@@ -1,21 +1,27 @@
 // For testing purposes only. Please refer to ./scripting/include/ for all of the methodmaps available.
+// This is the most hackiest shit I've done in SourceMod so far.
 
 #pragma semicolon true 
 #pragma newdecls required
 
-#define PLUGIN_NAME "NotnHeavy - SourceMod Type Collection"
-
 #include <sourcemod>
 #include <sdktools>
+#include <sdkhooks>
+#include <tf2_stocks>
 #include <smmem> // https://github.com/Scags/SM-Memory
+#include <dhooks> // Not actually needed, just used for tests.
 
+#include "SMTC"
 #include "Pointer.inc"
 #include "include/Vector.inc"
 #include "CUtlMemory.inc"
 #include "CUtlVector.inc"
+#include "CTakeDamageInfo.inc"
 
 static Address CTFPlayer_m_hMyWearables;
 static Handle SDKCall_CTFWearable_Equip;
+static Handle SDKCall_CBaseEntity_TakeDamage;
+static DHookSetup DHooks_CTFPlayer_OnTakeDamage;
 
 public void OnPluginStart()
 {
@@ -23,19 +29,62 @@ public void OnPluginStart()
 
     LoadTranslations("common.phrases");
 
-    GameData conf = LoadGameConfigFile(PLUGIN_NAME);
-    CTFPlayer_m_hMyWearables = view_as<Address>(conf.GetOffset("CTFPlayer::m_hMyWearables"));
+    SMTC_Initialize();
+
+    GameData config = LoadGameConfigFile("NotnHeavy - SourceMod Type Collection (tests)");
+    CTFPlayer_m_hMyWearables = view_as<Address>(config.GetOffset("CTFPlayer::m_hMyWearables"));
+
     StartPrepSDKCall(SDKCall_Entity);
-    PrepSDKCall_SetFromConf(conf, SDKConf_Virtual, "CTFWearable::Equip");
+    PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CTFWearable::Equip");
     PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
     SDKCall_CTFWearable_Equip = EndPrepSDKCall();
-    delete conf;
+
+    StartPrepSDKCall(SDKCall_Entity);
+    PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CBaseEntity::TakeDamage");
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+    PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+    SDKCall_CBaseEntity_TakeDamage = EndPrepSDKCall();
+
+    DHooks_CTFPlayer_OnTakeDamage = DHookCreateFromConf(config, "CTFPlayer::OnTakeDamage");
+    DHookEnableDetour(DHooks_CTFPlayer_OnTakeDamage, false, CTFPlayer_OnTakeDamage);
+
+    delete config;
 
     pointerOperation();
     vectorOperation();
     cutlvectorOperation(); // oh god
+    ctakedamageinfoOperation();
 
-    PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", PLUGIN_NAME);
+    PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
+}
+
+static void ctakedamageinfoOperation()
+{
+    // Player tests. (TF2)
+    if (IsClientInGame(1))
+    {
+        float buffer[3];
+        GetEntPropVector(1, Prop_Data, "m_vecAbsOrigin", buffer);
+        Vector damagePosition = AddressOfArray(buffer);
+        CTakeDamageInfo hell = CTakeDamageInfo.Malloc(0, 0, 0, damagePosition, damagePosition, 100.00, DMG_BLAST, TF_CUSTOM_STICKBOMB_EXPLOSION, damagePosition);
+        SDKCall(SDKCall_CBaseEntity_TakeDamage, 1, hell);
+        free(hell);
+    }
+
+    // Server tests.
+    CTakeDamageInfo info = CTakeDamageInfo.Malloc(0, 0, 0, vec3_origin, vec3_origin, 0.00, 0, 0);
+    PrintToServer("info.m_vecDamagePosition: %f: %f: %f", info.m_vecDamagePosition.X, info.m_vecDamagePosition.Y, info.m_vecDamagePosition.Z);
+    info.m_vecDamagePosition.X = 3.00;
+    PrintToServer("info.m_vecDamagePosition.X: %f, vec3_origin.X: %f\n", info.m_vecDamagePosition.X, vec3_origin.X);
+    free(info);
+}
+
+// CTFPlayer::OnTakeDamage
+MRESReturn CTFPlayer_OnTakeDamage(int entity, DHookReturn returnValue, DHookParam parameters)
+{
+    CTakeDamageInfo info = parameters.Get(1);
+    info.SetCritType(CRIT_MINI, entity); // :^)
+    return MRES_Ignored;
 }
 
 static void cutlvectorOperation()

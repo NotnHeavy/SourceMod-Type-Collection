@@ -2,19 +2,31 @@
 {
     "tf"
     {
-        "Offsets"
+        "Signatures"
         {
-            "CTFPlayer::m_hMyWearables"
+            "CTFPlayer::OnTakeDamage_Alive"
 			{
-				"windows" "3520"
-				"linux"   "3540"
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x83\xEC\x2A\x56\x57\x8B\xF9\x8B\x0D\x2A\x2A\x2A\x2A\x89\x7D\x2A"
+				"linux"   "@_ZN9CTFPlayer18OnTakeDamage_AliveERK15CTakeDamageInfo"
 			}
-
-            "CTFWearable::Equip"
-            {
-                "windows" "229"
-                "linux"   "235"
-            }
+        }
+        "Functions"
+        {
+            "CTFPlayer::OnTakeDamage_Alive"
+			{
+				"signature"	"CTFPlayer::OnTakeDamage_Alive"
+				"callconv"	"thiscall"
+				"return"	"int" 
+				"this"		"entity"
+				"arguments"
+				{
+					"info"
+					{
+						"type" "int"
+					}
+				}
+			}
         }
     }
 }

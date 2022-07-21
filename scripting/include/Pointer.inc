@@ -14,7 +14,7 @@
 
 #define V_SWAP(%1,%2,%3) { %1 temp = %2; %2 = %3; %3 = temp; } // Not going to make 500 functions. Can't parse through methodmap properties either (which makes sense tbh). If you really need to use this, don't use an ending semi-colon. Will consider removing.
 
-#include <smmem>
+#include <smmem> // https://github.com/Scags/SM-Memory
 
 //////////////////////////////////////////////////////////////////////////////
 // POINTER METHODMAP                                                        //
@@ -60,18 +60,24 @@ methodmap Pointer
     }
 
     // Get the entity index from an address. Taken from nosoop's stocksoup repository.
-    public int DereferenceEntity()
+    public int DereferenceEntity(any offset = 0)
     {
         static int offs_RefEHandle;
         if (!offs_RefEHandle) 
             offs_RefEHandle = getRefEHandleOffset();
-        return this.DereferenceEHandle(offs_RefEHandle);
+        return this.DereferenceEHandle(offset + offs_RefEHandle);
     }
 
     // Get the array offset from the pointer's current address. You must specify the size of the type used with this pointer using the typeSize parameter.
     public Pointer Get(int index, int typeSize = 4)
     {
         return Pointer(this.Address + view_as<Address>(index * typeSize));
+    }
+
+    // Store into a buffer. You must specify the size of the type used with this pointer using the typeSize parameter. Final size used = typeSize * 4.
+    public void ToBuffer(int[] buffer, int typeSize = 1)
+    {
+        memcpy(AddressOfArray(buffer), this, typeSize);
     }
 }
 
@@ -135,20 +141,20 @@ stock Pointer operator-(const Pointer left, const int right)
 
 // Re-allocate within a specific location in memory. You must specify the size of the type used with this CUtlMemory using the typeSize parameter.
 // Normally this would call the the constructor of the allocated memory, but that's not possible here.
-void Construct(Pointer memory, int typeSize = 4)
+stock void Construct(Pointer memory, int typeSize = 4)
 {
     memset(memory, 0, typeSize);
 }
 
 // Re-allocate within a specific location in memory, from another source. You must specify the size of the type used with this CUtlMemory using the typeSize parameter.
 // Normally this would call the the constructor of the allocated memory, but that's not possible here.
-void CopyConstruct(Pointer memory, Pointer source, int typeSize = 4)
+stock void CopyConstruct(Pointer memory, Pointer source, int typeSize = 4)
 {
     memcpy(memory, source, typeSize);
 }
 
 // Re-allocates a block of memory for an array of num elements. Each byte is initialized as 0.
-any recalloc(Pointer memory, int num, int size)
+stock any recalloc(Pointer memory, int num, int size)
 {
     Pointer buffer = calloc(num, size);
     memcpy(buffer, memory, num * size);

@@ -291,6 +291,10 @@ methodmap CUtlVector < Pointer
         return this.InsertMultipleBefore(elem + 1, num, typeSize);
     }
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    // todo: re-write these Find/FindPointer methods to use memcmp. whatever i did here, i was high. //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+
     // Finds an element. Returns the index if found. You must specify the size of the type used with this CUtlVector using the typeSize parameter.
     public int Find(const any source, int typeSize = 4)
     {

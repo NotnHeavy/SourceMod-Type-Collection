@@ -45,7 +45,7 @@ methodmap CUtlMemory < Pointer
     // Constructor - wrap around an existing address to make way for a CUtlMemory object.
     public CUtlMemory(Address address)
     {
-        return view_as<CUTLMEMORY>(address);
+        return view_as<CUtlMemory>(address);
     }
 
     // The memory pointer itself.
@@ -294,7 +294,7 @@ methodmap CUtlMemory < Pointer
 // MISCELLANEOUS                                                            //
 //////////////////////////////////////////////////////////////////////////////
 
-int UtlMemory_CalcNewAllocationCount(int allocationCount, int growSize, int newSize, int bytesItem)
+stock int UtlMemory_CalcNewAllocationCount(int allocationCount, int growSize, int newSize, int bytesItem)
 {
     if (growSize)
         allocationCount = (1 + ((newSize - 1) / growSize)) * growSize;

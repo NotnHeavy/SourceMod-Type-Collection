@@ -26,6 +26,7 @@ enum vectorOffsets
 
 static float accumulator[3];
 static Address accumulatorAddress;
+Vector vec3_origin; // NOT INTENDED TO BE WRITTEN TO!
 
 //////////////////////////////////////////////////////////////////////////////
 // VECTOR METHODMAP                                                         //
@@ -49,6 +50,16 @@ methodmap Vector < Pointer
         accumulator[1] = y;
         accumulator[2] = z;
         return Vector(accumulatorAddress);
+    }
+
+    // Set up globals with a custom dereference method.
+    public any Dereference(any offset = 0, NumberType bits = NumberType_Int32)
+    {
+        // this is very hacky shit but lol.
+        // only a fallback case if SMTC_Initialize() has not been called.
+        if (!vec3_origin)
+            vec3_origin = Vector(AddressOfArray({0.00, 0.00, 0.00}));
+        return view_as<Pointer>(this).Dereference(offset, bits);
     }
 
     // X co-ordinate.
@@ -161,9 +172,7 @@ methodmap Vector < Pointer
     // Vector assignation (would be operator= instead if I was able to fully utilise it).
     public void Assign(Vector vector)
     {
-        this.X = vector.X;
-        this.Y = vector.Y;
-        this.Z = vector.Z;
+        memcpy(this, vector, VECTOR_SIZE);
     }
 }
 
@@ -210,14 +219,14 @@ stock Vector operator-(const Vector vector)
 // VECTOR GLOBALS                                                           //
 //////////////////////////////////////////////////////////////////////////////
 
-void CrossProduct(const Vector a, const Vector b, Vector result)
+stock void CrossProduct(const Vector a, const Vector b, Vector result)
 {
     result.X = a.Y * b.Z - a.Z * b.Y;
     result.Y = a.Z * b.X - a.X * b.Z;
     result.Z = a.X * b.Y - a.Y * b.X;
 }
 
-void VectorVectors(const Vector forwardVector, Vector right, Vector up)
+stock void VectorVectors(const Vector forwardVector, Vector right, Vector up)
 {
     if (forwardVector.X == 0.00 && forwardVector.Y == 0.00)
     {

@@ -1,0 +1,52 @@
+"Games"
+{
+    "tf"
+    {
+        "Offsets"
+        {
+            "CTFPlayer::m_hMyWearables"
+			{
+				"windows" "3520"
+				"linux"   "3540"
+			}
+
+            "CTFWearable::Equip"
+            {
+                "windows" "229"
+                "linux"   "235"
+            }
+        }
+        "Signatures"
+        {
+            "CBaseEntity::TakeDamage"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x83\xEC\x74\x57\x8B\xF9\x8B\x0D\x2A\x2A\x2A\x2A"
+				"linux"   "@_ZN11CBaseEntity10TakeDamageERK15CTakeDamageInfo"
+			}
+            "CTFPlayer::OnTakeDamage"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x81\xEC\x2A\x2A\x2A\x2A\x56\x8B\x75\x2A\x57\x8B\xF9\x8D\x8D\x2A\x2A\x2A\x2A"
+				"linux"	  "@_ZN9CTFPlayer12OnTakeDamageERK15CTakeDamageInfo"
+			}
+        }
+        "Functions"
+        {
+            "CTFPlayer::OnTakeDamage"
+			{
+				"signature"	"CTFPlayer::OnTakeDamage"
+				"callconv"	"thiscall"
+				"return"	"int" 
+				"this"		"entity"
+				"arguments"
+				{
+					"inputInfo"
+					{
+						"type" "int"
+					}
+				}
+			}
+        }
+    }
+}
