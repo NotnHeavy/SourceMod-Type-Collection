@@ -19,12 +19,13 @@
 // CUTLVECTOR DATA                                                          //
 //////////////////////////////////////////////////////////////////////////////
 
-enum cutlvectorOffsets
+enum
 {
-    CUTLVECTOR_OFFSET_M_MEMORY = 0,     // CAllocator m_Memory; (where CAllocator = CUtlMemory<T>, where T = CUtlVector<T>)
-    CUTLVECTOR_OFFSET_M_SIZE = 12,      // int m_Size;
-    CUTLVECTOR_OFFSET_M_PELEMENTS = 16, // T* m_pElements; (where T = CUtlVector<T>)
-    CUTLVECTOR_SIZE = 20                // sizeof(CUtlVector);
+    CUTLVECTOR_OFFSET_M_MEMORY = 0,                                          // CAllocator m_Memory; (where CAllocator = CUtlMemory<T>, where T = CUtlVector<T>)
+    CUTLVECTOR_OFFSET_M_SIZE = CUTLVECTOR_OFFSET_M_MEMORY + CUTLMEMORY_SIZE, // int m_Size;
+    CUTLVECTOR_OFFSET_M_PELEMENTS = CUTLVECTOR_OFFSET_M_SIZE + 4,            // T* m_pElements; (where T = CUtlVector<T>)
+    
+    CUTLVECTOR_SIZE = CUTLVECTOR_OFFSET_M_PELEMENTS + 4                      // sizeof(CUtlVector);
 }
 
 
@@ -44,7 +45,7 @@ methodmap CUtlVector < Pointer
     // The allocator.
     property CUtlMemory m_Memory
     {
-        public get() { return view_as<CUtlMemory>(this.Address + view_as<int>(CUTLVECTOR_OFFSET_M_MEMORY)); }
+        public get() { return view_as<CUtlMemory>(this.Address + CUTLVECTOR_OFFSET_M_MEMORY); }
         public set(CUtlMemory allocator) { this.Write(allocator, CUTLVECTOR_OFFSET_M_MEMORY); }
     }
 
@@ -487,8 +488,8 @@ methodmap CUtlVector < Pointer
     {
         // nightmare
         this.m_Memory.Swap(vector.m_Memory);
-        V_SWAP(int, this.m_Size, vector.m_Size)
-        V_SWAP(Pointer, this.m_pElements, vector.m_pElements)
+        V_swap(view_as<Pointer>(this) + CUTLVECTOR_OFFSET_M_SIZE, view_as<Pointer>(vector) + CUTLVECTOR_OFFSET_M_SIZE);
+        V_swap(view_as<Pointer>(this) + CUTLVECTOR_OFFSET_M_PELEMENTS, view_as<Pointer>(vector) + CUTLVECTOR_OFFSET_M_PELEMENTS);
     }
 
     // Makes sure we have enough memory allocated to store a requested # of elements.
@@ -578,7 +579,8 @@ methodmap CUtlVector < Pointer
     public void Reverse(int typeSize = 4)
     {
         for (int i = 0; i < this.m_Size / 2; ++i)
-        {
+        {   
+            /*
             Pointer left = malloc(typeSize);
             Pointer right = malloc(typeSize);
             memcpy(left, this.m_Memory.Get(i, typeSize), typeSize);
@@ -587,6 +589,8 @@ methodmap CUtlVector < Pointer
             memcpy(this.m_Memory.Get(this.m_Size - 1 - i), left, typeSize);
             free(left);
             free(right);
+            */
+            V_swap(this.m_Memory.Get(i, typeSize), this.m_Memory.Get(this.m_Size - 1 - i, typeSize), typeSize);
         }
     }
 

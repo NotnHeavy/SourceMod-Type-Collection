@@ -2,6 +2,8 @@
 // MADE BY NOTNHEAVY. USES GPL-3, AS PER REQUEST OF SOURCEMOD               //
 //////////////////////////////////////////////////////////////////////////////
 
+// Include SMTC.inc and run SMTC_Initialize() to fix the bug with mini-crit setting using the full crit effect instead.
+
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTAKEDAMAGEINFO
 #endinput
 #endif
@@ -20,32 +22,32 @@
 // CTAKEDAMAGEINFO DATA                                                     //
 //////////////////////////////////////////////////////////////////////////////
 
-enum ctakedamageinfoOffsets
+enum
 {
-    CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEFORCE = 0, // Vector m_vecDamageForce;
-    CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEPOSITION = 12, // Vector m_vecDamagePosition;
-    CTAKEDAMAGEINFO_OFFSET_M_VECREPORTEDPOSITION = 24, // Position players are told damage is coming from (Vector m_vecReportedPosition;)
-    CTAKEDAMAGEINFO_OFFSET_M_HINFLICTOR = 36, // EHANDLE m_hInflictor;
-    CTAKEDAMAGEINFO_OFFSET_M_HATTACKER = 40, // EHANDLE m_hAttacker;
-    CTAKEDAMAGEINFO_OFFSET_M_HWEAPON = 44, // EHANDLE m_hWeapon;
-    CTAKEDAMAGEINFO_OFFSET_M_FLDAMAGE = 48, // float m_flDamage;
-    CTAKEDAMAGEINFO_OFFSET_M_FLMAXDAMAGE = 52, // float m_flMaxDamage;
-    CTAKEDAMAGEINFO_OFFSET_M_FLBASEDAMAGE = 56, // The damage amount before skill leve adjustments are made. Used to get uniform damage forces. (float m_flBaseDamage;)
-    CTAKEDAMAGEINFO_OFFSET_M_BITSDAMAGETYPE = 60,
-    CTAKEDAMAGEINFO_OFFSET_M_IDAMAGECUSTOM = 64,
-    CTAKEDAMAGEINFO_OFFSET_M_IDAMAGESTATS = 68,
-    CTAKEDAMAGEINFO_OFFSET_M_IAMMOTYPE = 72, // AmmoType of the weapon used to cause this damage, if any
-    CTAKEDAMAGEINFO_OFFSET_M_IDAMAGEDOTHERPLAYERS = 76,
-    CTAKEDAMAGEINFO_OFFSET_M_IPLAYERPENETRATIONCOUNT = 80,
-    CTAKEDAMAGEINFO_OFFSET_M_FLDAMAGEBONUS = 84, // Anything that increases damage (crit) - store the delta
-    CTAKEDAMAGEINFO_OFFSET_M_HDAMAGEBONUSPROVIDER = 88, // Who gave us the ability to do extra damage?
-    CTAKEDAMAGEINFO_OFFSET_M_BFORCEFRIENDLYFIRE = 92, // Ideally this would be a dmg type, but we can't add more
+    CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEFORCE = 0,                                                             // Vector m_vecDamageForce;
+    CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEPOSITION = CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEFORCE + VECTOR_SIZE,      // Vector m_vecDamagePosition;
+    CTAKEDAMAGEINFO_OFFSET_M_VECREPORTEDPOSITION = CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEPOSITION + VECTOR_SIZE, // Position players are told damage is coming from (Vector m_vecReportedPosition;)
+    CTAKEDAMAGEINFO_OFFSET_M_HINFLICTOR = CTAKEDAMAGEINFO_OFFSET_M_VECREPORTEDPOSITION + VECTOR_SIZE,        // EHANDLE m_hInflictor;
+    CTAKEDAMAGEINFO_OFFSET_M_HATTACKER = CTAKEDAMAGEINFO_OFFSET_M_HINFLICTOR + 4,                            // EHANDLE m_hAttacker;
+    CTAKEDAMAGEINFO_OFFSET_M_HWEAPON = CTAKEDAMAGEINFO_OFFSET_M_HATTACKER + 4,                               // EHANDLE m_hWeapon;
+    CTAKEDAMAGEINFO_OFFSET_M_FLDAMAGE = CTAKEDAMAGEINFO_OFFSET_M_HWEAPON + 4,                                // float m_flDamage;
+    CTAKEDAMAGEINFO_OFFSET_M_FLMAXDAMAGE = CTAKEDAMAGEINFO_OFFSET_M_FLDAMAGE + 4,                            // float m_flMaxDamage;
+    CTAKEDAMAGEINFO_OFFSET_M_FLBASEDAMAGE = CTAKEDAMAGEINFO_OFFSET_M_FLMAXDAMAGE + 4,                        // The damage amount before skill leve adjustments are made. Used to get uniform damage forces. (float m_flBaseDamage;)
+    CTAKEDAMAGEINFO_OFFSET_M_BITSDAMAGETYPE = CTAKEDAMAGEINFO_OFFSET_M_FLBASEDAMAGE + 4,                     // int m_bitsDamageType;
+    CTAKEDAMAGEINFO_OFFSET_M_IDAMAGECUSTOM = CTAKEDAMAGEINFO_OFFSET_M_BITSDAMAGETYPE + 4,                    // int m_iDamageCustom;
+    CTAKEDAMAGEINFO_OFFSET_M_IDAMAGESTATS = CTAKEDAMAGEINFO_OFFSET_M_IDAMAGECUSTOM + 4,                      // int m_iDamageStats;
+    CTAKEDAMAGEINFO_OFFSET_M_IAMMOTYPE = CTAKEDAMAGEINFO_OFFSET_M_IDAMAGESTATS + 4,                          // AmmoType of the weapon used to cause this damage, if any (int m_iAmmoType;)
+    CTAKEDAMAGEINFO_OFFSET_M_IDAMAGEDOTHERPLAYERS = CTAKEDAMAGEINFO_OFFSET_M_IAMMOTYPE + 4,                  // int m_iDamagedOtherPlayers;
+    CTAKEDAMAGEINFO_OFFSET_M_IPLAYERPENETRATIONCOUNT = CTAKEDAMAGEINFO_OFFSET_M_IDAMAGEDOTHERPLAYERS + 4,    // int m_iPlayerPenetrationCount;
+    CTAKEDAMAGEINFO_OFFSET_M_FLDAMAGEBONUS = CTAKEDAMAGEINFO_OFFSET_M_IPLAYERPENETRATIONCOUNT + 4,           // Anything that increases damage (crit) - store the delta (float m_flDamageBonus;)
+    CTAKEDAMAGEINFO_OFFSET_M_HDAMAGEBONUSPROVIDER = CTAKEDAMAGEINFO_OFFSET_M_FLDAMAGEBONUS + 4,              // Who gave us the ability to do extra damage? (EHANDLE m_hDamageBonusProvider;)
+    CTAKEDAMAGEINFO_OFFSET_M_BFORCEFRIENDLYFIRE = CTAKEDAMAGEINFO_OFFSET_M_HDAMAGEBONUSPROVIDER + 4,         // Ideally this would be a dmg type, but we can't add more (bool m_bForceFriendlyFire;)
 
-    CTAKEDAMAGEINFO_M_FLDAMAGEFORFORCE = 96,
+    CTAKEDAMAGEINFO_M_FLDAMAGEFORFORCE = CTAKEDAMAGEINFO_OFFSET_M_BFORCEFRIENDLYFIRE + 4,                    // float m_flDamageForForce;
 
-    CTAKEDAMAGEINFO_M_ECRITTYPE = 100,
+    CTAKEDAMAGEINFO_M_ECRITTYPE = CTAKEDAMAGEINFO_M_FLDAMAGEFORFORCE + 4,                                    // ECritType m_eCritType;
 
-    CTAKEDAMAGEINFO_SIZE = 104
+    CTAKEDAMAGEINFO_SIZE = CTAKEDAMAGEINFO_M_ECRITTYPE + 4                                                   // sizeof(CTakeDamageInfo);
 };
 
 enum ECritType

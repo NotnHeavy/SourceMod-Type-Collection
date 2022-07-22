@@ -19,6 +19,9 @@
 
 static DHookSetup SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive;
 
+Handle SMTC_DHooks_CTFRadiusDamageInfo_CalculateFalloff;
+Handle SMTC_DHooks_CTFRadiusDamageInfo_ApplyToEntity;
+
 int SMTC_PlayerTakingMiniCrits = 0;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -31,8 +34,18 @@ stock void SMTC_Initialize()
     // Set up hooks from the config file.
     GameData config = LoadGameConfigFile("NotnHeavy - SourceMod Type Collection");
 
-    SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive = DHookCreateFromConf(config, "CTFPlayer::OnTakeDamage_Alive");
+    SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive = DHookCreateFromConf(config, "CTFPlayer::OnTakeDamage_Alive()");
     DHookEnableDetour(SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive, false, SMTC_CTFPlayer_OnTakeDamage_Alive);
+
+    StartPrepSDKCall(SDKCall_Raw);
+    PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFRadiusDamageInfo::CalculateFalloff()");
+    SMTC_DHooks_CTFRadiusDamageInfo_CalculateFalloff = EndPrepSDKCall();
+
+    StartPrepSDKCall(SDKCall_Raw);
+    PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFRadiusDamageInfo::ApplyToEntity()");
+    PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+    PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+    SMTC_DHooks_CTFRadiusDamageInfo_ApplyToEntity = EndPrepSDKCall();
 
     delete config;
 

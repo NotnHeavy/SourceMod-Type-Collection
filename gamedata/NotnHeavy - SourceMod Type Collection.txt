@@ -4,18 +4,31 @@
     {
         "Signatures"
         {
-            "CTFPlayer::OnTakeDamage_Alive"
+            "CTFPlayer::OnTakeDamage_Alive()"
 			{
 				"library" "server"
 				"windows" "\x55\x8B\xEC\x83\xEC\x2A\x56\x57\x8B\xF9\x8B\x0D\x2A\x2A\x2A\x2A\x89\x7D\x2A"
 				"linux"   "@_ZN9CTFPlayer18OnTakeDamage_AliveERK15CTakeDamageInfo"
 			}
+
+			"CTFRadiusDamageInfo::CalculateFalloff()"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x51\x56\x8B\xF1\x8B\x2A\x2A\x2A\x2A\x2A\x00\x04"
+				"linux"	  "@_ZN19CTFRadiusDamageInfo16CalculateFalloffEv"
+			}
+			"CTFRadiusDamageInfo::ApplyToEntity()"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x81\xEC\x3C\x01\x00\x00\x8B\xD1"
+				"linux"   "\x55\x89\xE5\x57\x89\xD7\x56\x31\xF6"
+			}
         }
         "Functions"
         {
-            "CTFPlayer::OnTakeDamage_Alive"
+            "CTFPlayer::OnTakeDamage_Alive()"
 			{
-				"signature"	"CTFPlayer::OnTakeDamage_Alive"
+				"signature"	"CTFPlayer::OnTakeDamage_Alive()"
 				"callconv"	"thiscall"
 				"return"	"int" 
 				"this"		"entity"

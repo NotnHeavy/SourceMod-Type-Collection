@@ -18,12 +18,13 @@
 // CUTLMEMORY DATA                                                          //
 //////////////////////////////////////////////////////////////////////////////
 
-enum cutlmemoryOffsets
+enum
 {
-    CUTLMEMORY_OFFSET_M_PMEMORY = 0,          // T* m_pMemory; (where T = CUtlMemory<T>)
-    CUTLMEMORY_OFFSET_M_NALLOCATIONCOUNT = 4, // int m_nAllocationCount;
-    CUTLMEMORY_OFFEST_M_NGROWSIZE = 8,        // int m_nGrowSize;
-    CUTLMEMORY_SIZE = 12                      // sizeof(CUtlMemory);
+    CUTLMEMORY_OFFSET_M_PMEMORY = 0,                                          // T* m_pMemory; (where T = CUtlMemory<T>)
+    CUTLMEMORY_OFFSET_M_NALLOCATIONCOUNT = CUTLMEMORY_OFFSET_M_PMEMORY + 4,   // int m_nAllocationCount;
+    CUTLMEMORY_OFFEST_M_NGROWSIZE = CUTLMEMORY_OFFSET_M_NALLOCATIONCOUNT + 4, // int m_nGrowSize;
+
+    CUTLMEMORY_SIZE = CUTLMEMORY_OFFEST_M_NGROWSIZE + 4                       // sizeof(CUtlMemory);
 };
 
 enum
@@ -206,9 +207,9 @@ methodmap CUtlMemory < Pointer
     public void Swap(CUtlMemory memory)
     {
         // this is weird, but whatever.
-        V_SWAP(int, this.m_nGrowSize, memory.m_nGrowSize)
-        V_SWAP(Pointer, this.m_pMemory, memory.m_pMemory)
-        V_SWAP(int, this.m_nAllocationCount, memory.m_nAllocationCount)
+        V_swap(view_as<Pointer>(this) + CUTLMEMORY_OFFEST_M_NGROWSIZE, view_as<Pointer>(memory) + CUTLMEMORY_OFFEST_M_NGROWSIZE);
+        V_swap(this.m_pMemory, memory.m_pMemory);
+        V_swap(view_as<Pointer>(this) + CUTLMEMORY_OFFSET_M_NALLOCATIONCOUNT, view_as<Pointer>(memory) + CUTLMEMORY_OFFSET_M_NALLOCATIONCOUNT);
     }
 
     // Switches the buffer from an external memory buffer to a reallocatable buffer.

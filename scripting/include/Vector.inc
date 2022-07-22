@@ -2,6 +2,8 @@
 // MADE BY NOTNHEAVY. USES GPL-3, AS PER REQUEST OF SOURCEMOD               //
 //////////////////////////////////////////////////////////////////////////////
 
+// Not really necessary, but you can include SMTC.inc and run SMTC_Initialize() to allocate vec3_origin properly.
+
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_VECTOR
 #endinput
 #endif
@@ -12,16 +14,19 @@
 #pragma semicolon true 
 #pragma newdecls required
 
+#define VECTOR_STACK_ALLOC(%1) float SMTC_%1[3] = { 0.00, 0.00, 0.00 }; Vector %1 = Vector(AddressOfArray(SMTC_%1))
+
 //////////////////////////////////////////////////////////////////////////////
 // VECTOR DATA                                                              //
 //////////////////////////////////////////////////////////////////////////////
 
-enum vectorOffsets
+enum
 {
-    VECTOR_OFFSET_X = 0, // float x;
-    VECTOR_OFFSET_Y = 4, // float y;
-    VECTOR_OFFSET_Z = 8, // float z;
-    VECTOR_SIZE = 12     // sizeof(Vector);
+    VECTOR_OFFSET_X = 0,                   // float x;
+    VECTOR_OFFSET_Y = VECTOR_OFFSET_X + 4, // float y;
+    VECTOR_OFFSET_Z = VECTOR_OFFSET_Y + 4, // float z;
+    
+    VECTOR_SIZE = VECTOR_OFFSET_Z + 4      // sizeof(Vector);
 }
 
 static float accumulator[3];

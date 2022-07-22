@@ -11,8 +11,7 @@
 #pragma newdecls required
 
 #define NULL view_as<Pointer>(0) // ((void*)0)
-
-#define V_SWAP(%1,%2,%3) { %1 temp = %2; %2 = %3; %3 = temp; } // Not going to make 500 functions. Can't parse through methodmap properties either (which makes sense tbh). If you really need to use this, don't use an ending semi-colon. Will consider removing.
+#define ENTITY_NULL -1
 
 #include <smmem> // https://github.com/Scags/SM-Memory
 
@@ -66,6 +65,12 @@ methodmap Pointer
         if (!offs_RefEHandle) 
             offs_RefEHandle = getRefEHandleOffset();
         return this.DereferenceEHandle(offset + offs_RefEHandle);
+    }
+
+    // Write the entity address to this pointer.
+    public void WriteEntity(int entity, any offset = 0)
+    {
+        this.Write(IsValidEntity(entity) ? GetEntityAddress(entity) : Address_Null, offset);
     }
 
     // Get the array offset from the pointer's current address. You must specify the size of the type used with this pointer using the typeSize parameter.
@@ -138,15 +143,23 @@ stock Pointer operator-(const Pointer left, const int right)
 {
     return Pointer(left.Address - right);
 }
+stock Pointer operator+(const Pointer left, const Address right)
+{
+    return Pointer(left.Address + right);
+}
+stock Pointer operator-(const Pointer left, const Address right)
+{
+    return Pointer(left.Address - right);
+}
 
-// Re-allocate within a specific location in memory. You must specify the size of the type used with this CUtlMemory using the typeSize parameter.
+// Re-allocate within a specific location in memory. You must specify the size of the type used with this global using the typeSize parameter.
 // Normally this would call the the constructor of the allocated memory, but that's not possible here.
 stock void Construct(Pointer memory, int typeSize = 4)
 {
     memset(memory, 0, typeSize);
 }
 
-// Re-allocate within a specific location in memory, from another source. You must specify the size of the type used with this CUtlMemory using the typeSize parameter.
+// Re-allocate within a specific location in memory, from another source. You must specify the size of the type used with this global using the typeSize parameter.
 // Normally this would call the the constructor of the allocated memory, but that's not possible here.
 stock void CopyConstruct(Pointer memory, Pointer source, int typeSize = 4)
 {
@@ -160,4 +173,14 @@ stock any recalloc(Pointer memory, int num, int size)
     memcpy(buffer, memory, num * size);
     free(memory);
     return buffer;
+}
+
+// Swap between two blocks of memory. You must specify the size of the type used with this global using the typeSize parameter.
+stock void V_swap(Pointer x, Pointer y, int typeSize = 4)
+{
+    Pointer temp = malloc(typeSize);
+    memcpy(temp, x, typeSize);
+    memcpy(x, y, typeSize);
+    memcpy(y, temp, typeSize);
+    free(temp);
 }

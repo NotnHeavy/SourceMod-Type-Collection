@@ -17,11 +17,17 @@
 #include "CUtlMemory.inc"
 #include "CUtlVector.inc"
 #include "CTakeDamageInfo.inc"
+#include "CTFRadiusDamageInfo.inc"
 
-static Address CTFPlayer_m_hMyWearables;
+static int CTFPlayer_m_hMyWearables;
 static Handle SDKCall_CTFWearable_Equip;
 static Handle SDKCall_CBaseEntity_TakeDamage;
+static Address g_pGameRules;
+static Handle SDKCall_CTFGameRules_RadiusDamage;
 static DHookSetup DHooks_CTFPlayer_OnTakeDamage;
+
+
+static int explosionModelIndex;
 
 public void OnPluginStart()
 {
@@ -32,7 +38,7 @@ public void OnPluginStart()
     SMTC_Initialize();
 
     GameData config = LoadGameConfigFile("NotnHeavy - SourceMod Type Collection (tests)");
-    CTFPlayer_m_hMyWearables = view_as<Address>(config.GetOffset("CTFPlayer::m_hMyWearables"));
+    CTFPlayer_m_hMyWearables = config.GetOffset("CTFPlayer::m_hMyWearables");
 
     StartPrepSDKCall(SDKCall_Entity);
     PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CTFWearable::Equip");
@@ -48,14 +54,51 @@ public void OnPluginStart()
     DHooks_CTFPlayer_OnTakeDamage = DHookCreateFromConf(config, "CTFPlayer::OnTakeDamage");
     DHookEnableDetour(DHooks_CTFPlayer_OnTakeDamage, false, CTFPlayer_OnTakeDamage);
 
+    g_pGameRules = config.GetAddress("g_pGameRules");
+
+    // ik i can use StartPrepSDKCall(SDKCall_GameRules), but why not :P
+    StartPrepSDKCall(SDKCall_Raw);
+    PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFGameRules::RadiusDamage");
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+    SDKCall_CTFGameRules_RadiusDamage = EndPrepSDKCall();
+
     delete config;
 
     pointerOperation();
     vectorOperation();
     cutlvectorOperation(); // oh god
     ctakedamageinfoOperation();
+    AddCommandListener(ctfradiusdamageinfoOperation, "voicemenu"); // ctfradiusdamageinfo operation
 
     PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
+    PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
+}
+
+public void OnMapStart()
+{
+    explosionModelIndex = PrecacheModel("sprites/sprite_fire01.vmt");
+}
+
+static Action ctfradiusdamageinfoOperation(int client, const char[] argv, int argc)
+{
+    char args[128];
+    GetCmdArgString(args, sizeof(args));
+    if (strcmp(args, "0 0") == 0)
+    {
+        float buffer[3];
+        GetEntPropVector(1, Prop_Data, "m_vecAbsOrigin", buffer);
+        Vector damagePosition = AddressOfArray(buffer);
+
+        CTakeDamageInfo damageInfo = CTakeDamageInfo.Malloc(client, client, client, damagePosition, damagePosition, 300.00, DMG_BLAST & DMG_HALF_FALLOFF, TF_CUSTOM_STICKBOMB_EXPLOSION, damagePosition);
+        CTFRadiusDamageInfo radiusInfo = CTFRadiusDamageInfo.Malloc(damageInfo, damagePosition, 200.00);
+        SDKCall(SDKCall_CTFGameRules_RadiusDamage, g_pGameRules, radiusInfo);
+        free(damageInfo);
+        free(radiusInfo);
+
+        TE_SetupExplosion(buffer, explosionModelIndex, 10.0, 1, 0, 200, 0);
+        TE_SendToAll();
+    }
+    return Plugin_Continue;
 }
 
 static void ctakedamageinfoOperation()
@@ -188,7 +231,11 @@ static void vectorOperation()
     PrintToServer("forward/right/up after VectorVectors: %f: %f: %f, %f: %f: %f, %f: %f: %f", forwardVector.X, forwardVector.Y, forwardVector.Z, right.X, right.Y, right.Z, up.X, up.Y, up.Z);
 
     PrintToServer("result.NormalizeInPlace(): %f", result.NormalizeInPlace());
-    PrintToServer("new co-ordinates for normalized vector: %f: %f: %f\n", result.X, result.Y, result.Z);
+    PrintToServer("new co-ordinates for normalized vector: %f: %f: %f", result.X, result.Y, result.Z);
+
+    VECTOR_STACK_ALLOC(stackAllocatedVector);
+    stackAllocatedVector.X = 3144.00;
+    PrintToServer("stackAllocatedVector: %f: %f: %f\n", stackAllocatedVector.X, stackAllocatedVector.Y, stackAllocatedVector.Z);
 
     free(vectorMalloc);
 }
@@ -201,7 +248,7 @@ static void pointerOperation()
     Pointer b = malloc(4);
     b.Write(20);
 
-    V_SWAP(Pointer, a, b)
+    V_swap(a, b);
     PrintToServer("where a was 10 and b was 20 before V_swap, pointer a: %i, pointer b: %i\n", a.Dereference(), b.Dereference());
 
     free(a);
