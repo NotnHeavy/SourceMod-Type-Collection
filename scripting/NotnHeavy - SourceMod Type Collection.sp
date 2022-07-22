@@ -195,6 +195,17 @@ static void cutlvectorOperation()
     {
         PrintToServer("after filling up, intVector[%i]: %i", i, intVector.Get(i).Dereference());
     }
+    int hasElement = 109;
+    PrintToServer("Does intVector have 109? %s", intVector.HasElement(Pointer(AddressOf(hasElement))) ? "yes" : "no");
+    hasElement = 110;
+    PrintToServer("Does intVector have 110? %s\n", intVector.HasElement(Pointer(AddressOf(hasElement))) ? "yes" : "no");
+
+    int valueToFill = 69420;
+    intVector.FillWithValue(Pointer(AddressOf(valueToFill)));
+    for (int i = 0; i < intVector.Count(); ++i)
+    {
+        PrintToServer("after filling up buffer with valueToFill, intVector[%i]: %i", i, intVector.Get(i).Dereference());
+    }
     PrintToServer("");
     
     intVector.Dispose();

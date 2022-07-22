@@ -292,30 +292,15 @@ methodmap CUtlVector < Pointer
         return this.InsertMultipleBefore(elem + 1, num, typeSize);
     }
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    // todo: re-write these Find/FindPointer methods to use memcmp. whatever i did here, i was high. //
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-
     // Finds an element. Returns the index if found. You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public int Find(const any source, int typeSize = 4)
+    public int Find(const Pointer source, int typeSize = 4)
     {
         for (int i = 0; i < this.Count(); ++i)
         {
-            if (this.Element(i, typeSize).Dereference() == source)
+            if (memcmp(this.Element(i, typeSize), source, typeSize) == 0)
                 return i;
         }
         return CUtlVector.InvalidIndex();
-    }
-
-    // Finds an element. Returns the index if found. You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public int FindPointer(const Pointer source, int typeSize = 4)
-    {
-        for (int i = 0; i < this.Count(); ++i)
-        {
-            if (this.Element(i, typeSize) == source)
-                return i;
-        }
-        return -1;
     }
 
     // Element removal. Doesn't preserve order.
@@ -345,23 +330,9 @@ methodmap CUtlVector < Pointer
     // Element removal. Removes first occurence of source, preserves order, shifts elements.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
     // Internally this code would call the deconstructor on allocated memory, but that's not possible here.
-    public bool FindAndRemove(const any source, int typeSize = 4)
+    public bool FindAndRemove(const Pointer source, int typeSize = 4)
     {
         int elem = this.Find(source, typeSize);
-        if (elem != -1)
-        {
-            this.Remove(elem);
-            return true;
-        }
-        return false;
-    }
-
-    // Element removal. Removes first occurence of source, preserves order, shifts elements.
-    // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    // Internally this code would call the deconstructor on allocated memory, but that's not possible here.
-    public bool FindAndRemovePointer(const Pointer source, int typeSize = 4)
-    {
-        int elem = this.FindPointer(source, typeSize);
         if (elem != -1)
         {
             this.Remove(elem);
@@ -373,23 +344,9 @@ methodmap CUtlVector < Pointer
     // Element removal. Removes first occurence of source, doesn't preserve order.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
     // Internally this code would call the deconstructor on allocated memory, but that's not possible here.
-    public bool FindAndFastRemove(const any source, int typeSize = 4)
+    public bool FindAndFastRemove(const Pointer source, int typeSize = 4)
     {
         int elem = this.Find(source, typeSize);
-        if (elem != -1)
-        {
-            this.FastRemove(elem);
-            return true;
-        }
-        return false;
-    }
-
-    // Element removal. Removes first occurence of source, doesn't preserve order.
-    // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    // Internally this code would call the deconstructor on allocated memory, but that's not possible here.
-    public bool FindAndFastRemovePointer(const Pointer source, int typeSize = 4)
-    {
-        int elem = this.FindPointer(source, typeSize);
         if (elem != -1)
         {
             this.FastRemove(elem);
@@ -529,22 +486,16 @@ methodmap CUtlVector < Pointer
     }
 
     // Fill up this CUtlVector with a specific value. You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public void FillWithValue(const any value, int typeSize = 4)
+    public void FillWithValue(const Pointer value, int typeSize = 4)
     {
         for (int i = 0; i < this.Count(); ++i)
-            this.Element(i, typeSize).Write(value);
-    }
-
-    // Does this CUtlVector have the folloiwng element? You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public bool HasElement(const any source, int typeSize = 4)
-    {
-        return this.Find(source, typeSize) >= 0;
+            memcpy(this.Element(i, typeSize), value, typeSize);
     }
 
     // Does this CUtlVector have the following element? You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public bool HasElementPointer(const Pointer source, int typeSize = 4)
+    public bool HasElement(const Pointer source, int typeSize = 4)
     {
-        return this.FindPointer(source, typeSize) >= 0;
+        return this.Find(source, typeSize) >= 0;
     }
 
     // Memory deallocation.
@@ -579,19 +530,7 @@ methodmap CUtlVector < Pointer
     public void Reverse(int typeSize = 4)
     {
         for (int i = 0; i < this.m_Size / 2; ++i)
-        {   
-            /*
-            Pointer left = malloc(typeSize);
-            Pointer right = malloc(typeSize);
-            memcpy(left, this.m_Memory.Get(i, typeSize), typeSize);
-            memcpy(right, this.m_Memory.Get(this.m_Size - 1 - i, typeSize), typeSize);
-            memcpy(this.m_Memory.Get(i, typeSize), right, typeSize);
-            memcpy(this.m_Memory.Get(this.m_Size - 1 - i), left, typeSize);
-            free(left);
-            free(right);
-            */
             V_swap(this.m_Memory.Get(i, typeSize), this.m_Memory.Get(this.m_Size - 1 - i, typeSize), typeSize);
-        }
     }
 
     // Deconstructor.

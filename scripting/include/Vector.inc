@@ -9,7 +9,7 @@
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_VECTOR
 
-#include <Pointer>
+#include "Pointer.inc"
 
 #pragma semicolon true 
 #pragma newdecls required
