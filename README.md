@@ -15,6 +15,7 @@ At the very least, you'll need [Scags' SM-Memory Extension](https://github.com/S
 - CUtlMemory.inc: This is a dynamically expanding buffer that is pretty much the barebones of CUtlVector.
 - CTakeDamageInfo.inc: An object that contains all information for damaging players. Note that you will have to create your own SDKCalls (in particular, CBaseEntity::TakeDamage), or create your own DHooks (in particular, the OnTakeDamage ones) in order to utilise this methodmap fully. Note that there is a bug where if you toggle mini crits manually before "CTFGameRules::ApplyOnDamageModifyRules" is called, due to mini crits and crits both toggling the DMG_CRIT damage type, the effect will default to the full crit one. This can be fixed by including SMTC.inc and calling "CTakeDamageInfo::SetCritType()" instead of modifying "CTakeDamageInfo::m_eCritType" directly.
 - CTFRadiusDamageInfo.inc: An object that allows for damaging players within a specific radius. Note that you will have to create your own SDKCalls (in particular, CTFGameRules::RadiusDamage) in order to utilise this methodmap fully. It's recommended to include SMTC.inc for the full functionality of "CTFRadiusDamageInfo::CalculateFalloff()", however it is a necessity for "CTFRadiusDamageInfo::ApplyToEntity()".
+- QAngle.inc: A 3D vector, but used for pitch/yaw/roll.
 
 ## SourceMod version
 This library has been tested with SourceMod 1.11.

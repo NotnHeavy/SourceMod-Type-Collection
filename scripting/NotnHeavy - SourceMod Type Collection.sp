@@ -1,4 +1,4 @@
-// For testing purposes only. Please refer to ./scripting/include/ for all of the methodmaps available.
+// For testing purposes only. Please refer to ./scripting/include/ for all of the includes available.
 // This is the most hackiest shit I've done in SourceMod so far.
 
 #pragma semicolon true 
@@ -18,14 +18,13 @@
 #include "CUtlVector.inc"
 #include "CTakeDamageInfo.inc"
 #include "CTFRadiusDamageInfo.inc"
+#include "QAngle.inc"
 
 static int CTFPlayer_m_hMyWearables;
 static Handle SDKCall_CTFWearable_Equip;
 static Handle SDKCall_CBaseEntity_TakeDamage;
-static Address g_pGameRules;
 static Handle SDKCall_CTFGameRules_RadiusDamage;
 static DHookSetup DHooks_CTFPlayer_OnTakeDamage;
-
 
 static int explosionModelIndex;
 
@@ -54,10 +53,7 @@ public void OnPluginStart()
     DHooks_CTFPlayer_OnTakeDamage = DHookCreateFromConf(config, "CTFPlayer::OnTakeDamage");
     DHookEnableDetour(DHooks_CTFPlayer_OnTakeDamage, false, CTFPlayer_OnTakeDamage);
 
-    g_pGameRules = config.GetAddress("g_pGameRules");
-
-    // ik i can use StartPrepSDKCall(SDKCall_GameRules), but why not :P
-    StartPrepSDKCall(SDKCall_Raw);
+    StartPrepSDKCall(SDKCall_GameRules);
     PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFGameRules::RadiusDamage");
     PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
     SDKCall_CTFGameRules_RadiusDamage = EndPrepSDKCall();
@@ -69,6 +65,7 @@ public void OnPluginStart()
     cutlvectorOperation(); // oh god
     ctakedamageinfoOperation();
     AddCommandListener(ctfradiusdamageinfoOperation, "voicemenu"); // ctfradiusdamageinfo operation
+    qangleOperation();
 
     PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
     PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
@@ -77,6 +74,29 @@ public void OnPluginStart()
 public void OnMapStart()
 {
     explosionModelIndex = PrecacheModel("sprites/sprite_fire01.vmt");
+}
+
+static void qangleOperation()
+{
+    STACK_ALLOC(angle, QAngle, QANGLE_SIZE);
+    angle.X = 1.00;
+    angle.Y = 2.00;
+    angle.Z = 3.00;
+    PrintToServer("QAngle angle: %f: %f: %f", angle.X, angle.Y, angle.Z);
+
+    STACK_ALLOC(direction, QAngle, QANGLE_SIZE);
+    direction.X = 5.00;
+    direction.Y = 5.00;
+    direction.Z = 5.00;
+    STACK_ALLOC(dest, QAngle, QANGLE_SIZE);
+    VectorMA(angle, 3.00, direction, dest);
+    PrintToServer("after VectorMA, dest: %f: %f: %f", dest.X, dest.Y, dest.Z);
+
+    STACK_ALLOC(forwardVector, Vector, QANGLE_SIZE);
+    STACK_ALLOC(right, Vector, QANGLE_SIZE);
+    STACK_ALLOC(up, Vector, QANGLE_SIZE);
+    AngleVectors(dest, forwardVector, right, up);
+    PrintToServer("after AngleVectors, forward: %f: %f: %f, right: %f: %f: %f, up: %f: %f: %f", forwardVector.X, forwardVector.Y, forwardVector.Z, right.X, right.Y, right.Z, up.X, up.Y, up.Z);
 }
 
 static Action ctfradiusdamageinfoOperation(int client, const char[] argv, int argc)
@@ -91,7 +111,7 @@ static Action ctfradiusdamageinfoOperation(int client, const char[] argv, int ar
 
         CTakeDamageInfo damageInfo = CTakeDamageInfo.Malloc(client, client, client, damagePosition, damagePosition, 300.00, DMG_BLAST & DMG_HALF_FALLOFF, TF_CUSTOM_STICKBOMB_EXPLOSION, damagePosition);
         CTFRadiusDamageInfo radiusInfo = CTFRadiusDamageInfo.Malloc(damageInfo, damagePosition, 200.00);
-        SDKCall(SDKCall_CTFGameRules_RadiusDamage, g_pGameRules, radiusInfo);
+        SDKCall(SDKCall_CTFGameRules_RadiusDamage, radiusInfo);
         free(damageInfo);
         free(radiusInfo);
 
@@ -106,12 +126,17 @@ static void ctakedamageinfoOperation()
     // Player tests. (TF2)
     if (IsClientInGame(1))
     {
+        /*
         float buffer[3];
         GetEntPropVector(1, Prop_Data, "m_vecAbsOrigin", buffer);
         Vector damagePosition = AddressOfArray(buffer);
+        */
+        Vector damagePosition = GetEntVector(1, Prop_Data, "m_vecAbsOrigin", .allocate = true);
+
         CTakeDamageInfo hell = CTakeDamageInfo.Malloc(0, 0, 0, damagePosition, damagePosition, 100.00, DMG_BLAST, TF_CUSTOM_STICKBOMB_EXPLOSION, damagePosition);
         SDKCall(SDKCall_CBaseEntity_TakeDamage, 1, hell);
         free(hell);
+        free(damagePosition);
     }
 
     // Server tests.
@@ -244,7 +269,7 @@ static void vectorOperation()
     PrintToServer("result.NormalizeInPlace(): %f", result.NormalizeInPlace());
     PrintToServer("new co-ordinates for normalized vector: %f: %f: %f", result.X, result.Y, result.Z);
 
-    VECTOR_STACK_ALLOC(stackAllocatedVector);
+    STACK_ALLOC(stackAllocatedVector, Vector, VECTOR_SIZE);
     stackAllocatedVector.X = 3144.00;
     PrintToServer("stackAllocatedVector: %f: %f: %f\n", stackAllocatedVector.X, stackAllocatedVector.Y, stackAllocatedVector.Z);
 

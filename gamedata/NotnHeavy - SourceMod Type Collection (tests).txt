@@ -2,22 +2,6 @@
 {
     "tf"
     {
-		"Addresses"
-		{
-			"g_pGameRules"
-            {
-                "windows"
-                {
-                    "signature" "CreateGameRulesObject"                
-                    "read"      "5"                    
-                }
-                "linux"
-                {
-                    "signature" "g_pGameRules"
-                }
-                "read" "0"
-            }
-		}
         "Offsets"
         {
             "CTFPlayer::m_hMyWearables"
@@ -34,16 +18,6 @@
         }
         "Signatures"
         {
-			"g_pGameRules"
-			{
-				"library" "server"
-				"linux"   "@g_pGameRules"
-			}
-			"CreateGameRulesObject"
-            {
-                "library" "server"
-                "windows" "\x55\x8B\xEC\x8B\x0D\x2A\x2A\x2A\x2A\x85\xC9\x74\x2A\x8B\x01\x6A\x01"
-            }
             "CBaseEntity::TakeDamage"
 			{
 				"library" "server"

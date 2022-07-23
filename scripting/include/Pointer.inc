@@ -13,6 +13,8 @@
 #define NULL view_as<Pointer>(0) // ((void*)0)
 #define ENTITY_NULL -1
 
+#define STACK_ALLOC(%1,%2,%3) int SMTC_%1[%3 / 4]; %2 %1 = %2(AddressOfArray(SMTC_%1)) // %1 = name, %2 = methodmap, %3 = size in bytes (buffer size will be %3 / 4)
+
 #include <smmem> // https://github.com/Scags/SM-Memory
 
 //////////////////////////////////////////////////////////////////////////////
@@ -183,4 +185,9 @@ stock void V_swap(Pointer x, Pointer y, int typeSize = 4)
     memcpy(x, y, typeSize);
     memcpy(y, temp, typeSize);
     free(temp);
+}
+
+stock float FloatMakePositive(float f)
+{
+    return view_as<float>(view_as<int>(f) & 0x77777777); // evil floating point bit level hacking
 }

@@ -14,8 +14,6 @@
 #pragma semicolon true 
 #pragma newdecls required
 
-#define VECTOR_STACK_ALLOC(%1) float SMTC_%1[3] = { 0.00, 0.00, 0.00 }; Vector %1 = Vector(AddressOfArray(SMTC_%1))
-
 //////////////////////////////////////////////////////////////////////////////
 // VECTOR DATA                                                              //
 //////////////////////////////////////////////////////////////////////////////
@@ -104,6 +102,12 @@ methodmap Vector < Pointer
         return pointer;
     }
 
+    // Base address...
+    public Pointer Base()
+    {
+        return view_as<Pointer>(this);
+    }
+
     // Store the vector into a buffer.
     public void GetBuffer(float buffer[3])
     {
@@ -174,7 +178,19 @@ methodmap Vector < Pointer
         return Vector.Accumulator(this.X > other.X ? this.X : other.X, this.Y > other.Y ? this.Y : other.Y, this.Z > other.Z ? this.Z : other.Z);
     }
 
-    // Vector assignation (would be operator= instead if I was able to fully utilise it).
+    // Is this vector's length greater than the provided magnitude?
+    public bool IsLengthGreaterThan(float val)
+    {
+        return this.LengthSqr() > val * val;
+    }
+
+    // Is this vector's length less than the provided magnitude?
+    public bool IsLengthLessThan(float val)
+    {
+        return this.LengthSqr() < val * val;
+    }
+
+    // Vector assignation.
     public void Assign(Vector vector)
     {
         memcpy(this, vector, VECTOR_SIZE);
@@ -252,4 +268,23 @@ stock void VectorVectors(const Vector forwardVector, Vector right, Vector up)
         up.NormalizeInPlace();
         free(temp);
     }
+}
+
+
+// Vector equality with tolerance
+stock bool VectorsAreEqual(const Vector left, const Vector right, float tolerance)
+{
+    if (FloatMakePositive(left.X - right.X) > tolerance)
+        return false;
+    if (FloatMakePositive(left.Y - right.Y) > tolerance)
+        return false;
+    return FloatMakePositive(left.Z - right.Z) <= tolerance;
+}
+
+// The vector returned is stored onto the accumulator and must be assigned to your desired vector, unless allocate is set to true.
+stock Vector GetEntVector(int entity, PropType type, const char[] property, int index = 0, bool allocate = false)
+{
+    float buffer[3];
+    GetEntPropVector(entity, type, property, buffer, index);
+    return allocate ? Vector.Malloc(buffer[0], buffer[1], buffer[2]) : Vector.Accumulator(buffer[0], buffer[1], buffer[2]);
 }
