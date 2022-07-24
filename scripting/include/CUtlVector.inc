@@ -4,6 +4,8 @@
 
 // this is suicide
 
+// Requires "CUtlMemory.inc".
+
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CUTLVECTOR
 #endinput
 #endif

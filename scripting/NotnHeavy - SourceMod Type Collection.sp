@@ -14,11 +14,14 @@
 #include "SMTC"
 #include "Pointer.inc"
 #include "include/Vector.inc"
+#include "QAngle.inc"
 #include "CUtlMemory.inc"
 #include "CUtlVector.inc"
-#include "CTakeDamageInfo.inc"
-#include "CTFRadiusDamageInfo.inc"
-#include "QAngle.inc"
+
+#include "tf/CTakeDamageInfo.inc"
+#include "tf/CTFRadiusDamageInfo.inc"
+#include "tf/tf_shareddefs.inc"
+#include "tf/TFPlayerClassData_t.inc"
 
 static int CTFPlayer_m_hMyWearables;
 static Handle SDKCall_CTFWearable_Equip;
@@ -66,6 +69,7 @@ public void OnPluginStart()
     ctakedamageinfoOperation();
     AddCommandListener(ctfradiusdamageinfoOperation, "voicemenu"); // ctfradiusdamageinfo operation
     qangleOperation();
+    tfplayerclassdata_tOperation();
 
     PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
     PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
@@ -74,6 +78,59 @@ public void OnPluginStart()
 public void OnMapStart()
 {
     explosionModelIndex = PrecacheModel("sprites/sprite_fire01.vmt");
+}
+
+static void tfplayerclassdata_tOperation()
+{
+    // offset verification
+    PrintToServer("sizeof(TFPlayerClassData_T): %i", TFPLAYERCLASSDATA_T_SIZE); // should be 2288
+    PrintToServer("TFPlayerClassData_t::m_flMaxSpeed: %i", TFPLAYERCLASSDATA_T_OFFSET_M_FLMAXSPEED); // should be 640
+    PrintToServer("TFPlayerClassData_t::m_aWeapons: %i", TFPLAYERCLASSDATA_T_OFFSET_M_AWEAPONS); // should be 652
+    PrintToServer("TFPlayerClassData_t::m_aGrenades: %i", TFPLAYERCLASSDATA_T_OFFSET_M_AGRENADES);
+    PrintToServer("TFPlayerClassData_t::m_aAmmoMax: %i", TFPLAYERCLASSDATA_T_OFFSET_M_AAMMOMAX);
+    PrintToServer("TFPlayerClassData_t::m_aBuildable: %i", TFPLAYERCLASSDATA_T_OFFSET_M_ABUILDABLE);
+    PrintToServer("TFPlayerClassData_t::m_bDontDoAirwalk: %i", TFPLAYERCLASSDATA_T_OFFSET_M_BDONTDOAIRWALK);
+    PrintToServer("TFPlayerClassData_t::m_bDontDoNewJump: %i", TFPLAYERCLASSDATA_T_OFFSET_M_BDONTDONEWJUMP);
+    PrintToServer("TFPlayerClassData_t::m_bParsed: %i", TFPLAYERCLASSDATA_T_OFFSET_M_BPARSED);
+    PrintToServer("TFPlayerClassData_t::m_vecThirdPersonoffset: %i", TFPLAYERCLASSDATA_T_OFFSET_M_VECTHIRDPERSONOFFSET);
+    PrintToServer("TFPlayerClassData_t::m_szDeathSound: %i\n", TFPLAYERCLASSDATA_T_OFFSET_M_SZDEATHSOUND); // should be 752
+
+    // get the actual class data!
+    PrintToServer("g_pTFPlayerClassDataMgr: %i", g_pTFPlayerClassDataMgr);
+    TFPlayerClassData_t pyroData = GetPlayerClassData(TF_CLASS_PYRO);
+    pyroData.m_flMaxSpeed = 520.00; // we do a miniscule amount of trolling
+    
+    TFPlayerClassData_t spyData = GetPlayerClassData(TF_CLASS_SPY);
+    PrintToServer("Spy's m_flMaxSpeed: %f", spyData.m_flMaxSpeed);
+    spyData.m_flMaxSpeed = 300.00; // and well you know, lol. yw, sappho :^)
+
+    TFPlayerClassData_t soldierData = GetPlayerClassData(TF_CLASS_SOLDIER);
+    soldierData.m_nMaxHealth = 10000; // :skull:
+    soldierData.m_flMaxSpeed = 520.00;
+
+    TFPlayerClassData_t heavyData = GetPlayerClassData(TF_CLASS_HEAVYWEAPONS);
+    heavyData.m_nMaxHealth = 1; // heavy has recently went on a diet!
+    char buffer[TF_NAME_LENGTH];
+
+    pyroData.m_szModelName_Get(buffer);
+    PrintToServer("Pyro model: %s", buffer);
+    pyroData.m_szHWMModelName_Get(buffer);
+    PrintToServer("Pyro HWM model: %s", buffer);
+    pyroData.m_szHandModelName_Get(buffer);
+    PrintToServer("Pyro hands model: %s", buffer);
+    pyroData.m_szLocalizableName_Get(buffer);
+    PrintToServer("Pyro localizable name: %s", buffer);
+    pyroData.m_szClassName_Get(buffer);
+    PrintToServer("Pyro class name: %s", buffer);
+
+    /*
+    TFPlayerClassData_t demomanData = GetPlayerClassData(TF_CLASS_DEMOMAN);
+    demomanData.m_szModelName_Set("models/player/pyro.mdl");
+    demomanData.m_szHWMModelName_Set("models/player/pyro.mdl");
+    demomanData.m_szHandModelName_Set("models/weapons/c_models/c_pyro_arms.mdl");
+    */
+
+    PrintToServer("");
 }
 
 static void qangleOperation()
@@ -96,7 +153,7 @@ static void qangleOperation()
     STACK_ALLOC(right, Vector, QANGLE_SIZE);
     STACK_ALLOC(up, Vector, QANGLE_SIZE);
     AngleVectors(dest, forwardVector, right, up);
-    PrintToServer("after AngleVectors, forward: %f: %f: %f, right: %f: %f: %f, up: %f: %f: %f", forwardVector.X, forwardVector.Y, forwardVector.Z, right.X, right.Y, right.Z, up.X, up.Y, up.Z);
+    PrintToServer("after AngleVectors, forward: %f: %f: %f, right: %f: %f: %f, up: %f: %f: %f\n", forwardVector.X, forwardVector.Y, forwardVector.Z, right.X, right.Y, right.Z, up.X, up.Y, up.Z);
 }
 
 static Action ctfradiusdamageinfoOperation(int client, const char[] argv, int argc)
@@ -285,7 +342,7 @@ static void pointerOperation()
     b.Write(20);
 
     V_swap(a, b);
-    PrintToServer("where a was 10 and b was 20 before V_swap, pointer a: %i, pointer b: %i\n", a.Dereference(), b.Dereference());
+    PrintToServer("where a was 10 and b was 20 before V_swap, pointer a: %i, pointer b: %i\n", a.Dereference(), b.Dereference());  
 
     free(a);
     free(b);

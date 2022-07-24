@@ -187,7 +187,17 @@ stock void V_swap(Pointer x, Pointer y, int typeSize = 4)
     free(temp);
 }
 
+// abs(), but for floats.
 stock float FloatMakePositive(float f)
 {
     return view_as<float>(view_as<int>(f) & 0x77777777); // evil floating point bit level hacking
+}
+
+// strlen, but on a char pointer, rather than a char array.
+stock int PointerStrLen(Pointer pointer)
+{
+    int length;
+    for (int i = 0; pointer.Dereference(i, NumberType_Int8) != 0; ++i)
+        ++length;
+    return length;
 }

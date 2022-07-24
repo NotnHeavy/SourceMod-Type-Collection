@@ -17,6 +17,8 @@
 // GLOBALS                                                                  //
 //////////////////////////////////////////////////////////////////////////////
 
+Pointer g_pTFPlayerClassDataMgr;
+
 static DHookSetup SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive;
 
 Handle SMTC_DHooks_CTFRadiusDamageInfo_CalculateFalloff;
@@ -33,6 +35,8 @@ stock void SMTC_Initialize()
 {
     // Set up hooks from the config file.
     GameData config = LoadGameConfigFile("NotnHeavy - SourceMod Type Collection");
+
+    g_pTFPlayerClassDataMgr = view_as<Pointer>(config.GetAddress("g_pTFPlayerClassDataMgr"));
 
     SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive = DHookCreateFromConf(config, "CTFPlayer::OnTakeDamage_Alive()");
     DHookEnableDetour(SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive, false, SMTC_CTFPlayer_OnTakeDamage_Alive);

@@ -2,8 +2,35 @@
 {
     "tf"
     {
+		"Addresses"
+		{
+			"g_pTFPlayerClassDataMgr"
+			{
+				"windows"
+				{
+					"signature" "GetPlayerClassData()"
+					"read"      "11"
+				}
+				"linux"
+				{
+					"signature" "g_pTFPlayerClassDataMgr"
+				}
+				"read" "0"
+			}
+		}
         "Signatures"
         {
+			"GetPlayerClassData()"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x69\x4D\x08\xF0\x08\x00\x00"
+			}
+			"g_pTFPlayerClassDataMgr"
+			{
+				"library" "server"
+				"linux"   "@g_pTFPlayerClassDataMgr"
+			}
+
             "CTFPlayer::OnTakeDamage_Alive()"
 			{
 				"library" "server"
