@@ -14,7 +14,7 @@
 #include "Pointer.inc"
 #include "CUtlMemory.inc"
 
-#pragma semicolon true 
+#pragma semicolon true
 #pragma newdecls required
 
 //////////////////////////////////////////////////////////////////////////////

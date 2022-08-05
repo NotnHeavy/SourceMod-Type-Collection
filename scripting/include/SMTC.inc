@@ -17,14 +17,14 @@
 // GLOBALS                                                                  //
 //////////////////////////////////////////////////////////////////////////////
 
-Pointer g_pTFPlayerClassDataMgr;
+stock Pointer g_pTFPlayerClassDataMgr;
 
-static DHookSetup SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive;
+stock static DHookSetup SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive;
 
-Handle SMTC_DHooks_CTFRadiusDamageInfo_CalculateFalloff;
-Handle SMTC_DHooks_CTFRadiusDamageInfo_ApplyToEntity;
+stock Handle SMTC_DHooks_CTFRadiusDamageInfo_CalculateFalloff;
+stock Handle SMTC_DHooks_CTFRadiusDamageInfo_ApplyToEntity;
 
-int SMTC_PlayerTakingMiniCrits = 0;
+stock int SMTC_PlayerTakingMiniCrits = 0;
 
 //////////////////////////////////////////////////////////////////////////////
 // INITIALIZER                                                              //
@@ -38,8 +38,10 @@ stock void SMTC_Initialize()
 
     g_pTFPlayerClassDataMgr = view_as<Pointer>(config.GetAddress("g_pTFPlayerClassDataMgr"));
 
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTAKEDAMAGEINFO
     SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive = DHookCreateFromConf(config, "CTFPlayer::OnTakeDamage_Alive()");
     DHookEnableDetour(SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive, false, SMTC_CTFPlayer_OnTakeDamage_Alive);
+#endif
 
     StartPrepSDKCall(SDKCall_Raw);
     PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFRadiusDamageInfo::CalculateFalloff()");
@@ -54,7 +56,9 @@ stock void SMTC_Initialize()
     delete config;
 
     // Miscallaneous hooks.
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTAKEDAMAGEINFO
     HookEvent("player_hurt", SMTC_ClientHurt, EventHookMode_Pre);
+#endif
 
     // Set up globals.
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_VECTOR
@@ -66,6 +70,7 @@ stock void SMTC_Initialize()
 // HOOKS                                                                    //
 //////////////////////////////////////////////////////////////////////////////
 
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTAKEDAMAGEINFO
 // Fix the bug where mini-crits toggled manually shows the full crit effect instead. This is due to DMG_CRIT being toggled when using either mini-crits or crits, and DMG_CRIT defaulting to the full crit effect.
 static Action SMTC_ClientHurt(Event event, const char[] name, bool dontBroadcast)
 {
@@ -84,3 +89,4 @@ static MRESReturn SMTC_CTFPlayer_OnTakeDamage_Alive(int entity, DHookReturn retu
         SMTC_PlayerTakingMiniCrits = 0;
     return MRES_Ignored;
 }
+#endif

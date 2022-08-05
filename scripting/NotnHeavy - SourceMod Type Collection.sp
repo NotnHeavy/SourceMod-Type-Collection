@@ -28,6 +28,8 @@ static Handle SDKCall_CTFWearable_Equip;
 static Handle SDKCall_CBaseEntity_TakeDamage;
 static Handle SDKCall_CTFGameRules_RadiusDamage;
 static DHookSetup DHooks_CTFPlayer_OnTakeDamage;
+static Pointer MemoryPatch_DemoknightTurnCap;
+static float MemoryPatch_DemoknightTurnCap_Value = 1000.00;
 
 static int explosionModelIndex;
 
@@ -60,6 +62,12 @@ public void OnPluginStart()
     PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFGameRules::RadiusDamage");
     PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
     SDKCall_CTFGameRules_RadiusDamage = EndPrepSDKCall();
+
+    // was testing something, not related to SMTC
+    MemoryPatch_DemoknightTurnCap = view_as<Pointer>(config.GetAddress("MemoryPatch_DemoknightTurnCap") + config.GetOffset("MemoryPatch_DemoknightTurnCap"));
+    PrintToServer("MemoryPatch_DemoknightTurnCap: %u", MemoryPatch_DemoknightTurnCap);
+    PrintToServer("MemoryPatch_DemoknightTurnCap.Dereference(): %f", view_as<Pointer>(MemoryPatch_DemoknightTurnCap.Dereference()).Dereference());
+    MemoryPatch_DemoknightTurnCap.Write(AddressOf(MemoryPatch_DemoknightTurnCap_Value));
 
     delete config;
 
@@ -96,7 +104,7 @@ static void tfplayerclassdata_tOperation()
     PrintToServer("TFPlayerClassData_t::m_szDeathSound: %i\n", TFPLAYERCLASSDATA_T_OFFSET_M_SZDEATHSOUND); // should be 752
 
     // get the actual class data!
-    PrintToServer("g_pTFPlayerClassDataMgr: %i", g_pTFPlayerClassDataMgr);
+    PrintToServer("g_pTFPlayerClassDataMgr: %u", g_pTFPlayerClassDataMgr);
     TFPlayerClassData_t pyroData = GetPlayerClassData(TF_CLASS_PYRO);
     pyroData.m_flMaxSpeed = 520.00; // we do a miniscule amount of trolling
     
@@ -112,16 +120,18 @@ static void tfplayerclassdata_tOperation()
     heavyData.m_nMaxHealth = 1; // heavy has recently went on a diet!
     char buffer[TF_NAME_LENGTH];
 
-    pyroData.m_szModelName_Get(buffer);
-    PrintToServer("Pyro model: %s", buffer);
-    pyroData.m_szHWMModelName_Get(buffer);
-    PrintToServer("Pyro HWM model: %s", buffer);
-    pyroData.m_szHandModelName_Get(buffer);
-    PrintToServer("Pyro hands model: %s", buffer);
-    pyroData.m_szLocalizableName_Get(buffer);
-    PrintToServer("Pyro localizable name: %s", buffer);
-    pyroData.m_szClassName_Get(buffer);
-    PrintToServer("Pyro class name: %s", buffer);
+    TFPlayerClassData_t civilianData = GetPlayerClassData(TF_CLASS_CIVILIAN);
+
+    civilianData.m_szModelName_Get(buffer);
+    PrintToServer("Civilian model: %s", buffer);
+    civilianData.m_szHWMModelName_Get(buffer);
+    PrintToServer("Civilian HWM model: %s", buffer);
+    civilianData.m_szHandModelName_Get(buffer);
+    PrintToServer("Civilian hands model: %s", buffer);
+    civilianData.m_szLocalizableName_Get(buffer);
+    PrintToServer("Civilian localizable name: %s", buffer);
+    civilianData.m_szClassName_Get(buffer);
+    PrintToServer("Civilian class name: %s", buffer);
 
     /*
     TFPlayerClassData_t demomanData = GetPlayerClassData(TF_CLASS_DEMOMAN);

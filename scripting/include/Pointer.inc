@@ -81,8 +81,9 @@ methodmap Pointer
         return Pointer(this.Address + view_as<Address>(index * typeSize));
     }
 
-    // Store into a buffer. You must specify the size of the type used with this pointer using the typeSize parameter. Final size used = typeSize * 4.
-    public void ToBuffer(int[] buffer, int typeSize = 1)
+    // Store into a buffer. You must specify the size of the type used with this pointer using the typeSize parameter.
+    // If the size specified is based upon the size of your buffer, you must multiply it by 4 for the typeSize parameter.
+    public void ToBuffer(any[] buffer, int typeSize = 4)
     {
         memcpy(AddressOfArray(buffer), this, typeSize);
     }
@@ -118,7 +119,7 @@ static int getRefEHandleOffset()
     return offs_angRotation + 0x0C;
 }
 
-// The tag mismatch warnings you get are complete BS, so there's these operator overloads.
+// :D
 stock Address operator+(Address left, int right)
 {
     return left + view_as<Address>(right);
