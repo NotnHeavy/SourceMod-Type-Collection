@@ -17,19 +17,25 @@
 #include "QAngle.inc"
 #include "CUtlMemory.inc"
 #include "CUtlVector.inc"
+#include "cplane_t.inc"
+#include "CBaseTrace.inc"
+#include "csurface_t.inc"
+#include "CGameTrace.inc"
+#include "shareddefs.inc"
 
 #include "tf/CTakeDamageInfo.inc"
 #include "tf/CTFRadiusDamageInfo.inc"
 #include "tf/tf_shareddefs.inc"
 #include "tf/TFPlayerClassData_t.inc"
 
+#include "TESTS/tests.inc" // self-tests only.
+
 static int CTFPlayer_m_hMyWearables;
 static Handle SDKCall_CTFWearable_Equip;
 static Handle SDKCall_CBaseEntity_TakeDamage;
 static Handle SDKCall_CTFGameRules_RadiusDamage;
 static DHookSetup DHooks_CTFPlayer_OnTakeDamage;
-static Pointer MemoryPatch_DemoknightTurnCap;
-static float MemoryPatch_DemoknightTurnCap_Value = 1000.00;
+static DHookSetup DHooks_CTFPlayer_TraceAttack;
 
 static int explosionModelIndex;
 
@@ -63,13 +69,12 @@ public void OnPluginStart()
     PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
     SDKCall_CTFGameRules_RadiusDamage = EndPrepSDKCall();
 
-    // was testing something, not related to SMTC
-    MemoryPatch_DemoknightTurnCap = view_as<Pointer>(config.GetAddress("MemoryPatch_DemoknightTurnCap") + config.GetOffset("MemoryPatch_DemoknightTurnCap"));
-    PrintToServer("MemoryPatch_DemoknightTurnCap: %u", MemoryPatch_DemoknightTurnCap);
-    PrintToServer("MemoryPatch_DemoknightTurnCap.Dereference(): %f", view_as<Pointer>(MemoryPatch_DemoknightTurnCap.Dereference()).Dereference());
-    MemoryPatch_DemoknightTurnCap.Write(AddressOf(MemoryPatch_DemoknightTurnCap_Value));
+    DHooks_CTFPlayer_TraceAttack = DHookCreateFromConf(config, "CTFPlayer::TraceAttack()");
+    DHookEnableDetour(DHooks_CTFPlayer_TraceAttack, false, CTFPlayer_TraceAttack);
 
     delete config;
+
+    commitTests(); // TESTS/tests.inc
 
     pointerOperation();
     vectorOperation();
@@ -78,6 +83,7 @@ public void OnPluginStart()
     AddCommandListener(ctfradiusdamageinfoOperation, "voicemenu"); // ctfradiusdamageinfo operation
     qangleOperation();
     tfplayerclassdata_tOperation();
+    cgametrace_csurface_t_cbasetrace_cplane_tOperation();
 
     PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
     PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
@@ -88,10 +94,26 @@ public void OnMapStart()
     explosionModelIndex = PrecacheModel("sprites/sprite_fire01.vmt");
 }
 
+// also for CGameTrace
+MRESReturn CTFPlayer_TraceAttack(int entity, DHookParam parameters)
+{
+    CGameTrace ptr = parameters.Get(3);
+    PrintToServer("CTFPlayer::TraceAttack() on %i, is headshot: %i", entity, ptr.hitgroup == HITGROUP_HEAD);
+    return MRES_Ignored;
+}
+
+// for CGameTrace, csurface_t, CBaseTrace and cplane_t.
+static void cgametrace_csurface_t_cbasetrace_cplane_tOperation()
+{
+    // offset verification
+    PrintToServer("sizeof(CGameTrace): %i", SIZEOF(CGameTrace)); // should be 84
+    PrintToServer("CGameTrace::m_pEnt: %i", CGAMETRACE_OFFSET_M_PENT); // should be 76
+}
+
 static void tfplayerclassdata_tOperation()
 {
     // offset verification
-    PrintToServer("sizeof(TFPlayerClassData_T): %i", TFPLAYERCLASSDATA_T_SIZE); // should be 2288
+    PrintToServer("sizeof(TFPlayerClassData_T): %i", SIZEOF(TFPlayerClassData_t)); // should be 2288
     PrintToServer("TFPlayerClassData_t::m_flMaxSpeed: %i", TFPLAYERCLASSDATA_T_OFFSET_M_FLMAXSPEED); // should be 640
     PrintToServer("TFPlayerClassData_t::m_aWeapons: %i", TFPLAYERCLASSDATA_T_OFFSET_M_AWEAPONS); // should be 652
     PrintToServer("TFPlayerClassData_t::m_aGrenades: %i", TFPLAYERCLASSDATA_T_OFFSET_M_AGRENADES);
@@ -145,23 +167,23 @@ static void tfplayerclassdata_tOperation()
 
 static void qangleOperation()
 {
-    STACK_ALLOC(angle, QAngle, QANGLE_SIZE);
+    STACK_ALLOC(angle, QAngle, SIZEOF(QAngle));
     angle.X = 1.00;
     angle.Y = 2.00;
     angle.Z = 3.00;
     PrintToServer("QAngle angle: %f: %f: %f", angle.X, angle.Y, angle.Z);
 
-    STACK_ALLOC(direction, QAngle, QANGLE_SIZE);
+    STACK_ALLOC(direction, QAngle, SIZEOF(QAngle));
     direction.X = 5.00;
     direction.Y = 5.00;
     direction.Z = 5.00;
-    STACK_ALLOC(dest, QAngle, QANGLE_SIZE);
+    STACK_ALLOC(dest, QAngle, SIZEOF(QAngle));
     VectorMA(angle, 3.00, direction, dest);
     PrintToServer("after VectorMA, dest: %f: %f: %f", dest.X, dest.Y, dest.Z);
 
-    STACK_ALLOC(forwardVector, Vector, QANGLE_SIZE);
-    STACK_ALLOC(right, Vector, QANGLE_SIZE);
-    STACK_ALLOC(up, Vector, QANGLE_SIZE);
+    STACK_ALLOC(forwardVector, Vector, SIZEOF(Vector));
+    STACK_ALLOC(right, Vector, SIZEOF(Vector));
+    STACK_ALLOC(up, Vector, SIZEOF(Vector));
     AngleVectors(dest, forwardVector, right, up);
     PrintToServer("after AngleVectors, forward: %f: %f: %f, right: %f: %f: %f, up: %f: %f: %f\n", forwardVector.X, forwardVector.Y, forwardVector.Z, right.X, right.Y, right.Z, up.X, up.Y, up.Z);
 }
@@ -198,12 +220,11 @@ static void ctakedamageinfoOperation()
         GetEntPropVector(1, Prop_Data, "m_vecAbsOrigin", buffer);
         Vector damagePosition = AddressOfArray(buffer);
         */
-        Vector damagePosition = GetEntVector(1, Prop_Data, "m_vecAbsOrigin", .allocate = true);
+        Vector damagePosition = GetEntVector(1, Prop_Data, "m_vecAbsOrigin");
 
         CTakeDamageInfo hell = CTakeDamageInfo.Malloc(0, 0, 0, damagePosition, damagePosition, 100.00, DMG_BLAST, TF_CUSTOM_STICKBOMB_EXPLOSION, damagePosition);
         SDKCall(SDKCall_CBaseEntity_TakeDamage, 1, hell);
         free(hell);
-        free(damagePosition);
     }
 
     // Server tests.
@@ -336,7 +357,7 @@ static void vectorOperation()
     PrintToServer("result.NormalizeInPlace(): %f", result.NormalizeInPlace());
     PrintToServer("new co-ordinates for normalized vector: %f: %f: %f", result.X, result.Y, result.Z);
 
-    STACK_ALLOC(stackAllocatedVector, Vector, VECTOR_SIZE);
+    STACK_ALLOC(stackAllocatedVector, Vector, SIZEOF(Vector));
     stackAllocatedVector.X = 3144.00;
     PrintToServer("stackAllocatedVector: %f: %f: %f\n", stackAllocatedVector.X, stackAllocatedVector.Y, stackAllocatedVector.Z);
 
@@ -352,8 +373,21 @@ static void pointerOperation()
     b.Write(20);
 
     V_swap(a, b);
-    PrintToServer("where a was 10 and b was 20 before V_swap, pointer a: %i, pointer b: %i\n", a.Dereference(), b.Dereference());  
+    PrintToServer("where a was 10 and b was 20 before V_swap, pointer a: %i, pointer b: %i", a.Dereference(), b.Dereference());  
+
+    // WHAT THE FUCK IS THIS
+    Vector test = STACK_GETRETURN(Vector, vectorReturn());
+    PrintToServer("test.X, test.Y, test.Z: %f: %f: %f\n", test.X, test.Y, test.Z);
 
     free(a);
     free(b);
+}
+
+static STACK_SETRETURN(Vector) vectorReturn()
+{
+    STACK_ALLOC(Return, Vector, SIZEOF(Vector));
+    Return.X = 1.00;
+    Return.Y = 434.00;
+    Return.Z = 21393.00;
+    STACK_RETURN(Return, SIZEOF(Vector));
 }

@@ -2,4 +2,4 @@
 plugins/
 .vscode/
 scripting/include/smmem.inc
-scripting/include/string_t.inc
+scripting/include/TESTS/

@@ -20,11 +20,11 @@
 
 enum
 {
-    CUTLMEMORY_OFFSET_M_PMEMORY = 0,                                          // T* m_pMemory; (where T = CUtlMemory<T>)
-    CUTLMEMORY_OFFSET_M_NALLOCATIONCOUNT = CUTLMEMORY_OFFSET_M_PMEMORY + 4,   // int m_nAllocationCount;
-    CUTLMEMORY_OFFEST_M_NGROWSIZE = CUTLMEMORY_OFFSET_M_NALLOCATIONCOUNT + 4, // int m_nGrowSize;
+    CUTLMEMORY_OFFSET_M_PMEMORY = 0,                                                     // T* m_pMemory; (where T = CUtlMemory<T>)
+    CUTLMEMORY_OFFSET_M_NALLOCATIONCOUNT = CUTLMEMORY_OFFSET_M_PMEMORY + SIZEOF_Pointer, // int m_nAllocationCount;
+    CUTLMEMORY_OFFEST_M_NGROWSIZE = CUTLMEMORY_OFFSET_M_NALLOCATIONCOUNT + 4,            // int m_nGrowSize;
 
-    CUTLMEMORY_SIZE = CUTLMEMORY_OFFEST_M_NGROWSIZE + 4                       // sizeof(CUtlMemory);
+    SIZEOF_CUtlMemory = CUTLMEMORY_OFFEST_M_NGROWSIZE + 4                                // sizeof(CUtlMemory);
 };
 
 enum
@@ -87,7 +87,7 @@ methodmap CUtlMemory < Pointer
     // You must specify the size of the type used with this CUtlMemory using the typeSize parameter.
     public static CUtlMemory Malloc(int growSize = 0, int initialAllocationCount = 0, int typeSize = 4)
     {
-        CUtlMemory pointer = malloc(CUTLMEMORY_SIZE);
+        CUtlMemory pointer = malloc(SIZEOF_CUtlMemory);
         pointer.ctor(growSize, initialAllocationCount, typeSize);
         return pointer;
     }

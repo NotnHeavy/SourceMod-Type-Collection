@@ -23,11 +23,11 @@
 
 enum
 {
-    CUTLVECTOR_OFFSET_M_MEMORY = 0,                                          // CAllocator m_Memory; (where CAllocator = CUtlMemory<T>, where T = CUtlVector<T>)
-    CUTLVECTOR_OFFSET_M_SIZE = CUTLVECTOR_OFFSET_M_MEMORY + CUTLMEMORY_SIZE, // int m_Size;
-    CUTLVECTOR_OFFSET_M_PELEMENTS = CUTLVECTOR_OFFSET_M_SIZE + 4,            // T* m_pElements; (where T = CUtlVector<T>)
+    CUTLVECTOR_OFFSET_M_MEMORY = 0,                                            // CAllocator m_Memory; (where CAllocator = CUtlMemory<T>, where T = CUtlVector<T>)
+    CUTLVECTOR_OFFSET_M_SIZE = CUTLVECTOR_OFFSET_M_MEMORY + SIZEOF_CUtlMemory, // int m_Size;
+    CUTLVECTOR_OFFSET_M_PELEMENTS = CUTLVECTOR_OFFSET_M_SIZE + SIZEOF_Pointer, // T* m_pElements; (where T = CUtlVector<T>)
     
-    CUTLVECTOR_SIZE = CUTLVECTOR_OFFSET_M_PELEMENTS + 4                      // sizeof(CUtlVector);
+    SIZEOF_CUtlVector = CUTLVECTOR_OFFSET_M_PELEMENTS + 4                      // sizeof(CUtlVector);
 }
 
 
@@ -75,7 +75,7 @@ methodmap CUtlVector < Pointer
     // Set this.m_pElements to starting point.
     public void ResetDbgInfo()
     {
-        //this.m_pElements = this.Base();
+        this.m_pElements = this.Base();
     }
 
     // Call constructor on existing type. You must specify the size of the type used with this CUtlVector using the typeSize parameter.
@@ -90,7 +90,7 @@ methodmap CUtlVector < Pointer
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
     public static CUtlVector Malloc(int growSize = 0, int initialCapacity = 0, int typeSize = 4)
     {
-        CUtlVector pointer = malloc(CUTLVECTOR_SIZE);
+        CUtlVector pointer = malloc(SIZEOF_CUtlVector);
         pointer.ctor(growSize, initialCapacity, typeSize);
         return pointer;
     }

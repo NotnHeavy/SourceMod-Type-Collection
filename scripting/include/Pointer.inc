@@ -13,9 +13,20 @@
 #define NULL view_as<Pointer>(0) // ((void*)0)
 #define ENTITY_NULL -1
 
-#define STACK_ALLOC(%1,%2,%3) int SMTC_%1[%3 / 4]; %2 %1 = %2(AddressOfArray(SMTC_%1)) // %1 = name, %2 = methodmap, %3 = size in bytes (buffer size will be %3 / 4)
+#define SIZEOF_Pointer 4
 
 #include <smmem> // https://github.com/Scags/SM-Memory
+
+//////////////////////////////////////////////////////////////////////////////
+// FUNCTION MACROS (terrorist acts here)                                    //
+//////////////////////////////////////////////////////////////////////////////
+
+#define SIZEOF(%1) SIZEOF_%1
+#define STACK_ALLOC(%1,%2,%3) char SMTC_%1[%3]; %2 %1 = %2(AddressOfString(SMTC_%1)) // %1 = name, %2 = methodmap, %3 = size to allocate
+
+#define STACK_SETRETURN(%1) int[] // %1 = methodmap. This is just a placebo.
+#define STACK_RETURN(%1,%2) int SMTC_RETURN_%1[%2 / 4]; memcpy(AddressOfArray(SMTC_RETURN_%1), %1, %2); return SMTC_RETURN_%1 // %1 = variable, %2 = size to allocate
+#define STACK_GETRETURN(%1,%2) view_as<%1>(AddressOfArray(%2))
 
 //////////////////////////////////////////////////////////////////////////////
 // POINTER METHODMAP                                                        //
@@ -82,7 +93,7 @@ methodmap Pointer
     }
 
     // Store into a buffer. You must specify the size of the type used with this pointer using the typeSize parameter.
-    // If the size specified is based upon the size of your buffer, you must multiply it by 4 for the typeSize parameter.
+    // If not using char buffers, typeSize would typically be the size of the buffer * 4.
     public void ToBuffer(any[] buffer, int typeSize = 4)
     {
         memcpy(AddressOfArray(buffer), this, typeSize);
@@ -201,4 +212,16 @@ stock int PointerStrLen(Pointer pointer)
     for (int i = 0; pointer.Dereference(i, NumberType_Int8) != 0; ++i)
         ++length;
     return length;
+}
+
+// Store pointer into a char buffer.
+stock void PointerToCharBuffer(Pointer pointer, char[] buffer, int maxlen)
+{
+    for (int i = 0; i < maxlen; ++i)
+    {
+        char value = pointer.Dereference(i, NumberType_Int8);
+        buffer[i] = value;
+        if (value == '\0') // NUL
+            break;
+    }
 }

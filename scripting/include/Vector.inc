@@ -24,12 +24,22 @@ enum
     VECTOR_OFFSET_Y = VECTOR_OFFSET_X + 4, // float y;
     VECTOR_OFFSET_Z = VECTOR_OFFSET_Y + 4, // float z;
     
-    VECTOR_SIZE = VECTOR_OFFSET_Z + 4      // sizeof(Vector);
+    SIZEOF_Vector = VECTOR_OFFSET_Z + 4    // sizeof(Vector);
 }
 
 static float accumulator[3];
 static Address accumulatorAddress;
 Vector vec3_origin; // NOT INTENDED TO BE WRITTEN TO!
+
+//////////////////////////////////////////////////////////////////////////////
+// SMTC_VectorForward()                                                     //
+//////////////////////////////////////////////////////////////////////////////
+
+// todo: make vec3_origin a legitimate reference to internal vec3_origin
+public void SMTC_VectorForward()
+{
+    vec3_origin = Vector(AddressOfArray({0.00, 0.00, 0.00}));
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // VECTOR METHODMAP                                                         //
@@ -53,16 +63,6 @@ methodmap Vector < Pointer
         accumulator[1] = y;
         accumulator[2] = z;
         return Vector(accumulatorAddress);
-    }
-
-    // Set up globals with a custom dereference method.
-    public any Dereference(any offset = 0, NumberType bits = NumberType_Int32)
-    {
-        // this is very hacky shit but lol.
-        // only a fallback case if SMTC_Initialize() has not been called.
-        if (!vec3_origin)
-            vec3_origin = Vector(AddressOfArray({0.00, 0.00, 0.00}));
-        return view_as<Pointer>(this).Dereference(offset, bits);
     }
 
     // X co-ordinate.
@@ -97,7 +97,7 @@ methodmap Vector < Pointer
     // Constructor - allocate a new vector onto the heap. Deallocation will be required when you are finished using this using free().
     public static Vector Malloc(float x = 0.00, float y = 0.00, float z = 0.00)
     {
-        Vector pointer = malloc(VECTOR_SIZE);
+        Vector pointer = malloc(SIZEOF_Vector);
         pointer.ctor(x, y, z);
         return pointer;
     }
@@ -111,13 +111,13 @@ methodmap Vector < Pointer
     // Store the vector into a buffer.
     public void GetBuffer(float buffer[3])
     {
-        memcpy(AddressOfArray(buffer), this, VECTOR_SIZE);
+        memcpy(AddressOfArray(buffer), this, SIZEOF_Vector);
     }
 
     // Copy from a buffer into this vector.
     public void SetFromBuffer(float buffer[3])
     {
-        memcpy(this, AddressOfArray(buffer), VECTOR_SIZE);
+        memcpy(this, AddressOfArray(buffer), SIZEOF_Vector);
     }
 
     // Get the vector's magnitude squared.
@@ -190,10 +190,18 @@ methodmap Vector < Pointer
         return this.LengthSqr() < val * val;
     }
 
+    // Generate random co-ordinates within a specific minValue/maxValue range.
+    public void Random(float minValue, float maxValue)
+    {
+        this.X = GetRandomFloat(minValue, maxValue);
+        this.Y = GetRandomFloat(minValue, maxValue);
+        this.Z = GetRandomFloat(minValue, maxValue);
+    }
+
     // Vector assignation.
     public void Assign(Vector vector)
     {
-        memcpy(this, vector, VECTOR_SIZE);
+        memcpy(this, vector, SIZEOF_Vector);
     }
 }
 
@@ -247,7 +255,7 @@ stock void CrossProduct(const Vector a, const Vector b, Vector result)
     result.Z = a.X * b.Y - a.Y * b.X;
 }
 
-stock void VectorVectors(const Vector forwardVector, Vector right, Vector up)
+stock void VectorVectors(const Vector forwardVector, Vector& right, Vector& up)
 {
     if (forwardVector.X == 0.00 && forwardVector.Y == 0.00)
     {
@@ -281,10 +289,20 @@ stock bool VectorsAreEqual(const Vector left, const Vector right, float toleranc
     return FloatMakePositive(left.Z - right.Z) <= tolerance;
 }
 
-// The vector returned is stored onto the accumulator and must be assigned to your desired vector, unless allocate is set to true.
-stock Vector GetEntVector(int entity, PropType type, const char[] property, int index = 0, bool allocate = false)
+// The vector returned is a reference to an internal class member. For use with Prop_Send, you must specify the object class name (CTFPlayer for player entities, for example).
+stock Vector GetEntVector(int entity, PropType type, const char[] property, const char[] class = {'\0'}, int index = 0)
 {
-    float buffer[3];
-    GetEntPropVector(entity, type, property, buffer, index);
-    return allocate ? Vector.Malloc(buffer[0], buffer[1], buffer[2]) : Vector.Accumulator(buffer[0], buffer[1], buffer[2]);
+    // We are accessing an internal member, therefore we should probably get it as a reference instead.
+    if (type == Prop_Send)
+        return view_as<Vector>(GetEntityAddress(entity) + FindSendPropInfo(class, property) + index * SIZEOF_Vector);
+    else
+        return view_as<Vector>(GetEntityAddress(entity) + FindDataMapInfo(entity, property) + index * SIZEOF_Vector);
+}
+
+// Get a random vector. This vector is stored onto the accumulator and must be assigned to your desired vector, unless allocate is set to true.
+stock Vector RandomVector(float minValue, float maxValue, bool allocate = false)
+{
+    Vector random = allocate ? Vector.Malloc() : Vector.Accumulator();
+    random.Random(minValue, maxValue);
+    return random;
 }

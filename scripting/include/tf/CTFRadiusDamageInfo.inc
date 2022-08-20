@@ -23,16 +23,16 @@
 // Fill these in & call RadiusDamage()
 enum
 {
-    CTFRADIUSDAMAGEINFO_OFFSET_DMGINFO = 0,                                                        // CTakeDamageInfo* dmgInfo;
-    CTFRADIUSDAMAGEINFO_OFFSET_VECSRC = CTFRADIUSDAMAGEINFO_OFFSET_DMGINFO + 4, // Vector vecSrc;
-    CTFRADIUSDAMAGEINFO_OFFSET_FLRADIUS = CTFRADIUSDAMAGEINFO_OFFSET_VECSRC + VECTOR_SIZE,         // float flRadius;
-    CTFRADIUSDAMAGEINFO_OFFSET_PENTITYIGNORE = CTFRADIUSDAMAGEINFO_OFFSET_FLRADIUS + 4,            // CBaseEntity* pEntityIgnore;
-    CTFRADIUSDAMAGEINFO_OFFSET_FLRJRADIUS = CTFRADIUSDAMAGEINFO_OFFSET_PENTITYIGNORE + 4,          // float flRJRadius;
-    CTFRADIUSDAMAGEINFO_OFFSET_M_FLFORCESCALE = CTFRADIUSDAMAGEINFO_OFFSET_FLRJRADIUS + 4,         // float m_flForceScale;
-    CTFRADIUSDAMAGEINFO_OFFSET_M_PENTITYTARGET = CTFRADIUSDAMAGEINFO_OFFSET_M_FLFORCESCALE + 4,    // CBaseEntity* m_pEntityTarget;
-    CTFRADIUSDAMAGEINFO_OFFSET_FLFALLOFF = CTFRADIUSDAMAGEINFO_OFFSET_M_PENTITYTARGET + 4,       // float flFalloff;
+    CTFRADIUSDAMAGEINFO_OFFSET_DMGINFO = 0,                                                             // CTakeDamageInfo* dmgInfo;
+    CTFRADIUSDAMAGEINFO_OFFSET_VECSRC = CTFRADIUSDAMAGEINFO_OFFSET_DMGINFO + SIZEOF_Pointer,            // Vector vecSrc;
+    CTFRADIUSDAMAGEINFO_OFFSET_FLRADIUS = CTFRADIUSDAMAGEINFO_OFFSET_VECSRC + SIZEOF_Vector,            // float flRadius;
+    CTFRADIUSDAMAGEINFO_OFFSET_PENTITYIGNORE = CTFRADIUSDAMAGEINFO_OFFSET_FLRADIUS + 4,                 // CBaseEntity* pEntityIgnore;
+    CTFRADIUSDAMAGEINFO_OFFSET_FLRJRADIUS = CTFRADIUSDAMAGEINFO_OFFSET_PENTITYIGNORE + SIZEOF_Pointer,  // float flRJRadius;
+    CTFRADIUSDAMAGEINFO_OFFSET_M_FLFORCESCALE = CTFRADIUSDAMAGEINFO_OFFSET_FLRJRADIUS + 4,              // float m_flForceScale;
+    CTFRADIUSDAMAGEINFO_OFFSET_M_PENTITYTARGET = CTFRADIUSDAMAGEINFO_OFFSET_M_FLFORCESCALE + 4,         // CBaseEntity* m_pEntityTarget;
+    CTFRADIUSDAMAGEINFO_OFFSET_FLFALLOFF = CTFRADIUSDAMAGEINFO_OFFSET_M_PENTITYTARGET + SIZEOF_Pointer, // float flFalloff;
 
-    CTFRADIUSDAMAGEINFO_SIZE = CTFRADIUSDAMAGEINFO_OFFSET_FLFALLOFF + 4                          // sizeof(CTFRadiusDamageInfo);
+    SIZEOF_CTFRadiusDamageInfo = CTFRADIUSDAMAGEINFO_OFFSET_FLFALLOFF + 4                               // sizeof(CTFRadiusDamageInfo);
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -59,7 +59,7 @@ methodmap CTFRadiusDamageInfo < Pointer
     property Vector vecSrc
     {
         public get() { return view_as<Vector>(this.Address + CTFRADIUSDAMAGEINFO_OFFSET_VECSRC); }
-        public set(Vector value) { memcpy(this.Address + CTFRADIUSDAMAGEINFO_OFFSET_VECSRC, value, VECTOR_SIZE); }
+        public set(Vector value) { memcpy(this.Address + CTFRADIUSDAMAGEINFO_OFFSET_VECSRC, value, SIZEOF_Vector); }
     }
 
     // The splash radius.
@@ -109,7 +109,7 @@ methodmap CTFRadiusDamageInfo < Pointer
     {
         // will add full functionality in here when i work on more tools. for now, only way to get full functionality is via SMTC_Initialize().
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_SMTC
-        SDKCall(SMTC_DHooks_CTFRadiusDamageInfo_CalculateFalloff, this);
+        SDKCall(SMTC_SDKCall_CTFRadiusDamageInfo_CalculateFalloff, this);
 #else
         if (this.dmgInfo.m_bitsDamageType & DMG_RADIUS_MAX)
             this.flFalloff = 0.00;
@@ -126,7 +126,7 @@ methodmap CTFRadiusDamageInfo < Pointer
     public void ApplyToEntity()
     {
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_SMTC
-        SDKCall(SMTC_DHooks_CTFRadiusDamageInfo_ApplyToEntity, this);
+        SDKCall(SMTC_SDKCall_CTFRadiusDamageInfo_ApplyToEntity, this);
 #else
         ThrowError("CTFRadiusDamageInfo::ApplyToEntity() requires SMTC.inc!");
 #endif
@@ -150,7 +150,7 @@ methodmap CTFRadiusDamageInfo < Pointer
     // Constructor - allocate a new CTFRadiusDamageInfo onto the heap. Deallocation will be required when you are finished using free().
     public static CTFRadiusDamageInfo Malloc(CTakeDamageInfo info, const Vector source, float radius, int ignore = ENTITY_NULL, float rjRadius = 0.00, float forceScale = 1.00)
     {
-        CTFRadiusDamageInfo pointer = malloc(CTFRADIUSDAMAGEINFO_SIZE);
+        CTFRadiusDamageInfo pointer = malloc(SIZEOF_CTFRadiusDamageInfo);
         pointer.ctor(info, source, radius, ignore, rjRadius, forceScale);
         return pointer;
     }

@@ -24,30 +24,30 @@
 
 enum
 {
-    CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEFORCE = 0,                                                             // Vector m_vecDamageForce;
-    CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEPOSITION = CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEFORCE + VECTOR_SIZE,      // Vector m_vecDamagePosition;
-    CTAKEDAMAGEINFO_OFFSET_M_VECREPORTEDPOSITION = CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEPOSITION + VECTOR_SIZE, // Position players are told damage is coming from (Vector m_vecReportedPosition;)
-    CTAKEDAMAGEINFO_OFFSET_M_HINFLICTOR = CTAKEDAMAGEINFO_OFFSET_M_VECREPORTEDPOSITION + VECTOR_SIZE,        // EHANDLE m_hInflictor;
-    CTAKEDAMAGEINFO_OFFSET_M_HATTACKER = CTAKEDAMAGEINFO_OFFSET_M_HINFLICTOR + 4,                            // EHANDLE m_hAttacker;
-    CTAKEDAMAGEINFO_OFFSET_M_HWEAPON = CTAKEDAMAGEINFO_OFFSET_M_HATTACKER + 4,                               // EHANDLE m_hWeapon;
-    CTAKEDAMAGEINFO_OFFSET_M_FLDAMAGE = CTAKEDAMAGEINFO_OFFSET_M_HWEAPON + 4,                                // float m_flDamage;
-    CTAKEDAMAGEINFO_OFFSET_M_FLMAXDAMAGE = CTAKEDAMAGEINFO_OFFSET_M_FLDAMAGE + 4,                            // float m_flMaxDamage;
-    CTAKEDAMAGEINFO_OFFSET_M_FLBASEDAMAGE = CTAKEDAMAGEINFO_OFFSET_M_FLMAXDAMAGE + 4,                        // The damage amount before skill leve adjustments are made. Used to get uniform damage forces. (float m_flBaseDamage;)
-    CTAKEDAMAGEINFO_OFFSET_M_BITSDAMAGETYPE = CTAKEDAMAGEINFO_OFFSET_M_FLBASEDAMAGE + 4,                     // int m_bitsDamageType;
-    CTAKEDAMAGEINFO_OFFSET_M_IDAMAGECUSTOM = CTAKEDAMAGEINFO_OFFSET_M_BITSDAMAGETYPE + 4,                    // int m_iDamageCustom;
-    CTAKEDAMAGEINFO_OFFSET_M_IDAMAGESTATS = CTAKEDAMAGEINFO_OFFSET_M_IDAMAGECUSTOM + 4,                      // int m_iDamageStats;
-    CTAKEDAMAGEINFO_OFFSET_M_IAMMOTYPE = CTAKEDAMAGEINFO_OFFSET_M_IDAMAGESTATS + 4,                          // AmmoType of the weapon used to cause this damage, if any (int m_iAmmoType;)
-    CTAKEDAMAGEINFO_OFFSET_M_IDAMAGEDOTHERPLAYERS = CTAKEDAMAGEINFO_OFFSET_M_IAMMOTYPE + 4,                  // int m_iDamagedOtherPlayers;
-    CTAKEDAMAGEINFO_OFFSET_M_IPLAYERPENETRATIONCOUNT = CTAKEDAMAGEINFO_OFFSET_M_IDAMAGEDOTHERPLAYERS + 4,    // int m_iPlayerPenetrationCount;
-    CTAKEDAMAGEINFO_OFFSET_M_FLDAMAGEBONUS = CTAKEDAMAGEINFO_OFFSET_M_IPLAYERPENETRATIONCOUNT + 4,           // Anything that increases damage (crit) - store the delta (float m_flDamageBonus;)
-    CTAKEDAMAGEINFO_OFFSET_M_HDAMAGEBONUSPROVIDER = CTAKEDAMAGEINFO_OFFSET_M_FLDAMAGEBONUS + 4,              // Who gave us the ability to do extra damage? (EHANDLE m_hDamageBonusProvider;)
-    CTAKEDAMAGEINFO_OFFSET_M_BFORCEFRIENDLYFIRE = CTAKEDAMAGEINFO_OFFSET_M_HDAMAGEBONUSPROVIDER + 4,         // Ideally this would be a dmg type, but we can't add more (bool m_bForceFriendlyFire;)
+    CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEFORCE = 0,                                                               // Vector m_vecDamageForce;
+    CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEPOSITION = CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEFORCE + SIZEOF_Vector,      // Vector m_vecDamagePosition;
+    CTAKEDAMAGEINFO_OFFSET_M_VECREPORTEDPOSITION = CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEPOSITION + SIZEOF_Vector, // Position players are told damage is coming from (Vector m_vecReportedPosition;)
+    CTAKEDAMAGEINFO_OFFSET_M_HINFLICTOR = CTAKEDAMAGEINFO_OFFSET_M_VECREPORTEDPOSITION + SIZEOF_Vector,        // EHANDLE m_hInflictor;
+    CTAKEDAMAGEINFO_OFFSET_M_HATTACKER = CTAKEDAMAGEINFO_OFFSET_M_HINFLICTOR + 4,                              // EHANDLE m_hAttacker;
+    CTAKEDAMAGEINFO_OFFSET_M_HWEAPON = CTAKEDAMAGEINFO_OFFSET_M_HATTACKER + 4,                                 // EHANDLE m_hWeapon;
+    CTAKEDAMAGEINFO_OFFSET_M_FLDAMAGE = CTAKEDAMAGEINFO_OFFSET_M_HWEAPON + 4,                                  // float m_flDamage;
+    CTAKEDAMAGEINFO_OFFSET_M_FLMAXDAMAGE = CTAKEDAMAGEINFO_OFFSET_M_FLDAMAGE + 4,                              // float m_flMaxDamage;
+    CTAKEDAMAGEINFO_OFFSET_M_FLBASEDAMAGE = CTAKEDAMAGEINFO_OFFSET_M_FLMAXDAMAGE + 4,                          // The damage amount before skill leve adjustments are made. Used to get uniform damage forces. (float m_flBaseDamage;)
+    CTAKEDAMAGEINFO_OFFSET_M_BITSDAMAGETYPE = CTAKEDAMAGEINFO_OFFSET_M_FLBASEDAMAGE + 4,                       // int m_bitsDamageType;
+    CTAKEDAMAGEINFO_OFFSET_M_IDAMAGECUSTOM = CTAKEDAMAGEINFO_OFFSET_M_BITSDAMAGETYPE + 4,                      // int m_iDamageCustom;
+    CTAKEDAMAGEINFO_OFFSET_M_IDAMAGESTATS = CTAKEDAMAGEINFO_OFFSET_M_IDAMAGECUSTOM + 4,                        // int m_iDamageStats;
+    CTAKEDAMAGEINFO_OFFSET_M_IAMMOTYPE = CTAKEDAMAGEINFO_OFFSET_M_IDAMAGESTATS + 4,                            // AmmoType of the weapon used to cause this damage, if any (int m_iAmmoType;)
+    CTAKEDAMAGEINFO_OFFSET_M_IDAMAGEDOTHERPLAYERS = CTAKEDAMAGEINFO_OFFSET_M_IAMMOTYPE + 4,                    // int m_iDamagedOtherPlayers;
+    CTAKEDAMAGEINFO_OFFSET_M_IPLAYERPENETRATIONCOUNT = CTAKEDAMAGEINFO_OFFSET_M_IDAMAGEDOTHERPLAYERS + 4,      // int m_iPlayerPenetrationCount;
+    CTAKEDAMAGEINFO_OFFSET_M_FLDAMAGEBONUS = CTAKEDAMAGEINFO_OFFSET_M_IPLAYERPENETRATIONCOUNT + 4,             // Anything that increases damage (crit) - store the delta (float m_flDamageBonus;)
+    CTAKEDAMAGEINFO_OFFSET_M_HDAMAGEBONUSPROVIDER = CTAKEDAMAGEINFO_OFFSET_M_FLDAMAGEBONUS + 4,                // Who gave us the ability to do extra damage? (EHANDLE m_hDamageBonusProvider;)
+    CTAKEDAMAGEINFO_OFFSET_M_BFORCEFRIENDLYFIRE = CTAKEDAMAGEINFO_OFFSET_M_HDAMAGEBONUSPROVIDER + 4,           // Ideally this would be a dmg type, but we can't add more (bool m_bForceFriendlyFire;)
 
-    CTAKEDAMAGEINFO_M_FLDAMAGEFORFORCE = CTAKEDAMAGEINFO_OFFSET_M_BFORCEFRIENDLYFIRE + 4,                    // float m_flDamageForForce;
+    CTAKEDAMAGEINFO_M_FLDAMAGEFORFORCE = CTAKEDAMAGEINFO_OFFSET_M_BFORCEFRIENDLYFIRE + 4,                      // float m_flDamageForForce;
 
-    CTAKEDAMAGEINFO_M_ECRITTYPE = CTAKEDAMAGEINFO_M_FLDAMAGEFORFORCE + 4,                                    // ECritType m_eCritType;
+    CTAKEDAMAGEINFO_M_ECRITTYPE = CTAKEDAMAGEINFO_M_FLDAMAGEFORFORCE + 4,                                      // ECritType m_eCritType;
 
-    CTAKEDAMAGEINFO_SIZE = CTAKEDAMAGEINFO_M_ECRITTYPE + 4                                                   // sizeof(CTakeDamageInfo);
+    SIZEOF_CTakeDamageInfo = CTAKEDAMAGEINFO_M_ECRITTYPE + 4                                                   // sizeof(CTakeDamageInfo);
 };
 
 enum ECritType
@@ -56,6 +56,18 @@ enum ECritType
     CRIT_MINI,
     CRIT_FULL,
 };
+
+static stock int SMTC_PlayerTakingMiniCrits = 0;
+
+//////////////////////////////////////////////////////////////////////////////
+// SMTC_CTakeDamageInfoForward()                                            //
+//////////////////////////////////////////////////////////////////////////////
+
+public void SMTC_CTakeDamageInfoForward()
+{
+    HookEvent("player_hurt", SMTC_ClientHurt, EventHookMode_Pre);
+    DHookEnableDetour(SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive, false, SMTC_CTFPlayer_OnTakeDamage_Alive);
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // CTAKEDAMAGEINFO METHODMAP                                                //
@@ -74,21 +86,21 @@ methodmap CTakeDamageInfo < Pointer
     property Vector m_vecDamageForce
     {
         public get() { return view_as<Vector>(this.Address + view_as<int>(CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEFORCE)); }
-        public set(Vector value) { memcpy(this.Address + view_as<int>(CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEFORCE), value, VECTOR_SIZE); }
+        public set(Vector value) { memcpy(this.Address + view_as<int>(CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEFORCE), value, SIZEOF_Vector); }
     }
 
     // The damage position.
     property Vector m_vecDamagePosition
     {
         public get() { return view_as<Vector>(this.Address + view_as<int>(CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEPOSITION)); }
-        public set(Vector value) { memcpy(this.Address + view_as<int>(CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEPOSITION), value, VECTOR_SIZE); }
+        public set(Vector value) { memcpy(this.Address + view_as<int>(CTAKEDAMAGEINFO_OFFSET_M_VECDAMAGEPOSITION), value, SIZEOF_Vector); }
     }
 
     // The reported damage position.
     property Vector m_vecReportedPosition
     {
         public get() { return view_as<Vector>(this.Address + view_as<int>(CTAKEDAMAGEINFO_OFFSET_M_VECREPORTEDPOSITION)); }
-        public set(Vector value) { memcpy(this.Address + view_as<int>(CTAKEDAMAGEINFO_OFFSET_M_VECREPORTEDPOSITION), value, VECTOR_SIZE); }
+        public set(Vector value) { memcpy(this.Address + view_as<int>(CTAKEDAMAGEINFO_OFFSET_M_VECREPORTEDPOSITION), value, SIZEOF_Vector); }
     }
 
     // The inflictor. This can be any entity.
@@ -253,7 +265,7 @@ methodmap CTakeDamageInfo < Pointer
     // Constructor - allocate a new CTakeDamageInfo onto the heap. Deallocation will be required when you are finished using free().
     public static CTakeDamageInfo Malloc(int inflictor, int attacker, int weapon, const Vector damageForce, const Vector damagePosition, float damage, int bitsDamageType, int killType, Vector reportedPosition = view_as<Vector>(NULL))
     {
-        CTakeDamageInfo pointer = malloc(CTAKEDAMAGEINFO_SIZE);
+        CTakeDamageInfo pointer = malloc(SIZEOF_CTakeDamageInfo);
         pointer.ctor(inflictor, attacker, weapon, damageForce, damagePosition, damage, bitsDamageType, killType, reportedPosition);
         return pointer;
     }
@@ -267,9 +279,33 @@ methodmap CTakeDamageInfo < Pointer
             this.m_eCritType = type > this.m_eCritType ? type : this.m_eCritType;
         
         // For fixing the display bug with mini-crits.
-#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_SMTC
         if (victim && this.m_eCritType == CRIT_MINI)
             SMTC_PlayerTakingMiniCrits = victim;
-#endif
     }
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// MISCELLANEOUS                                                            //
+//////////////////////////////////////////////////////////////////////////////
+
+// This fixes the bug where mini-crits toggled manually shows the full crit effect instead. 
+// This is due to DMG_CRIT being toggled when using either mini-crits or crits, and DMG_CRIT
+// defaulting to the full crit effect.
+static Action SMTC_ClientHurt(Event event, const char[] name, bool dontBroadcast)
+{
+    int client = GetClientOfUserId(event.GetInt("userid"));
+    if (SMTC_PlayerTakingMiniCrits == client) 
+        event.SetInt("bonuseffect", 1); // CRIT_MINI
+    SMTC_PlayerTakingMiniCrits = 0;
+    return Plugin_Changed;
+}
+
+// pre-call CTFPlayer::OnTakeDamage_Alive()
+// If the crit type is not CRIT_MINI, reset the SMTC_PlayerTakingMiniCrits counter.
+static MRESReturn SMTC_CTFPlayer_OnTakeDamage_Alive(int entity, DHookReturn returnValue, DHookParam parameters)
+{
+    CTakeDamageInfo info = parameters.Get(1);
+    if (info.m_eCritType != CRIT_MINI)
+        SMTC_PlayerTakingMiniCrits = 0;
+    return MRES_Ignored;
 }

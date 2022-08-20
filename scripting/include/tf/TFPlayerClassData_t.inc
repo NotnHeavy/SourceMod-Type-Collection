@@ -68,28 +68,28 @@ enum DeathSoundType_t
 // On a related note, is why TFPLAYERCLASSDATA_T_OFFSET_M_SZDEATHSOUND is the offset of the previous member (m_vecThirdPersonOffset) + sizeof(Vector), but also + 1, since the final byte is padded.
 enum
 {
-    TFPLAYERCLASSDATA_T_OFFSET_M_SZCLASSNAME = 0,                                                                                         // char m_szClassName[TF_NAME_LENGTH];
-    TFPLAYERCLASSDATA_T_OFFSET_M_SZMODELNAME = TFPLAYERCLASSDATA_T_OFFSET_M_SZCLASSNAME + TF_NAME_LENGTH,                                 // char m_szModelName[TF_NAME_LENGTH];
-    TFPLAYERCLASSDATA_T_OFFSET_M_SZHWMMODELNAME = TFPLAYERCLASSDATA_T_OFFSET_M_SZMODELNAME + TF_NAME_LENGTH,                              // char m_szHWMModelName[TF_NAME_LENGTH];
-    TFPLAYERCLASSDATA_T_OFFSET_M_SZHANDMODELNAME = TFPLAYERCLASSDATA_T_OFFSET_M_SZHWMMODELNAME + TF_NAME_LENGTH,                          // char m_szHandModelName[TF_NAME_LENGTH];
-    TFPLAYERCLASSDATA_T_OFFSET_M_SZLOCALIZABLENAME = TFPLAYERCLASSDATA_T_OFFSET_M_SZHANDMODELNAME + TF_NAME_LENGTH,                       // char m_szLocalizableName[TF_NAME_LENGTH];
-    TFPLAYERCLASSDATA_T_OFFSET_M_FLMAXSPEED = TFPLAYERCLASSDATA_T_OFFSET_M_SZLOCALIZABLENAME + TF_NAME_LENGTH,                            // float m_flMaxSpeed;
-    TFPLAYERCLASSDATA_T_OFFSET_M_NMAXHEALTH = TFPLAYERCLASSDATA_T_OFFSET_M_FLMAXSPEED + 4,                                                // int m_nMaxHealth;
-    TFPLAYERCLASSDATA_T_OFFSET_M_NMAXARMOR = TFPLAYERCLASSDATA_T_OFFSET_M_NMAXHEALTH + 4,                                                 // int m_nMaxArmor;
-    TFPLAYERCLASSDATA_T_OFFSET_M_AWEAPONS = TFPLAYERCLASSDATA_T_OFFSET_M_NMAXARMOR + 4,                                                   // int m_aWeapons[TF_PLAYER_WEAPON_COUNT];
-    TFPLAYERCLASSDATA_T_OFFSET_M_AGRENADES = TFPLAYERCLASSDATA_T_OFFSET_M_AWEAPONS + TF_PLAYER_WEAPON_COUNT * 4,                          // int m_aGrenades[TF_PLAYER_GRENADE_COUNT];
-    TFPLAYERCLASSDATA_T_OFFSET_M_AAMMOMAX = TFPLAYERCLASSDATA_T_OFFSET_M_AGRENADES + TF_PLAYER_GRENADE_COUNT * 4,                         // int m_aAmmoMax[TF_AMMO_COUNT];
-    TFPLAYERCLASSDATA_T_OFFSET_M_ABUILDABLE = TFPLAYERCLASSDATA_T_OFFSET_M_AAMMOMAX + view_as<int>(TF_AMMO_COUNT) * 4,                    // int m_aBuildable[TF_PLAYER_BLUEPRINT_COUNT];
+    TFPLAYERCLASSDATA_T_OFFSET_M_SZCLASSNAME = 0,                                                                                           // char m_szClassName[TF_NAME_LENGTH];
+    TFPLAYERCLASSDATA_T_OFFSET_M_SZMODELNAME = TFPLAYERCLASSDATA_T_OFFSET_M_SZCLASSNAME + TF_NAME_LENGTH,                                   // char m_szModelName[TF_NAME_LENGTH];
+    TFPLAYERCLASSDATA_T_OFFSET_M_SZHWMMODELNAME = TFPLAYERCLASSDATA_T_OFFSET_M_SZMODELNAME + TF_NAME_LENGTH,                                // char m_szHWMModelName[TF_NAME_LENGTH];
+    TFPLAYERCLASSDATA_T_OFFSET_M_SZHANDMODELNAME = TFPLAYERCLASSDATA_T_OFFSET_M_SZHWMMODELNAME + TF_NAME_LENGTH,                            // char m_szHandModelName[TF_NAME_LENGTH];
+    TFPLAYERCLASSDATA_T_OFFSET_M_SZLOCALIZABLENAME = TFPLAYERCLASSDATA_T_OFFSET_M_SZHANDMODELNAME + TF_NAME_LENGTH,                         // char m_szLocalizableName[TF_NAME_LENGTH];
+    TFPLAYERCLASSDATA_T_OFFSET_M_FLMAXSPEED = TFPLAYERCLASSDATA_T_OFFSET_M_SZLOCALIZABLENAME + TF_NAME_LENGTH,                              // float m_flMaxSpeed;
+    TFPLAYERCLASSDATA_T_OFFSET_M_NMAXHEALTH = TFPLAYERCLASSDATA_T_OFFSET_M_FLMAXSPEED + 4,                                                  // int m_nMaxHealth;
+    TFPLAYERCLASSDATA_T_OFFSET_M_NMAXARMOR = TFPLAYERCLASSDATA_T_OFFSET_M_NMAXHEALTH + 4,                                                   // int m_nMaxArmor;
+    TFPLAYERCLASSDATA_T_OFFSET_M_AWEAPONS = TFPLAYERCLASSDATA_T_OFFSET_M_NMAXARMOR + 4,                                                     // int m_aWeapons[TF_PLAYER_WEAPON_COUNT];
+    TFPLAYERCLASSDATA_T_OFFSET_M_AGRENADES = TFPLAYERCLASSDATA_T_OFFSET_M_AWEAPONS + TF_PLAYER_WEAPON_COUNT * 4,                            // int m_aGrenades[TF_PLAYER_GRENADE_COUNT];
+    TFPLAYERCLASSDATA_T_OFFSET_M_AAMMOMAX = TFPLAYERCLASSDATA_T_OFFSET_M_AGRENADES + TF_PLAYER_GRENADE_COUNT * 4,                           // int m_aAmmoMax[TF_AMMO_COUNT];
+    TFPLAYERCLASSDATA_T_OFFSET_M_ABUILDABLE = TFPLAYERCLASSDATA_T_OFFSET_M_AAMMOMAX + view_as<int>(TF_AMMO_COUNT) * 4,                      // int m_aBuildable[TF_PLAYER_BLUEPRINT_COUNT];
     
-    TFPLAYERCLASSDATA_T_OFFSET_M_BDONTDOAIRWALK = TFPLAYERCLASSDATA_T_OFFSET_M_ABUILDABLE + TF_PLAYER_BLUEPRINT_COUNT * 4,                // bool m_bDontDoAirwalk;
-    TFPLAYERCLASSDATA_T_OFFSET_M_BDONTDONEWJUMP = TFPLAYERCLASSDATA_T_OFFSET_M_BDONTDOAIRWALK + 1,                                        // bool m_bDontDoNewJump;
+    TFPLAYERCLASSDATA_T_OFFSET_M_BDONTDOAIRWALK = TFPLAYERCLASSDATA_T_OFFSET_M_ABUILDABLE + TF_PLAYER_BLUEPRINT_COUNT * 4,                  // bool m_bDontDoAirwalk;
+    TFPLAYERCLASSDATA_T_OFFSET_M_BDONTDONEWJUMP = TFPLAYERCLASSDATA_T_OFFSET_M_BDONTDOAIRWALK + 1,                                          // bool m_bDontDoNewJump;
     
-    TFPLAYERCLASSDATA_T_OFFSET_M_BPARSED = TFPLAYERCLASSDATA_T_OFFSET_M_BDONTDONEWJUMP + 1,                                               // bool m_bParsed;
-    TFPLAYERCLASSDATA_T_OFFSET_M_VECTHIRDPERSONOFFSET = TFPLAYERCLASSDATA_T_OFFSET_M_BPARSED + 1,                                         // Vector m_vecThirdPersonOffset;
+    TFPLAYERCLASSDATA_T_OFFSET_M_BPARSED = TFPLAYERCLASSDATA_T_OFFSET_M_BDONTDONEWJUMP + 1,                                                 // bool m_bParsed;
+    TFPLAYERCLASSDATA_T_OFFSET_M_VECTHIRDPERSONOFFSET = TFPLAYERCLASSDATA_T_OFFSET_M_BPARSED + 1,                                           // Vector m_vecThirdPersonOffset;
 
-    TFPLAYERCLASSDATA_T_OFFSET_M_SZDEATHSOUND = TFPLAYERCLASSDATA_T_OFFSET_M_VECTHIRDPERSONOFFSET + VECTOR_SIZE + 1,                      // char m_szDeathSound[DEATH_SOUND_TOTAL][MAX_PLAYERCLASS_SOUND_LENGTH];
+    TFPLAYERCLASSDATA_T_OFFSET_M_SZDEATHSOUND = TFPLAYERCLASSDATA_T_OFFSET_M_VECTHIRDPERSONOFFSET + SIZEOF_Vector + 1,                      // char m_szDeathSound[DEATH_SOUND_TOTAL][MAX_PLAYERCLASS_SOUND_LENGTH];
 
-    TFPLAYERCLASSDATA_T_SIZE = TFPLAYERCLASSDATA_T_OFFSET_M_SZDEATHSOUND + view_as<int>(DEATH_SOUND_TOTAL) * MAX_PLAYERCLASS_SOUND_LENGTH // sizeof(TFPlayerClassData_t);
+    SIZEOF_TFPlayerClassData_t = TFPLAYERCLASSDATA_T_OFFSET_M_SZDEATHSOUND + view_as<int>(DEATH_SOUND_TOTAL) * MAX_PLAYERCLASS_SOUND_LENGTH // sizeof(TFPlayerClassData_t);
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -275,7 +275,7 @@ methodmap TFPlayerClassData_t < Pointer
     property Vector m_vecThirdPersonOffset
     {
         public get() { return view_as<Vector>(this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_VECTHIRDPERSONOFFSET); }
-        public set(Vector vector) { memcpy(this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_VECTHIRDPERSONOFFSET, vector, VECTOR_SIZE); }
+        public set(Vector vector) { memcpy(this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_VECTHIRDPERSONOFFSET, vector, SIZEOF_Vector); }
     }
 
     // Get a string from the m_szDeathSound buffer. Index must be 0 <= index < DEATH_SOUND_TOTAL. Returns false on failure, returns true and buffer gets filled on success.
@@ -329,7 +329,7 @@ methodmap TFPlayerClassData_t < Pointer
     // Constructor - allocate a new CTFRadiusDamageInfo onto the heap. Deallocation will be required when you are finished using free().
     public static TFPlayerClassData_t Malloc()
     {
-        TFPlayerClassData_t pointer = malloc(TFPLAYERCLASSDATA_T_SIZE);
+        TFPlayerClassData_t pointer = malloc(SIZEOF_TFPlayerClassData_t);
         pointer.ctor();
         return pointer;
     }
@@ -342,7 +342,7 @@ methodmap TFPlayerClassData_t < Pointer
 stock TFPlayerClassData_t GetPlayerClassData(int class)
 {
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_SMTC
-    return view_as<TFPlayerClassData_t>(g_pTFPlayerClassDataMgr.Get(class, TFPLAYERCLASSDATA_T_SIZE) + 12);
+    return view_as<TFPlayerClassData_t>(g_pTFPlayerClassDataMgr.Get(class, SIZEOF_TFPlayerClassData_t) + 12);
 #else
     ThrowError("GetPlayerClassData() requires SMTC.inc!");
     return view_as<TFPlayerClassData_t>(NULL);

@@ -2,20 +2,6 @@
 {
     "tf"
     {
-		"Addresses"
-		{
-			"MemoryPatch_DemoknightTurnCap"
-			{
-				"windows"
-				{
-					"signature" "CTFPlayerMove::SetupMove()"
-				}
-				"linux"
-				{
-					"signature" "CTFPlayerMove::SetupMove()"
-				}
-			}
-		}
         "Offsets"
         {
             "CTFPlayer::m_hMyWearables"
@@ -29,12 +15,6 @@
                 "windows" "229"
                 "linux"   "235"
             }
-
-			"MemoryPatch_DemoknightTurnCap"
-			{
-				"windows" "139"
-				"linux"   "140"
-			}
         }
         "Signatures"
         {
@@ -50,17 +30,17 @@
 				"windows" "\x55\x8B\xEC\x81\xEC\x2A\x2A\x2A\x2A\x56\x8B\x75\x2A\x57\x8B\xF9\x8D\x8D\x2A\x2A\x2A\x2A"
 				"linux"	  "@_ZN9CTFPlayer12OnTakeDamageERK15CTakeDamageInfo"
 			}
+			"CTFPlayer::TraceAttack()"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x81\xEC\x90\x00\x00\x00\x57\x8B\xF9\x80\xBF\xF9\x00\x00\x00\x02"
+				"linux"   "@_ZN9CTFPlayer11TraceAttackERK15CTakeDamageInfoRK6VectorP10CGameTraceP15CDmgAccumulator"
+			}
 			"CTFGameRules::RadiusDamage"
 			{
 				"library" "server"
 				"windows" "\x55\x8B\xEC\x81\xEC\x24\x08\x00\x00\x53"
 				"linux"	  "@_ZN12CTFGameRules12RadiusDamageER19CTFRadiusDamageInfo"
-			}
-			"CTFPlayerMove::SetupMove()"
-			{
-				"library" "server"
-				"windows" "\x55\x8B\xEC\x83\xEC\x10\x56\x8B\x75\x08\x89\x4D\xFC"
-				"linux"	  "@_ZN13CTFPlayerMove9SetupMoveEP11CBasePlayerP8CUserCmdP11IMoveHelperP9CMoveData"
 			}
         }
         "Functions"
@@ -74,6 +54,32 @@
 				"arguments"
 				{
 					"inputInfo"
+					{
+						"type" "int"
+					}
+				}
+			}
+			"CTFPlayer::TraceAttack()"
+			{
+				"signature" "CTFPlayer::TraceAttack()"
+				"callconv"  "thiscall"
+				"return"    "void"
+				"this"      "entity"
+				"arguments"
+				{
+					"info"
+					{
+						"type" "int"
+					}
+					"vecDir"
+					{
+						"type" "int"
+					}
+					"ptr"
+					{
+						"type" "int"
+					}
+					"pAccumulator"
 					{
 						"type" "int"
 					}

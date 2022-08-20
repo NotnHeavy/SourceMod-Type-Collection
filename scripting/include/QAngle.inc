@@ -22,7 +22,7 @@ enum
     QANGLE_OFFSET_Y = QANGLE_OFFSET_X + 4, // float y;
     QANGLE_OFFSET_Z = QANGLE_OFFSET_Y + 4, // float z;
     
-    QANGLE_SIZE = QANGLE_OFFSET_Z + 4      // sizeof(QAngle);
+    SIZEOF_QAngle = QANGLE_OFFSET_Z + 4    // sizeof(QAngle);
 }
 
 static float accumulator[3];
@@ -85,7 +85,7 @@ methodmap QAngle < Pointer
     // Constructor - allocate a new QAngle onto the heap. Deallocation will be required when you are finished using this using free().
     public static QAngle Malloc(float x = 0.00, float y = 0.00, float z = 0.00)
     {
-        QAngle pointer = malloc(QANGLE_SIZE);
+        QAngle pointer = malloc(SIZEOF_QAngle);
         pointer.ctor(x, y, z);
         return pointer;
     }
@@ -99,13 +99,13 @@ methodmap QAngle < Pointer
     // Store the QAngle into a buffer.
     public void GetBuffer(float buffer[3])
     {
-        memcpy(AddressOfArray(buffer), this, QANGLE_SIZE);
+        memcpy(AddressOfArray(buffer), this, SIZEOF_QAngle);
     }
 
     // Copy from a buffer into this QAngle.
     public void SetFromBuffer(float buffer[3])
     {
-        memcpy(this, AddressOfArray(buffer), QANGLE_SIZE);
+        memcpy(this, AddressOfArray(buffer), SIZEOF_QAngle);
     }
 
     // Get the QAngle's magnitude squared.
@@ -120,10 +120,18 @@ methodmap QAngle < Pointer
         return SquareRoot(this.LengthSqr());
     }
 
+    // Generate random co-ordinates within a specific minValue/maxValue range.
+    public void Random(float minValue, float maxValue)
+    {
+        this.X = GetRandomFloat(minValue, maxValue);
+        this.Y = GetRandomFloat(minValue, maxValue);
+        this.Z = GetRandomFloat(minValue, maxValue);
+    }
+
     // Vector assignation.
     public void Assign(QAngle vector)
     {
-        memcpy(this, vector, VECTOR_SIZE);
+        memcpy(this, vector, SIZEOF_QAngle);
     }
 }
 
@@ -180,7 +188,7 @@ stock bool QAnglesAreEqual(const QAngle left, const QAngle right, float toleranc
 }
 
 // Euler QAngle -> Basis Vectors. Each vector is optional.
-stock void AngleVectors(const QAngle angles, Vector forwardVector = view_as<Vector>(NULL), Vector right = view_as<Vector>(NULL), Vector up = view_as<Vector>(NULL))
+stock void AngleVectors(const QAngle angles, Vector& forwardVector = view_as<Vector>(NULL), Vector& right = view_as<Vector>(NULL), Vector& up = view_as<Vector>(NULL))
 {
     // bit of a cheap implementation but i'm not really a maths wizard (yet).
     float anglesBuffer[3];
@@ -206,10 +214,20 @@ stock void AngleVectors(const QAngle angles, Vector forwardVector = view_as<Vect
         up.SetFromBuffer(upBuffer);
 }
 
-// The QAngle returned is stored onto the accumulator and must be assigned to your desired vector, unless allocate is set to true.
-stock QAngle GetEntQAngle(int entity, PropType type, const char[] property, int index = 0, bool allocate = false)
+// The QAngle returned is a reference to an internal class member. For use with Prop_Send, you must specify the object class name (CTFPlayer for player entities, for example).
+stock QAngle GetEntQAngle(int entity, PropType type, const char[] property, const char[] class = {'\0'}, int index = 0)
 {
-    float buffer[3];
-    GetEntPropVector(entity, type, property, buffer, index);
-    return allocate ? QAngle.Malloc(buffer[0], buffer[1], buffer[2]) : QAngle.Accumulator(buffer[0], buffer[1], buffer[2]);
+    // We are accessing an internal member, therefore we should probably get it as a reference instead.
+    if (type == Prop_Send)
+        return view_as<QAngle>(GetEntityAddress(entity) + FindSendPropInfo(class, property) + index * SIZEOF_QAngle);
+    else
+        return view_as<QAngle>(GetEntityAddress(entity) + FindDataMapInfo(entity, property) + index * SIZEOF_QAngle);
+}
+
+// Get a random QAngle. This QAngle is stored onto the accumulator and must be assigned to your desired QAngle, unless allocate is set to true.
+stock QAngle RandomAngle(float minValue, float maxValue, bool allocate = false)
+{
+    QAngle random = allocate ? QAngle.Malloc() : QAngle.Accumulator();
+    random.Random(minValue, maxValue);
+    return random;
 }
