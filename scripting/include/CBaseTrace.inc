@@ -4,7 +4,7 @@
 
 // these members are alligned!! (ok ty valve xx)
 
-// Requires "Vector.inc" and "cplane_t.inc".
+// Requires "Vector.inc", "ctypes.inc" and "cplane_t.inc".
 
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CBASETRACE
 #endinput
@@ -14,6 +14,7 @@
 #include "Pointer.inc"
 #include "Vector.inc"
 #include "cplane_t.inc"
+#include "ctypes.inc"
 
 #pragma semicolon true 
 #pragma newdecls required
@@ -22,11 +23,13 @@
 // CBASETRACE DATA                                                          //
 //////////////////////////////////////////////////////////////////////////////
 
+#if !defined DISPSURF_FLAG_SURFACE
 #define DISPSURF_FLAG_SURFACE		(1<<0)
 #define DISPSURF_FLAG_WALKABLE		(1<<1)
 #define DISPSURF_FLAG_BUILDABLE		(1<<2)
 #define DISPSURF_FLAG_SURFPROP1		(1<<3)
 #define DISPSURF_FLAG_SURFPROP2		(1<<4)
+#endif
 
 enum
 {
@@ -94,11 +97,10 @@ methodmap CBaseTrace < Pointer
     }
 
     // displacement flags for marking surfaces with data
-    // This is meant to be an unsigned short, however SourcePawn uses 4-bit cells for every data type and does not have the concept of unsigned types either.
-    property int dispFlags
+    property USHORT dispFlags
     {
         public get() { return this.Dereference(CBASETRACE_OFFSET_DISPFLAGS, NumberType_Int16); }
-        public set(int value) { this.Write(value, CBASETRACE_OFFSET_DISPFLAGS, NumberType_Int16); }
+        public set(USHORT value) { this.Write(value, CBASETRACE_OFFSET_DISPFLAGS, NumberType_Int16); }
     }
 
     // if true, plane is not valid
@@ -124,22 +126,22 @@ methodmap CBaseTrace < Pointer
     // Displacement flag tests.
     public bool IsDispSurface()
     {
-        return this.dispFlags & DISPSURF_FLAG_SURFACE != 0;
+        return this.dispFlags.And(DISPSURF_FLAG_SURFACE) != 0;
     }
     public bool IsDispSurfaceWalkable()
     {
-        return this.dispFlags & DISPSURF_FLAG_WALKABLE != 0;
+        return this.dispFlags.And(DISPSURF_FLAG_WALKABLE) != 0;
     }
     public bool IsDispSurfaceBuildable()
     {
-        return this.dispFlags & DISPSURF_FLAG_BUILDABLE != 0;
+        return this.dispFlags.And(DISPSURF_FLAG_BUILDABLE) != 0;
     }
     public bool IsDispSurfaceProp1()
     {
-        return this.dispFlags & DISPSURF_FLAG_SURFPROP1 != 0;
+        return this.dispFlags.And(DISPSURF_FLAG_SURFPROP1) != 0;
     }
     public bool IsDispSurfaceProp2()
     {
-        return this.dispFlags & DISPSURF_FLAG_SURFPROP2 != 0;
+        return this.dispFlags.And(DISPSURF_FLAG_SURFPROP2) != 0;
     }
 }

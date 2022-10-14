@@ -10,6 +10,7 @@
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CSURFACE_T
 
 #include "Pointer.inc"
+#include "ctypes.inc"
 
 #pragma semicolon true 
 #pragma newdecls required
@@ -56,11 +57,10 @@ methodmap CSurface_t < Pointer
     }
 
     // Get per surface flags.
-    // This is meant to be an unsigned short, however SourcePawn uses 4-bit cells for every data type and does not have the concept of unsigned types either.
-    property int flags
+    property USHORT flags
     {
         public get() { return this.Dereference(CSURFACE_T_OFFSET_FLAGS, NumberType_Int16); }
-        public set(int value) { this.Write(value, CSURFACE_T_OFFSET_FLAGS, NumberType_Int16); }
+        public set(USHORT value) { this.Write(value, CSURFACE_T_OFFSET_FLAGS, NumberType_Int16); }
     }
 
     // Call constructor on existing type.
@@ -72,7 +72,7 @@ methodmap CSurface_t < Pointer
     }
 
     // Constructor - allocate a new csurface_t onto the heap. Deallocation will be required when you are finished using free().
-    public static CSurface_t malloc(Pointer name = NULL, int surfaceProps = 0, int flags = 0)
+    public static CSurface_t malloc(Pointer name = NULL, int surfaceProps = 0, USHORT flags = view_as<USHORT>(0))
     {
         CSurface_t pointer = malloc(SIZEOF_CSurface_t);
         pointer.ctor(name, surfaceProps, flags);

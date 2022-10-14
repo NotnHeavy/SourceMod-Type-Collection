@@ -18,15 +18,17 @@
 #include <smmem> // https://github.com/Scags/SM-Memory
 
 //////////////////////////////////////////////////////////////////////////////
-// FUNCTION MACROS (terrorist acts here)                                    //
+// FUNCTION MACROS AND STACK (terrorist acts here)                          //
 //////////////////////////////////////////////////////////////////////////////
 
 #define SIZEOF(%1) SIZEOF_%1
 #define STACK_ALLOC(%1,%2,%3) char SMTC_%1[%3]; %2 %1 = %2(AddressOfString(SMTC_%1)) // %1 = name, %2 = methodmap, %3 = size to allocate
 
-#define STACK_SETRETURN(%1) int[] // %1 = methodmap. This is just a placebo.
-#define STACK_RETURN(%1,%2) int SMTC_RETURN_%1[%2 / 4]; memcpy(AddressOfArray(SMTC_RETURN_%1), %1, %2); return SMTC_RETURN_%1 // %1 = variable, %2 = size to allocate
-#define STACK_GETRETURN(%1,%2) view_as<%1>(AddressOfArray(%2))
+#define ARRAY Pointer
+#define STACK char[]
+#define STACK_RETURN(%1,%2) char SMTC_RETURN_%1[%2]; memcpy(AddressOfString(SMTC_RETURN_%1), %1, %2); return SMTC_RETURN_%1 // %1 = variable, %2 = size to allocate
+#define STACK_GETRETURN(%1,%2) view_as<%1>(AddressOfString(%2)) // %1 = methodmap, %2 = variable
+#define STACK_SIZEOF(%1) sizeof(SMTC_%1) // %1 = variable
 
 //////////////////////////////////////////////////////////////////////////////
 // POINTER METHODMAP                                                        //

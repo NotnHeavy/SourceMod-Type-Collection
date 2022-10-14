@@ -56,8 +56,8 @@ stock void SMTC_Initialize()
     SMTC_CTakeDamageInfoForward();
 }
 
-// Used in Vector.inc to initialize vec3_origin.
+// Used in ./Vector.inc to initialize vec3_origin.
 forward void SMTC_VectorForward();
 
-// Used in CTakeDamageInfo.inc for mini-crit management.
+// Used in ./tf/CTakeDamageInfo.inc for mini-crit management.
 forward void SMTC_CTakeDamageInfoForward();

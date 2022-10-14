@@ -14,11 +14,12 @@ At the very least, you'll need [Scags' SM-Memory Extension](https://github.com/S
 - QAngle.inc: A 3D vector, but used for pitch/yaw/roll.
 - CUtlVector.inc: A dynamically expanding array responsible for all acts of terrorism. You're probably better off using SourceMod's ArrayList instead, but use this if you want. This will be necessary for any CUtlVectors used internally however, such as CBasePlayer::m_hMyWearables. Note, because this repository relies on Scags' SM-Memory extension, this will collide with the methodmap found in SM-Memory's vec.inc. You'll have to modify your smmem.inc to not include its own vec.inc. Unlike Scags' implementation, this one is made to have full functionality and also has its own CUtlMemory methodmap, much like how the internal CUtlVector class has its own CUtlMemory class. This requires "CUtlMemory.inc".
 - CUtlMemory.inc: This is a dynamically expanding buffer that is pretty much the barebones of CUtlVector.
-- cplane_t.inc: A surface plane structure, primarily found in CBaseTrace.
-- csurface_t.inc: A structure containing information of a surface, primarily found in CGameTrace.
-- CBaseTrace.inc: The base object used for tracing information.
-- CGameTrace.inc: typedef'd as "trace_t" internally, this expands upon CBaseTrace and is typically used in trace operations.
+- cplane_t.inc: A surface plane structure, primarily found in CBaseTrace. This requires "Vector.inc" and "ctypes.inc".
+- csurface_t.inc: A structure containing information of a surface, primarily found in CGameTrace. This requires "Vector.inc", "cplane_t.inc" and "ctypes.inc".
+- CBaseTrace.inc: The base object used for tracing information. This requires "Vector.inc", "cplane_t.inc" and "ctypes.inc".
+- CGameTrace.inc: typedef'd as "trace_t" internally, this expands upon CBaseTrace and is typically used in trace operations. This requires "Vector.inc", "csurface_t.inc" and "ctypes.inc".
 - shareddefs.inc: This just contains a few pieces of information for usage with the other headers. This is not complete, however it is slowly expanding and I figured this would be an appropriate place to include additional code. This include does not require Pointer.inc.
+- ctypes.inc: This contains four methodmaps that mimick C types - UInt8_t (BYTE), Int8_t (CHAR), UInt16_t (WCHAR/USHORT), Int16_t (SHORT). As methodmaps are also cells, the underlying data type is still 4 bytes, however these methodmaps behave as if they are otherwise. For char arrays, this isn't as necessary, as char arrays are actually treated as if they are singular bytes. This include does not require Pointer.inc.
 
 ## TF2 includes present:
 - tf/tf_shareddefs.inc: Similar to shareddefs.inc, however this is TF2 specific. This include is not complete either, however it is slowly expanding. This include does not require Pointer.inc

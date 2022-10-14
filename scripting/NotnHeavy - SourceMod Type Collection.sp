@@ -12,6 +12,7 @@
 #include <dhooks> // Not actually needed, just used for tests.
 
 #include "SMTC"
+#include "ctypes.inc"
 #include "Pointer.inc"
 #include "include/Vector.inc"
 #include "QAngle.inc"
@@ -27,8 +28,6 @@
 #include "tf/CTFRadiusDamageInfo.inc"
 #include "tf/tf_shareddefs.inc"
 #include "tf/TFPlayerClassData_t.inc"
-
-#include "TESTS/tests.inc" // self-tests only.
 
 static int CTFPlayer_m_hMyWearables;
 static Handle SDKCall_CTFWearable_Equip;
@@ -74,7 +73,7 @@ public void OnPluginStart()
 
     delete config;
 
-    commitTests(); // TESTS/tests.inc
+    //commitTests(); // TESTS/tests.inc
 
     pointerOperation();
     vectorOperation();
@@ -84,6 +83,7 @@ public void OnPluginStart()
     qangleOperation();
     tfplayerclassdata_tOperation();
     cgametrace_csurface_t_cbasetrace_cplane_tOperation();
+    ctypesOperation();
 
     PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
     PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
@@ -92,6 +92,58 @@ public void OnPluginStart()
 public void OnMapStart()
 {
     explosionModelIndex = PrecacheModel("sprites/sprite_fire01.vmt");
+}
+
+// this is kind of cursed
+static void ctypesOperation()
+{
+    // BYTE = UInt8_t
+    // CHAR = Int8_t
+    // USHORT = UInt16_t
+    // SHORT = Int16_t
+
+    // normal variables
+    BYTE byte = 5; // unsigned char byte = 5;
+    BYTE byte2 = 240;
+    PrintToServer("%i", BYTE(byte * byte2)); // byte * byte2 on its own is 1200. this should print 176.
+
+    CHAR character = 'h';
+    PrintToServer("%c%c", character, character + 1); // should be hi
+
+    // arrays
+    STACK_ALLOC(shortArray, ARRAY, SIZEOF(SHORT) * 4); // short shortArray[4];
+    SHORT shortArray_1 = 15; // short shortArray_1 = 15;
+    SHORT shortArray_2 = shortArray_1 * shortArray_1;
+    SHORT shortArray_3 = shortArray_2 - 300;
+    SHORT shortArray_4 = shortArray_1 % 4;
+    shortArray.Write(shortArray_1, 0, NumberType_Int16); // shortArray[0] = shortArray_1; // should be 15
+    shortArray.Write(shortArray_2, 2, NumberType_Int16); // shortArray[1] = shortArray_1; // should be 225
+    shortArray.Write(shortArray_3, 4, NumberType_Int16); // shortArray[2] = shortArray_1; // should be -75
+    shortArray.Write(shortArray_4, 6, NumberType_Int16); // shortArray[3] = shortArray_1; // should be 3
+
+    for (int i = 0; i < STACK_SIZEOF(shortArray) / SIZEOF(SHORT); ++i) // for (int i = 0; i < sizeof(shortArray) / sizeof(shortArray[0]); ++i)
+        PrintToServer("shortArray[%i]: %i", i, SHORT(shortArray.Dereference(i * 2, NumberType_Int16)).ToCell()); // std::cout << "shortArray[" << i << "]: " << shortArray[i] << std::endl;
+
+    // c string
+    STACK_ALLOC(str, ARRAY, SIZEOF(CHAR) * 32); // char str[32];
+    memcpy(str, AddressOfString("Hello world!"), STACK_SIZEOF(str));
+    
+    for (int i = 0; ; ++i)
+    {
+        CHAR character2 = str.Dereference(i, NumberType_Int8);
+        if (character2 == '\0')
+            break;
+        PrintToServer("%c", character2);
+    }
+
+    // last few things
+    SHORT value = 0x8000;
+    USHORT uvalue = 0x8000;
+    int valueInt = value;
+    int uvalueInt = uvalue;
+    PrintToServer("valueInt: %i, uvalueInt: %i", valueInt, uvalueInt); // should be "valueInt: -32768, uvalueInt: 32768"
+
+    PrintToServer("");
 }
 
 // also for CGameTrace
@@ -107,7 +159,7 @@ static void cgametrace_csurface_t_cbasetrace_cplane_tOperation()
 {
     // offset verification
     PrintToServer("sizeof(CGameTrace): %i", SIZEOF(CGameTrace)); // should be 84
-    PrintToServer("CGameTrace::m_pEnt: %i", CGAMETRACE_OFFSET_M_PENT); // should be 76
+    PrintToServer("CGameTrace::m_pEnt: %i\n", CGAMETRACE_OFFSET_M_PENT); // should be 76
 }
 
 static void tfplayerclassdata_tOperation()
@@ -383,7 +435,7 @@ static void pointerOperation()
     free(b);
 }
 
-static STACK_SETRETURN(Vector) vectorReturn()
+static STACK vectorReturn()
 {
     STACK_ALLOC(Return, Vector, SIZEOF(Vector));
     Return.X = 1.00;

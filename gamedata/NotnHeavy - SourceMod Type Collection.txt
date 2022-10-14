@@ -1,3 +1,9 @@
+// PLEASE READ BEFORE MODIFYING!
+// I'd imagine this gamedata would be used across many plugins of different release dates.
+// When updating, do NOT remove anything that is currently unused within this version of SMTC.
+// Some versions of SMTC may still rely on gamedata that may be unused in modern versions.
+// Of course, update signatures/offsets whenever necessary (I.E. updates).
+
 "Games"
 {
     "tf"

@@ -11,6 +11,7 @@
 
 #include "Pointer.inc"
 #include "Vector.inc"
+#include "ctypes.inc"
 
 #pragma semicolon true 
 #pragma newdecls required
@@ -60,33 +61,29 @@ methodmap CPlane_t < Pointer
     }
 
     // For fast side tests.
-    // This is meant to be an unsigned char, however SourcePawn uses 4-bit cells for every data type and does not have the concept of unsigned types either.
-    property int type
+    property BYTE type
     {
         public get() { return this.Dereference(CPLANE_T_OFFSET_TYPE, NumberType_Int8); }
-        public set(int value) { this.Write(value, CPLANE_T_OFFSET_TYPE, NumberType_Int8); }
+        public set(BYTE value) { this.Write(value, CPLANE_T_OFFSET_TYPE, NumberType_Int8); }
     }
 
     // signx + (signy << 1) + (signz << 1)
-    // This is meant to be an unsigned char, however SourcePawn uses 4-bit cells for every data type and does not have the concept of unsigned types either.
-    property int signbits
+    property BYTE signbits
     {
         public get() { return this.Dereference(CPLANE_T_OFFSET_SIGNBITS, NumberType_Int8); }
-        public set(int value) { this.Write(value, CPLANE_T_OFFSET_SIGNBITS, NumberType_Int8); }
+        public set(BYTE value) { this.Write(value, CPLANE_T_OFFSET_SIGNBITS, NumberType_Int8); }
     }
 
     // Get byte pad.
-    // This is meant to be an unsigned char, however SourcePawn uses 4-bit cells for every data type and does not have the concept of unsigned types either.
-    public int pad_Get(int index)
+    public BYTE pad_Get(BYTE index)
     {
         if (index < 0 || index >= 2)
-            return 0;
+            return BYTE(0);
         return this.Dereference(CPLANE_T_OFFSET_PAD + index, NumberType_Int8);
     }
 
     // Set byte pad.
-    // This is meant to be an unsigned char, however SourcePawn uses 4-bit cells for every data type and does not have the concept of unsigned types either.
-    public void pad_Set(int index, int value)
+    public void pad_Set(int index, BYTE value)
     {
         if (index < 0 || index >= 2)
             return;
@@ -94,7 +91,7 @@ methodmap CPlane_t < Pointer
     }
 
     // Call constructor on existing type.
-    public void ctor(Vector normal = view_as<Vector>(NULL), float dist = 0.00, int type = 0, int signbits = 0, int pad[2] = { 0, 0 })
+    public void ctor(Vector normal = view_as<Vector>(NULL), float dist = 0.00, BYTE type = view_as<BYTE>(0), BYTE signbits = view_as<BYTE>(0), BYTE pad[2] = { view_as<BYTE>(0), view_as<BYTE>(0) })
     {
         this.normal = normal;
         this.dist = dist;
@@ -104,7 +101,7 @@ methodmap CPlane_t < Pointer
     }
 
     // Constructor - allocate a new cplane_t onto the heap. Deallocation will be required when you are finished using free().
-    public static CPlane_t Malloc(Vector normal = view_as<Vector>(NULL), float dist = 0.00, int type = 0, int signbits = 0, int pad[2] = { 0, 0 })
+    public static CPlane_t Malloc(Vector normal = view_as<Vector>(NULL), float dist = 0.00, BYTE type = view_as<BYTE>(0), BYTE signbits = view_as<BYTE>(0), BYTE pad[2] = { view_as<BYTE>(0), view_as<BYTE>(0) })
     {
         CPlane_t pointer = malloc(SIZEOF_CPlane_t);
         pointer.ctor(normal, dist, type, signbits, pad);
