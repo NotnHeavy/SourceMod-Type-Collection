@@ -23,6 +23,7 @@
 #include "csurface_t.inc"
 #include "CGameTrace.inc"
 #include "shareddefs.inc"
+#include "vtable.inc"
 
 #include "tf/CTakeDamageInfo.inc"
 #include "tf/CTFRadiusDamageInfo.inc"
@@ -84,6 +85,7 @@ public void OnPluginStart()
     tfplayerclassdata_tOperation();
     cgametrace_csurface_t_cbasetrace_cplane_tOperation();
     ctypesOperation();
+    vtableOperation();
 
     PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
     PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
@@ -92,6 +94,97 @@ public void OnPluginStart()
 public void OnMapStart()
 {
     explosionModelIndex = PrecacheModel("sprites/sprite_fire01.vmt");
+}
+
+public void OnPluginEnd()
+{
+    VTable.ClearVTables();
+}
+
+static void vtableOperation()
+{
+    // this stuff is tested for windows
+
+    // normal sdkcall
+    /*
+    ; int __cdecl test(void):
+    0x55               push ebp
+    0x8B 0xEC          mov ebp, esp
+    0xB8 08 00 00 00   mov eax, 0x08
+    0x5D               pop ebp
+    0xC3               ret
+    */
+    char testString[] = "\x55\x8B\xEC\xB8\x08\x00\x00\x00\x5D\xC3";
+    
+    StartPrepSDKCall(SDKCall_Static);
+    PrepSDKCall_SetAddress(AddressOfString(testString));
+    PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+    Handle SDKCall_test = EndPrepSDKCall();
+
+    int value = SDKCall(SDKCall_test);
+    PrintToServer("test return: %i", value);
+
+    // sdkcall for virtual method (what the actual fuck)
+    /*
+    struct obj
+    {
+        int val;
+        obj()
+            : val(8)
+        {
+        }
+
+        virtual int test()
+        {
+            return val;
+        }  
+    };
+
+    obj variable;
+    variable.test();
+    */
+
+    /*
+    ; int __thiscall test(void): ; would be __cdecl on linux
+    0x55             push ebp
+    0x8B 0xEC        mov ebp, esp
+    0x51             push ecx ; this (would be first param with __cdecl)
+    0x89 0x4D 0xFC   mov dword ptr [ebp - 0x04], ecx
+    0x8B 0x45 0xFC   mov eax, dword ptr[ebp - 0x04]
+    0x8B 0x40 0x04   mov eax, dword ptr[eax + 0x04]
+    0x8B 0xE5        mov esp, ebp
+    0x5D             pop ebp
+    0xC3             ret
+    */
+   
+    int offset_val = 1;
+
+    /*
+    char vtable_testString[] = "\x55\x8B\xEC\x51\x89\x4D\xFC\x8B\x45\xFC\x8B\x40\x04\x8B\xE5\x5D\xC3";
+    Pointer testStringPointer = Pointer(AddressOfString(vtable_testString));
+    Pointer vtable[1];
+    vtable[0] = testStringPointer;
+    Pointer vtable_ptr = AddressOfArray(vtable);
+    */
+    VTable.CreateVTable("obj", 1);
+    VTable.RegisterVPointer("obj", "\x55\x8B\xEC\x51\x89\x4D\xFC\x8B\x45\xFC\x8B\x40\x04\x8B\xE5\x5D\xC3", 0);
+
+    any variable[2];
+    variable[offset_val] = 8;             // int val;
+    VTable.HookOntoObject("obj", Pointer(AddressOfArray(variable)));
+
+    StartPrepSDKCall(SDKCall_Raw);
+    PrepSDKCall_SetVirtual(0);
+    PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+    Handle SDKCall_variable_test = EndPrepSDKCall();
+
+    value = SDKCall(SDKCall_variable_test, AddressOfArray(variable));
+    PrintToServer("variable.test() return: %i", value);
+    variable[offset_val] = 69420;
+    value = SDKCall(SDKCall_variable_test, AddressOfArray(variable));
+    PrintToServer("variable.test() return: %i", value);
+    
+    PrintToServer("");
 }
 
 // this is kind of cursed
@@ -116,10 +209,10 @@ static void ctypesOperation()
     SHORT shortArray_2 = shortArray_1 * shortArray_1;
     SHORT shortArray_3 = shortArray_2 - 300;
     SHORT shortArray_4 = shortArray_1 % 4;
-    shortArray.Write(shortArray_1, 0, NumberType_Int16); // shortArray[0] = shortArray_1; // should be 15
-    shortArray.Write(shortArray_2, 2, NumberType_Int16); // shortArray[1] = shortArray_1; // should be 225
-    shortArray.Write(shortArray_3, 4, NumberType_Int16); // shortArray[2] = shortArray_1; // should be -75
-    shortArray.Write(shortArray_4, 6, NumberType_Int16); // shortArray[3] = shortArray_1; // should be 3
+    shortArray.Write(shortArray_1, 0, NumberType_Int16); // shortArray[0] = 15; // should be 15
+    shortArray.Write(shortArray_2, 2, NumberType_Int16); // shortArray[1] = shortArray_1 * shortArray_1; // should be 225
+    shortArray.Write(shortArray_3, 4, NumberType_Int16); // shortArray[2] = shortArray_2 = 300; // should be -75
+    shortArray.Write(shortArray_4, 6, NumberType_Int16); // shortArray[3] = shortArray_1 % 4; // should be 3
 
     for (int i = 0; i < STACK_SIZEOF(shortArray) / SIZEOF(SHORT); ++i) // for (int i = 0; i < sizeof(shortArray) / sizeof(shortArray[0]); ++i)
         PrintToServer("shortArray[%i]: %i", i, SHORT(shortArray.Dereference(i * 2, NumberType_Int16)).ToCell()); // std::cout << "shortArray[" << i << "]: " << shortArray[i] << std::endl;

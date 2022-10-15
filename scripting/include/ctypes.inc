@@ -54,7 +54,7 @@
 #define SIZEOF_USHORT 2
 #define SIZEOF_BOOLEAN 1
 #define SIZEOF_BOOL 4
-#define SIZEOF_SIZET 4
+#define SIZEOF_SIZE_T 4
 
 // Just last few things for SIZEOF().
 #define SIZEOF_int 4

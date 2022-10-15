@@ -44,7 +44,7 @@ methodmap CSurface_t < Pointer
     // Get the string pointer for the name.
     property Pointer name
     {
-        public get() { return view_as<Pointer>(this.Address + CSURFACE_T_OFFSET_NAME); }
+        public get() { return this.Dereference(CSURFACE_T_OFFSET_NAME); }
         public set(Pointer value) { this.Write(value, CSURFACE_T_OFFSET_NAME); }
     }
 
