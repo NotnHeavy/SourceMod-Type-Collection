@@ -25,18 +25,16 @@
 
 enum
 {
-    VTABLE_INFO_OFFSET_NAME = 0,                                            // char Name[32];
-    VTABLE_INFO_OFFSET_VTABLE = VTABLE_INFO_OFFSET_NAME + SIZEOF_CHAR * 32, // void* VTable;
-    VTABLE_INFO_OFFSET_SIZE = VTABLE_INFO_OFFSET_VTABLE + SIZEOF_Pointer,   // size_t Size;
+    VTABLE_INFO_OFFSET_NAME = 0,                                             // char Name[32];
+    VTABLE_INFO_OFFSET_VTABLE = VTABLE_INFO_OFFSET_NAME + SIZEOF_CHAR * 32,  // void* VTable;
+    VTABLE_INFO_OFFSET_DERIVED = VTABLE_INFO_OFFSET_VTABLE + SIZEOF_Pointer, // bool* Derived;
+    VTABLE_INFO_OFFSET_SIZE = VTABLE_INFO_OFFSET_DERIVED + SIZEOF_Pointer,   // size_t Size;
 
-    SIZEOF_VTable_Info = VTABLE_INFO_OFFSET_SIZE + SIZEOF_SIZE_T            // sizeof(VTable_Info);
+    SIZEOF_VTable_Info = VTABLE_INFO_OFFSET_SIZE + SIZEOF_SIZE_T             // sizeof(VTable_Info);
 }
 
 static Pointer vtables = NULL;
 static SIZE_T vtablesLength = 0;
-
-static Pointer instantiatedVTables = NULL;
-static SIZE_T instantiatedVTablesLength = 0;
 
 //////////////////////////////////////////////////////////////////////////////
 // VTABLE_INFO METHODMAP                                                    //
@@ -63,6 +61,13 @@ methodmap VTable_Info < Pointer
         public set(Pointer value) { this.Write(value, VTABLE_INFO_OFFSET_VTABLE); }
     }
 
+    // An array depicting whether each vpointer is derived.
+    property Pointer Derived
+    {
+        public get() { return this.Dereference(VTABLE_INFO_OFFSET_DERIVED); }
+        public set(Pointer value) { this.Write(value, VTABLE_INFO_OFFSET_DERIVED); }
+    }
+
     // The length of the vtable.
     property SIZE_T Size
     {
@@ -71,12 +76,14 @@ methodmap VTable_Info < Pointer
     }
 
     // Call constructor on existing type.
-    public void ctor(char[] name, Pointer vtable, SIZE_T size)
+    public void ctor(char[] name, SIZE_T size)
     {
         memcpy(this.Name, AddressOfString(name), 32);
         this.Name.Write('\0', 31, NumberType_Int8);
-        this.VTable = vtable;
         this.Size = size;
+
+        this.VTable = calloc(size, SIZEOF_Pointer);
+        this.Derived = calloc(size, SIZEOF_BOOL);
     }
 }
 
@@ -100,23 +107,40 @@ static VTable_Info GetVTableInfo(char[] name)
 methodmap VTable
 {
     // The name must be up to 32 characters, including the NUL character. The length is the number of vpointers to be used.
-    public static Pointer CreateVTable(char[] name, SIZE_T length)
+    // If base is found in the registered vtables list, the default length will be set to the registered vtable length and the vtable's vpointers will be copied over to this vtable.
+    public static Pointer CreateVTable(char[] name, SIZE_T length, char[] base = "")
     {
+        if (StrEqual(name, ""))
+            return NULL;
+
         if (vtables == NULL)
         {
-            vtables = malloc(SIZEOF_VTable_Info);
+            vtables = calloc(1, SIZEOF_VTable_Info);
             vtablesLength = SIZEOF_VTable_Info;
         }
         else
         {
             vtablesLength += SIZEOF_VTable_Info;
-            vtables = realloc(vtables, vtablesLength);
+            vtables = recalloc(vtables, 1, vtablesLength);
         }
 
+        VTable_Info baseVTableInfo = GetVTableInfo(base);
+        if (baseVTableInfo != NULL && length < baseVTableInfo.Size)
+            length = baseVTableInfo.Size;
+
         VTable_Info vtableInfo = view_as<VTable_Info>(vtables.Get(vtablesLength - SIZEOF_VTable_Info, 1));
-        Pointer vtable = malloc(length * SIZEOF_Pointer);
-        vtableInfo.ctor(name, vtable, length);
-        return vtable;
+        vtableInfo.ctor(name, length);
+
+        if (baseVTableInfo != NULL)
+        {
+            memcpy(vtableInfo.VTable, baseVTableInfo.VTable, baseVTableInfo.Size * SIZEOF_Pointer);
+            for (int i = 0; i < baseVTableInfo.Size; ++i)
+            {
+                if (vtableInfo.VTable.Dereference(i * SIZEOF_Pointer) != NULL)
+                    vtableInfo.Derived.Write(true, i, NumberType_Int8);
+            }
+        }
+        return vtableInfo.VTable;
     }
 
     // Get the vtable from the registered name.
@@ -135,31 +159,34 @@ methodmap VTable
         Pointer vpointer = malloc(asmLength);
         memcpy(vpointer, asm, asmLength);
         info.VTable.Write(vpointer, index * SIZEOF_Pointer);
+        info.Derived.Write(false, index, NumberType_Int8);
         return vpointer;
+    }
+
+    // Remove a vpointer from a registered vtable.
+    public static void RemoveVPointer(char[] name, int index)
+    {
+        VTable_Info info = GetVTableInfo(name);
+        if (info == NULL || index < 0 || index >= info.Size)
+            return;
+
+        Pointer vpointer = info.VTable.Dereference(index * SIZEOF_Pointer);
+        if (vpointer == NULL)
+            return;
+
+        if (!info.Derived.Dereference(index, NumberType_Int8))
+            free(vpointer);
+        info.VTable.Write(NULL, index * SIZEOF_Pointer);
+        info.Derived.Write(false, index, NumberType_Int8);
     }
 
     // Hook a registered vtable onto an existing object.
     public static void HookOntoObject(char[] name, Pointer obj)
     {
-        VTable_Info info = GetVTableInfo(name);
-        if (info == NULL)
+        Pointer vtable = VTable.GetVTable(name);
+        if (vtable == NULL)
             return;
-        
-        Pointer vtable = malloc(info.Size * SIZEOF_Pointer);
-        memcpy(vtable, info.VTable, info.Size * SIZEOF_Pointer);
         obj.Write(vtable);
-
-        if (instantiatedVTables == NULL)
-        {
-            instantiatedVTablesLength = SIZEOF_Pointer;
-            instantiatedVTables = malloc(instantiatedVTablesLength);
-        }
-        else
-        {
-            instantiatedVTablesLength += SIZEOF_Pointer;
-            instantiatedVTables = realloc(instantiatedVTables, instantiatedVTablesLength);
-        }
-        instantiatedVTables.Write(vtable, instantiatedVTablesLength - SIZEOF_Pointer);
     }
 
     // Grab the pointer to an object's vtable.
@@ -169,6 +196,7 @@ methodmap VTable
     }
 
     // Override a vpointer on an existing object with another vpointer.
+    // This should not be used on vtables registered with this include, otherwise unwanted behaviour will occur. Use RemoveVPointer() and RegisterVPointer() instead.
     public static void OverrideVPointer(Pointer vtable, Pointer vpointer, int index)
     {
         if (vtable == NULL || vpointer == NULL)
@@ -176,28 +204,52 @@ methodmap VTable
         vtable.Write(vpointer, index * SIZEOF_Pointer);
     }
 
+    // Check to see if an object is using a vtable that is registered here.
+    public static bool IsObjectUsingRegisteredVTable(Pointer obj, char name[32])
+    {
+        if (obj == NULL)
+        {
+            name = "";
+            return false;
+        }
+
+        Pointer vtable = VTable.GetObjectVTable(obj);
+        for (int i = 0; i < vtablesLength / SIZEOF_VTable_Info; ++i)
+        {
+            VTable_Info vtableInfo = view_as<VTable_Info>(vtables.Get(i, SIZEOF_VTable_Info));
+            if (vtableInfo.VTable == vtable)
+            {
+                memcpy(AddressOfString(name), vtableInfo.Name, sizeof(name));
+                return true;
+            }
+        }
+
+        name = "";
+        return false;
+    }
+
     // This should be called on plugin end.
     public static void ClearVTables()
     {
-        // free() any hooked vtables.
-        for (int i = 0; i < instantiatedVTablesLength / SIZEOF_Pointer; ++i)
-            free(instantiatedVTables.Dereference(i * SIZEOF_Pointer));
-        free(instantiatedVTables);
-
         // free() all registered vtable definitions.
         for (int i = 0; i < vtablesLength / SIZEOF_VTable_Info; ++i)
         {
             VTable_Info vtableInfo = view_as<VTable_Info>(vtables.Get(i, SIZEOF_VTable_Info));
             for (int v = 0; v < vtableInfo.Size; ++v)
             {
+                // the vpointer will only be free()'d if it is coming from an original source.
                 Pointer vpointer = vtableInfo.VTable.Dereference(v * SIZEOF_Pointer);
-                if (vpointer != NULL)
+                if (vpointer != NULL && !vtableInfo.Derived.Dereference(v, NumberType_Int8))
                     free(vpointer);
             }
             free(vtableInfo.VTable);
+            free(vtableInfo.Derived);
         }
-        free(vtables);
-        vtables = NULL;
-        vtablesLength = 0;
+        if (vtables != NULL)
+        {
+            free(vtables);
+            vtables = NULL;
+            vtablesLength = 0;
+        }
     }
 }

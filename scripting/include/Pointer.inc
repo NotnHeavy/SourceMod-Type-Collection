@@ -168,6 +168,24 @@ stock Pointer operator-(const Pointer left, const Address right)
     return Pointer(left.Address - right);
 }
 
+// Assignment overloading.
+stock Address operator=(int value)
+{
+    return view_as<Address>(value);
+}
+stock Address operator=(Pointer value)
+{
+    return view_as<Address>(value);
+}
+stock Pointer operator=(int value)
+{
+    return view_as<Pointer>(value);
+}
+stock Pointer operator=(Address value)
+{
+    return view_as<Pointer>(value);
+}
+
 // Re-allocate within a specific location in memory. You must specify the size of the type used with this global using the typeSize parameter.
 // Normally this would call the the constructor of the allocated memory, but that's not possible here.
 stock void Construct(Pointer memory, int typeSize = 4)

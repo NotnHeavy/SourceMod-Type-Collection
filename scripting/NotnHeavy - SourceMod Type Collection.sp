@@ -199,11 +199,56 @@ static void vtableOperation()
     0xC3                       ret
     */
     char newTest[] = "\x55\x8B\xEC\x51\x89\x4D\xFC\xB8\x28\x00\x00\x00\x8B\xE5\x5D\xC3";
-    Pointer vtable = VTable.GetObjectVTable(Pointer(AddressOfArray(variable)));
-    VTable.OverrideVPointer(vtable, Pointer(AddressOfString(newTest)), 0);
+
+    // we should not be doing this!
+    // Pointer vtable = VTable.GetObjectVTable(Pointer(AddressOfArray(variable)));
+    // VTable.OverrideVPointer(vtable, Pointer(AddressOfString(newTest)), 0); 
+
+    VTable.RemoveVPointer("obj", 0);
+    VTable.RegisterVPointer("obj", Pointer(AddressOfString(newTest)), sizeof(newTest), 0);
 
     value = SDKCall(SDKCall_variable_test, AddressOfArray(variable));
     PrintToServer("after overriding, variable.test() return: %i, variable.val: %i", value, variable[offset_val]);
+
+    char buffer[32];
+    VTable.IsObjectUsingRegisteredVTable(Pointer(AddressOfArray(variable)), buffer);
+    PrintToServer("does variable have obj vtable: %i\n", StrEqual(buffer, "obj"));
+
+    // derived vtable test
+    VTable.CreateVTable("derived", 1, "obj");
+    VTable.HookOntoObject("derived", Pointer(AddressOfArray(variable)));
+    VTable.IsObjectUsingRegisteredVTable(Pointer(AddressOfArray(variable)), buffer);
+    PrintToServer("does variable have derived vtable: %i", StrEqual(buffer, "derived"));
+
+    value = SDKCall(SDKCall_variable_test, AddressOfArray(variable));
+    PrintToServer("after changing vtable to derived, variable.test() return: %i, variable.val: %i", value, variable[offset_val]);
+    
+    // now for the real shit
+    // because vtables on objects are references, this will apply to every player.
+    if (IsClientInGame(1))
+    {
+        PrintToServer("");
+        Pointer player = GetEntityAddress(1);
+        Pointer playerVTable = VTable.GetObjectVTable(player);
+        PrintToServer("player vtable: %i", playerVTable);
+
+        /*
+        ; bool __thiscall ShouldGib(const CTakeDamageInfo& info):
+        0x55                       push ebp
+        0x8B 0xEC                  mov ebp, esp
+        0xB0 0x00                  mov al, 0x00
+        0x5D                       pop ebp
+        0xC2 0x04 0x00             ret 0x04
+        */
+
+        char shouldGib[] = "\x55\x8B\xEC\xB0\x00\x5D\xC2\x04\x00";
+        Pointer subroutine = malloc(sizeof(shouldGib));
+        memcpy(subroutine, AddressOfString(shouldGib), sizeof(shouldGib));
+        VTable.OverrideVPointer(playerVTable, subroutine, 293);
+
+        VTable.IsObjectUsingRegisteredVTable(player, buffer);
+        PrintToServer("does entity index 1 (%i) have obj vtable: %i", player, StrEqual(buffer, "obj"));
+    }
     
     PrintToServer("");
 }
