@@ -35,6 +35,9 @@ enum
 static Pointer vtables = NULL;
 static SIZE_T vtablesLength = 0;
 
+static Pointer instantiatedVTables = NULL;
+static SIZE_T instantiatedVTablesLength = 0;
+
 //////////////////////////////////////////////////////////////////////////////
 // VTABLE_INFO METHODMAP                                                    //
 //////////////////////////////////////////////////////////////////////////////
@@ -116,38 +119,72 @@ methodmap VTable
         return vtable;
     }
 
-    // Get a vtable from the registered name.
+    // Get the vtable from the registered name.
     public static Pointer GetVTable(char[] name)
     {
         VTable_Info info = GetVTableInfo(name);
         return info != NULL ? info.VTable : NULL;
     }
 
-    // Register a new vpointer.
-    public static Pointer RegisterVPointer(char[] name, char[] asm, int index)
+    // Register a new vpointer to a registered vtable.
+    public static Pointer RegisterVPointer(char[] name, Pointer asm, int asmLength, int index)
     {
         VTable_Info info = GetVTableInfo(name);
         if (info == NULL || index < 0 || index >= info.Size)
             return NULL;
-        int length = strlen(asm) + 1;
-        Pointer vpointer = malloc(length);
-        memcpy(vpointer, AddressOfString(asm), length);
+        Pointer vpointer = malloc(asmLength);
+        memcpy(vpointer, asm, asmLength);
         info.VTable.Write(vpointer, index * SIZEOF_Pointer);
         return vpointer;
     }
 
-    // Hook the vtable onto an existing object.
+    // Hook a registered vtable onto an existing object.
     public static void HookOntoObject(char[] name, Pointer obj)
     {
         VTable_Info info = GetVTableInfo(name);
         if (info == NULL)
             return;
-        obj.Write(info.VTable);
+        
+        Pointer vtable = malloc(info.Size * SIZEOF_Pointer);
+        memcpy(vtable, info.VTable, info.Size * SIZEOF_Pointer);
+        obj.Write(vtable);
+
+        if (instantiatedVTables == NULL)
+        {
+            instantiatedVTablesLength = SIZEOF_Pointer;
+            instantiatedVTables = malloc(instantiatedVTablesLength);
+        }
+        else
+        {
+            instantiatedVTablesLength += SIZEOF_Pointer;
+            instantiatedVTables = realloc(instantiatedVTables, instantiatedVTablesLength);
+        }
+        instantiatedVTables.Write(vtable, instantiatedVTablesLength - SIZEOF_Pointer);
+    }
+
+    // Grab the pointer to an object's vtable.
+    public static Pointer GetObjectVTable(Pointer obj)
+    {
+        return obj.Dereference();
+    }
+
+    // Override a vpointer on an existing object with another vpointer.
+    public static void OverrideVPointer(Pointer vtable, Pointer vpointer, int index)
+    {
+        if (vtable == NULL || vpointer == NULL)
+            return;
+        vtable.Write(vpointer, index * SIZEOF_Pointer);
     }
 
     // This should be called on plugin end.
     public static void ClearVTables()
     {
+        // free() any hooked vtables.
+        for (int i = 0; i < instantiatedVTablesLength / SIZEOF_Pointer; ++i)
+            free(instantiatedVTables.Dereference(i * SIZEOF_Pointer));
+        free(instantiatedVTables);
+
+        // free() all registered vtable definitions.
         for (int i = 0; i < vtablesLength / SIZEOF_VTable_Info; ++i)
         {
             VTable_Info vtableInfo = view_as<VTable_Info>(vtables.Get(i, SIZEOF_VTable_Info));
@@ -161,5 +198,6 @@ methodmap VTable
         }
         free(vtables);
         vtables = NULL;
+        vtablesLength = 0;
     }
 }

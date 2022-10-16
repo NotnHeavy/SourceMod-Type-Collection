@@ -122,7 +122,7 @@ static void vtableOperation()
     Handle SDKCall_test = EndPrepSDKCall();
 
     int value = SDKCall(SDKCall_test);
-    PrintToServer("test return: %i", value);
+    PrintToServer("test() return: %i\n", value);
 
     // sdkcall for virtual method (what the actual fuck)
     /*
@@ -166,12 +166,14 @@ static void vtableOperation()
     vtable[0] = testStringPointer;
     Pointer vtable_ptr = AddressOfArray(vtable);
     */
-    VTable.CreateVTable("obj", 1);
-    VTable.RegisterVPointer("obj", "\x55\x8B\xEC\x51\x89\x4D\xFC\x8B\x45\xFC\x8B\x40\x04\x8B\xE5\x5D\xC3", 0);
+    char testMethod[] = "\x55\x8B\xEC\x51\x89\x4D\xFC\x8B\x45\xFC\x8B\x40\x04\x8B\xE5\x5D\xC3";
+    PrintToServer("creating obj vtable: %i", VTable.CreateVTable("obj", 1));
+    VTable.RegisterVPointer("obj", Pointer(AddressOfString(testMethod)), sizeof(testMethod), 0);
 
     any variable[2];
     variable[offset_val] = 8;             // int val;
     VTable.HookOntoObject("obj", Pointer(AddressOfArray(variable)));
+    PrintToServer("VTable.GetObjectVTable(variable): %i", VTable.GetObjectVTable(Pointer(AddressOfArray(variable))));
 
     StartPrepSDKCall(SDKCall_Raw);
     PrepSDKCall_SetVirtual(0);
@@ -182,7 +184,26 @@ static void vtableOperation()
     PrintToServer("variable.test() return: %i", value);
     variable[offset_val] = 69420;
     value = SDKCall(SDKCall_variable_test, AddressOfArray(variable));
-    PrintToServer("variable.test() return: %i", value);
+    PrintToServer("variable.test() return: %i\n", value);
+
+    // override variable.test()
+    /*
+    ; int __thiscall test(void):
+    0x55                       push ebp
+    0x8B 0xEC                  mov ebp, esp
+    0x51                       push ecx
+    0x89 0x4D 0xFC             mov dword ptr [ebp - 0x04], ecx
+    0xB8 0x28 0x00 0x00 0x00   mov eax, 0x28 ; 40
+    0x8B 0xE5                  mov esp, ebp
+    0x5D                       pop ebp
+    0xC3                       ret
+    */
+    char newTest[] = "\x55\x8B\xEC\x51\x89\x4D\xFC\xB8\x28\x00\x00\x00\x8B\xE5\x5D\xC3";
+    Pointer vtable = VTable.GetObjectVTable(Pointer(AddressOfArray(variable)));
+    VTable.OverrideVPointer(vtable, Pointer(AddressOfString(newTest)), 0);
+
+    value = SDKCall(SDKCall_variable_test, AddressOfArray(variable));
+    PrintToServer("after overriding, variable.test() return: %i, variable.val: %i", value, variable[offset_val]);
     
     PrintToServer("");
 }
