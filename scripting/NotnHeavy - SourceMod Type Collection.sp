@@ -168,7 +168,7 @@ static void vtableOperation()
     */
     char testMethod[] = "\x55\x8B\xEC\x51\x89\x4D\xFC\x8B\x45\xFC\x8B\x40\x04\x8B\xE5\x5D\xC3";
     PrintToServer("creating obj vtable: %i", VTable.CreateVTable("obj", 1));
-    VTable.RegisterVPointer("obj", Pointer(AddressOfString(testMethod)), sizeof(testMethod), 0);
+    VTable.RegisterVPointer("obj", 0, Pointer(AddressOfString(testMethod)), sizeof(testMethod));
 
     any variable[2];
     variable[offset_val] = 8;             // int val;
@@ -205,7 +205,7 @@ static void vtableOperation()
     // VTable.OverrideVPointer(vtable, Pointer(AddressOfString(newTest)), 0); 
 
     VTable.RemoveVPointer("obj", 0);
-    VTable.RegisterVPointer("obj", Pointer(AddressOfString(newTest)), sizeof(newTest), 0);
+    VTable.RegisterVPointer("obj", 0, Pointer(AddressOfString(newTest)), FROM_EXISTING_SOURCE);
 
     value = SDKCall(SDKCall_variable_test, AddressOfArray(variable));
     PrintToServer("after overriding, variable.test() return: %i, variable.val: %i", value, variable[offset_val]);
