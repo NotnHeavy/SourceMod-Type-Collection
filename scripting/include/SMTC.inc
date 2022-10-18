@@ -17,6 +17,15 @@
 // GLOBALS                                                                  //
 //////////////////////////////////////////////////////////////////////////////
 
+enum OSType
+{
+    OSTYPE_WINDOWS,
+    OSTYPE_LINUX,
+    OSTYPE_MACOS
+}
+
+stock OSType OSTypeUsed;
+
 stock Pointer g_pTFPlayerClassDataMgr;
 
 stock DHookSetup SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive;
@@ -33,11 +42,12 @@ stock void SMTC_Initialize()
 {
     // Set up hooks from the config file.
     GameData config = LoadGameConfigFile("NotnHeavy - SourceMod Type Collection");
+    
+    OSTypeUsed = view_as<OSType>(config.GetOffset("OSTypeUsed"));
 
     g_pTFPlayerClassDataMgr = view_as<Pointer>(config.GetAddress("g_pTFPlayerClassDataMgr"));
 
     SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive = DHookCreateFromConf(config, "CTFPlayer::OnTakeDamage_Alive()");
-    
 
     StartPrepSDKCall(SDKCall_Raw);
     PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFRadiusDamageInfo::CalculateFalloff()");
@@ -61,3 +71,15 @@ forward void SMTC_VectorForward();
 
 // Used in ./tf/CTakeDamageInfo.inc for mini-crit management.
 forward void SMTC_CTakeDamageInfoForward();
+
+//////////////////////////////////////////////////////////////////////////////
+// GLOBALS                                                                  //
+//////////////////////////////////////////////////////////////////////////////
+
+methodmap SMTC
+{
+    public static OSType GetOperatingSystem()
+    {
+        return OSTypeUsed;
+    }
+}

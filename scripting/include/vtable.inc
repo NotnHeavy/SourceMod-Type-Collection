@@ -4,6 +4,43 @@
 
 // god
 
+// vtable structure:
+/*
+struct obj
+{
+    virtual int a()
+    {
+        return 1;
+    }
+    virtual int b(int var)
+    {
+        return var + 1;
+    }
+
+    int var1;
+    int var2;
+    int var3;
+};
+
+virtual functions are all part of what's called a vtable, which is constructed for every class (not object). upon instantiating an object, a reference to the vtable is stored to a pointer declared at the beginning of the object's contents.
+
+(obj + 0): uintptr_t vtable
+(obj + 4): int var1;
+(obj + 8): int var2;
+(obj + 12): int var3;
+
+upon dereferencing the vtable you'd find what are called vpointers. these are pointers that then point to the beginning of the actual subroutines.
+*vtable:
+0x12345678 (int (__thiscall **a)(obj* pThis))
+0xDEADBEEF (int (__thiscall **b)(obj* pThis, int var))
+
+when calling these vpointers, you must dereference them.
+note that class methods on MSVC use the __thiscall calling convention, otherwise it's typically __cdecl.
+__cdecl passes arguments onto the stack right-to-left. the caller cleans the stack up after the function call.
+the this pointer is essentially the first argument.
+with __thiscall, the this pointer is actually stored in the ecx register instead. the callee cleans the stack up.
+*/
+
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_VTABLE
 #endinput
 #endif
@@ -205,6 +242,12 @@ methodmap VTable
     public static Pointer GetObjectVTable(Pointer obj)
     {
         return obj.Dereference();
+    }
+
+    // Override an object's vtable.
+    public static void ReplaceObjectVTable(Pointer obj, Pointer vtable)
+    {
+        obj.Write(vtable);
     }
 
     // Override a vpointer on an existing object with another vpointer.

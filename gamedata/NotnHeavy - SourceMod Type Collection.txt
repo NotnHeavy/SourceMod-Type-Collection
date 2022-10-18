@@ -24,6 +24,15 @@
 				"read" "0"
 			}
 		}
+		"Offsets"
+		{
+			"OSTypeUsed"
+			{
+				"windows" "0"
+				"linux"   "1"
+				"mac"     "2"
+			}
+		}
         "Signatures"
         {
 			"GetPlayerClassData()"

@@ -105,150 +105,155 @@ static void vtableOperation()
 {
     // this stuff is tested for windows
 
-    // normal sdkcall
-    /*
-    ; int __cdecl test(void):
-    0x55               push ebp
-    0x8B 0xEC          mov ebp, esp
-    0xB8 08 00 00 00   mov eax, 0x08
-    0x5D               pop ebp
-    0xC3               ret
-    */
-    char testString[] = "\x55\x8B\xEC\xB8\x08\x00\x00\x00\x5D\xC3";
-    
-    StartPrepSDKCall(SDKCall_Static);
-    PrepSDKCall_SetAddress(AddressOfString(testString));
-    PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
-    Handle SDKCall_test = EndPrepSDKCall();
-
-    int value = SDKCall(SDKCall_test);
-    PrintToServer("test() return: %i\n", value);
-
-    // sdkcall for virtual method (what the actual fuck)
-    /*
-    struct obj
+    if (SMTC.GetOperatingSystem() == OSTYPE_WINDOWS)
     {
-        int val;
-        obj()
-            : val(8)
-        {
-        }
-
-        virtual int test()
-        {
-            return val;
-        }  
-    };
-
-    obj variable;
-    variable.test();
-    */
-
-    /*
-    ; int __thiscall test(void): ; would be __cdecl on linux
-    0x55             push ebp
-    0x8B 0xEC        mov ebp, esp
-    0x51             push ecx ; this (would be first param with __cdecl)
-    0x89 0x4D 0xFC   mov dword ptr [ebp - 0x04], ecx
-    0x8B 0x45 0xFC   mov eax, dword ptr[ebp - 0x04]
-    0x8B 0x40 0x04   mov eax, dword ptr[eax + 0x04]
-    0x8B 0xE5        mov esp, ebp
-    0x5D             pop ebp
-    0xC3             ret
-    */
-   
-    int offset_val = 1;
-
-    /*
-    char vtable_testString[] = "\x55\x8B\xEC\x51\x89\x4D\xFC\x8B\x45\xFC\x8B\x40\x04\x8B\xE5\x5D\xC3";
-    Pointer testStringPointer = Pointer(AddressOfString(vtable_testString));
-    Pointer vtable[1];
-    vtable[0] = testStringPointer;
-    Pointer vtable_ptr = AddressOfArray(vtable);
-    */
-    char testMethod[] = "\x55\x8B\xEC\x51\x89\x4D\xFC\x8B\x45\xFC\x8B\x40\x04\x8B\xE5\x5D\xC3";
-    PrintToServer("creating obj vtable: %i", VTable.CreateVTable("obj", 1));
-    VTable.RegisterVPointer("obj", 0, Pointer(AddressOfString(testMethod)), sizeof(testMethod));
-
-    any variable[2];
-    variable[offset_val] = 8;             // int val;
-    VTable.HookOntoObject("obj", Pointer(AddressOfArray(variable)));
-    PrintToServer("VTable.GetObjectVTable(variable): %i", VTable.GetObjectVTable(Pointer(AddressOfArray(variable))));
-
-    StartPrepSDKCall(SDKCall_Raw);
-    PrepSDKCall_SetVirtual(0);
-    PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
-    Handle SDKCall_variable_test = EndPrepSDKCall();
-
-    value = SDKCall(SDKCall_variable_test, AddressOfArray(variable));
-    PrintToServer("variable.test() return: %i", value);
-    variable[offset_val] = 69420;
-    value = SDKCall(SDKCall_variable_test, AddressOfArray(variable));
-    PrintToServer("variable.test() return: %i\n", value);
-
-    // override variable.test()
-    /*
-    ; int __thiscall test(void):
-    0x55                       push ebp
-    0x8B 0xEC                  mov ebp, esp
-    0x51                       push ecx
-    0x89 0x4D 0xFC             mov dword ptr [ebp - 0x04], ecx
-    0xB8 0x28 0x00 0x00 0x00   mov eax, 0x28 ; 40
-    0x8B 0xE5                  mov esp, ebp
-    0x5D                       pop ebp
-    0xC3                       ret
-    */
-    char newTest[] = "\x55\x8B\xEC\x51\x89\x4D\xFC\xB8\x28\x00\x00\x00\x8B\xE5\x5D\xC3";
-
-    // we should not be doing this!
-    // Pointer vtable = VTable.GetObjectVTable(Pointer(AddressOfArray(variable)));
-    // VTable.OverrideVPointer(vtable, Pointer(AddressOfString(newTest)), 0); 
-
-    VTable.RemoveVPointer("obj", 0);
-    VTable.RegisterVPointer("obj", 0, Pointer(AddressOfString(newTest)), FROM_EXISTING_SOURCE);
-
-    value = SDKCall(SDKCall_variable_test, AddressOfArray(variable));
-    PrintToServer("after overriding, variable.test() return: %i, variable.val: %i", value, variable[offset_val]);
-
-    char buffer[32];
-    VTable.IsObjectUsingRegisteredVTable(Pointer(AddressOfArray(variable)), buffer);
-    PrintToServer("does variable have obj vtable: %i\n", StrEqual(buffer, "obj"));
-
-    // derived vtable test
-    VTable.CreateVTable("derived", 1, "obj");
-    VTable.HookOntoObject("derived", Pointer(AddressOfArray(variable)));
-    VTable.IsObjectUsingRegisteredVTable(Pointer(AddressOfArray(variable)), buffer);
-    PrintToServer("does variable have derived vtable: %i", StrEqual(buffer, "derived"));
-
-    value = SDKCall(SDKCall_variable_test, AddressOfArray(variable));
-    PrintToServer("after changing vtable to derived, variable.test() return: %i, variable.val: %i", value, variable[offset_val]);
-    
-    // now for the real shit
-    // because vtables on objects are references, this will apply to every player.
-    if (IsClientInGame(1))
-    {
-        PrintToServer("");
-        Pointer player = GetEntityAddress(1);
-        Pointer playerVTable = VTable.GetObjectVTable(player);
-        PrintToServer("player vtable: %i", playerVTable);
-
+        // normal sdkcall
         /*
-        ; bool __thiscall ShouldGib(const CTakeDamageInfo& info):
-        0x55                       push ebp
-        0x8B 0xEC                  mov ebp, esp
-        0xB0 0x00                  mov al, 0x00
-        0x5D                       pop ebp
-        0xC2 0x04 0x00             ret 0x04
+        ; int __cdecl test(void):
+        0x55               push ebp
+        0x8B 0xEC          mov ebp, esp
+        0xB8 08 00 00 00   mov eax, 0x08
+        0x5D               pop ebp
+        0xC3               ret
+        */
+        char testString[] = "\x55\x8B\xEC\xB8\x08\x00\x00\x00\x5D\xC3";
+        
+        StartPrepSDKCall(SDKCall_Static);
+        PrepSDKCall_SetAddress(AddressOfString(testString));
+        PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+        Handle SDKCall_test = EndPrepSDKCall();
+
+        int value = SDKCall(SDKCall_test);
+        PrintToServer("test() return: %i\n", value);
+
+        // sdkcall for virtual method (what the actual fuck)
+        /*
+        struct obj
+        {
+            int val;
+            obj()
+                : val(8)
+            {
+            }
+
+            virtual int test()
+            {
+                return val;
+            }  
+        };
+
+        obj variable;
+        variable.test();
         */
 
-        char shouldGib[] = "\x55\x8B\xEC\xB0\x00\x5D\xC2\x04\x00";
-        Pointer subroutine = malloc(sizeof(shouldGib));
-        memcpy(subroutine, AddressOfString(shouldGib), sizeof(shouldGib));
-        VTable.OverrideVPointer(playerVTable, subroutine, 293);
+        /*
+        ; int __thiscall test(void): ; would be __cdecl on linux
+        0x55             push ebp
+        0x8B 0xEC        mov ebp, esp
+        0x51             push ecx ; this (would be first param with __cdecl)
+        0x89 0x4D 0xFC   mov dword ptr [ebp - 0x04], ecx
+        0x8B 0x45 0xFC   mov eax, dword ptr[ebp - 0x04]
+        0x8B 0x40 0x04   mov eax, dword ptr[eax + 0x04]
+        0x8B 0xE5        mov esp, ebp
+        0x5D             pop ebp
+        0xC3             ret
+        */
+    
+        int offset_val = 1;
 
-        VTable.IsObjectUsingRegisteredVTable(player, buffer);
-        PrintToServer("does entity index 1 (%i) have obj vtable: %i", player, StrEqual(buffer, "obj"));
+        /*
+        char vtable_testString[] = "\x55\x8B\xEC\x51\x89\x4D\xFC\x8B\x45\xFC\x8B\x40\x04\x8B\xE5\x5D\xC3";
+        Pointer testStringPointer = Pointer(AddressOfString(vtable_testString));
+        Pointer vtable[1];
+        vtable[0] = testStringPointer;
+        Pointer vtable_ptr = AddressOfArray(vtable);
+        */
+        char testMethod[] = "\x55\x8B\xEC\x51\x89\x4D\xFC\x8B\x45\xFC\x8B\x40\x04\x8B\xE5\x5D\xC3";
+        PrintToServer("creating obj vtable: %i", VTable.CreateVTable("obj", 1));
+        VTable.RegisterVPointer("obj", 0, Pointer(AddressOfString(testMethod)), sizeof(testMethod));
+
+        any variable[2];
+        variable[offset_val] = 8;             // int val;
+        VTable.HookOntoObject("obj", Pointer(AddressOfArray(variable)));
+        PrintToServer("VTable.GetObjectVTable(variable): %i", VTable.GetObjectVTable(Pointer(AddressOfArray(variable))));
+
+        StartPrepSDKCall(SDKCall_Raw);
+        PrepSDKCall_SetVirtual(0);
+        PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+        Handle SDKCall_variable_test = EndPrepSDKCall();
+
+        value = SDKCall(SDKCall_variable_test, AddressOfArray(variable));
+        PrintToServer("variable.test() return: %i", value);
+        variable[offset_val] = 69420;
+        value = SDKCall(SDKCall_variable_test, AddressOfArray(variable));
+        PrintToServer("variable.test() return: %i\n", value);
+
+        // override variable.test()
+        /*
+        ; int __thiscall test(void):
+        0x55                       push ebp
+        0x8B 0xEC                  mov ebp, esp
+        0x51                       push ecx
+        0x89 0x4D 0xFC             mov dword ptr [ebp - 0x04], ecx
+        0xB8 0x28 0x00 0x00 0x00   mov eax, 0x28 ; 40
+        0x8B 0xE5                  mov esp, ebp
+        0x5D                       pop ebp
+        0xC3                       ret
+        */
+        char newTest[] = "\x55\x8B\xEC\x51\x89\x4D\xFC\xB8\x28\x00\x00\x00\x8B\xE5\x5D\xC3";
+
+        // we should not be doing this!
+        // Pointer vtable = VTable.GetObjectVTable(Pointer(AddressOfArray(variable)));
+        // VTable.OverrideVPointer(vtable, Pointer(AddressOfString(newTest)), 0); 
+
+        VTable.RemoveVPointer("obj", 0);
+        VTable.RegisterVPointer("obj", 0, Pointer(AddressOfString(newTest)), FROM_EXISTING_SOURCE);
+
+        value = SDKCall(SDKCall_variable_test, AddressOfArray(variable));
+        PrintToServer("after overriding, variable.test() return: %i, variable.val: %i", value, variable[offset_val]);
+
+        char buffer[32];
+        VTable.IsObjectUsingRegisteredVTable(Pointer(AddressOfArray(variable)), buffer);
+        PrintToServer("does variable have obj vtable: %i\n", StrEqual(buffer, "obj"));
+
+        // derived vtable test
+        VTable.CreateVTable("derived", 1, "obj");
+        VTable.HookOntoObject("derived", Pointer(AddressOfArray(variable)));
+        VTable.IsObjectUsingRegisteredVTable(Pointer(AddressOfArray(variable)), buffer);
+        PrintToServer("does variable have derived vtable: %i", StrEqual(buffer, "derived"));
+
+        value = SDKCall(SDKCall_variable_test, AddressOfArray(variable));
+        PrintToServer("after changing vtable to derived, variable.test() return: %i, variable.val: %i", value, variable[offset_val]);
+        
+        // now for the real shit
+        // because vtables on objects are references, this will apply to every player.
+        if (IsClientInGame(1))
+        {
+            PrintToServer("");
+            Pointer player = GetEntityAddress(1);
+            Pointer playerVTable = VTable.GetObjectVTable(player);
+            PrintToServer("player vtable: %i", playerVTable);
+
+            /*
+            ; bool __thiscall ShouldGib(const CTakeDamageInfo& info):
+            0x55                       push ebp
+            0x8B 0xEC                  mov ebp, esp
+            0x32 0xC0                  xor al, al
+            0x5D                       pop ebp
+            0xC2 0x04 0x00             ret 0x04
+            */
+
+            char shouldGib[] = "\x55\x8B\xEC\x32\xC0\x5D\xC2\x04\x00";
+            Pointer subroutine = malloc(sizeof(shouldGib));
+            memcpy(subroutine, AddressOfString(shouldGib), sizeof(shouldGib));
+            VTable.OverrideVPointer(playerVTable, subroutine, 293);
+
+            VTable.IsObjectUsingRegisteredVTable(player, buffer);
+            PrintToServer("does entity index 1 (%i) have obj vtable: %i", player, StrEqual(buffer, "obj"));
+        }
     }
+    else
+        PrintToServer("Not using Windows; skipping vtableOperation()...");
     
     PrintToServer("");
 }
