@@ -107,4 +107,12 @@ methodmap CPlane_t < Pointer
         pointer.ctor(normal, dist, type, signbits, pad);
         return pointer;
     }
+
+    // Constructor - allocate a new cplane_t onto the stack. When using the return value, you must use STACK_GETRETURN().
+    public static STACK StackAlloc(Vector normal = view_as<Vector>(NULL), float dist = 0.00, BYTE type = view_as<BYTE>(0), BYTE signbits = view_as<BYTE>(0), BYTE pad[2] = { view_as<BYTE>(0), view_as<BYTE>(0) })
+    {
+        STACK_ALLOC(pointer, CPlane_t, SIZEOF_CPlane_t);
+        pointer.ctor(normal, dist, type, signbits, pad);
+        STACK_RETURN(pointer);
+    }
 }

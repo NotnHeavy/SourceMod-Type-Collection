@@ -17,6 +17,9 @@
 #pragma semicolon true 
 #pragma newdecls required
 
+#define TRACE_T CGameTrace
+#define SIZEOF_TRACE_T SIZEOF_CGameTrace
+
 //////////////////////////////////////////////////////////////////////////////
 // CGAMETRACE DATA                                                          //
 //////////////////////////////////////////////////////////////////////////////
@@ -99,6 +102,13 @@ methodmap CGameTrace < CBaseTrace
     public static CGameTrace Malloc()
     {
         return malloc(SIZEOF_CGameTrace);
+    }
+
+    // Constructor - allocate a new CGameTrace onto the stack. When using the return value, you must use STACK_GETRETURN().
+    public static STACK StackAlloc()
+    {
+        char buffer[SIZEOF_CGameTrace] = { 0, ... };
+        return buffer;
     }
 
     // Returns true if there was any kind of impact at all.

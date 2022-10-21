@@ -333,6 +333,14 @@ methodmap TFPlayerClassData_t < Pointer
         pointer.ctor();
         return pointer;
     }
+
+    // Constructor - allocate a new TFPlayerClassData_t onto the stack. When using the return value, you must use STACK_GETRETURN().
+    public static STACK StackAlloc()
+    {
+        STACK_ALLOC(pointer, TFPlayerClassData_t, SIZEOF_TFPlayerClassData_t);
+        pointer.ctor();
+        STACK_RETURN(pointer);
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////

@@ -95,6 +95,15 @@ methodmap CUtlVector < Pointer
         return pointer;
     }
 
+    // Constructor - allocate a new CUtlVector onto the stack. When using the return value, you must use STACK_GETRETURN().
+    // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
+    public static STACK StackAlloc(int growSize = 0, int initialCapacity = 0, int typeSize = 4)
+    {
+        STACK_ALLOC(pointer, CUtlVector, SIZEOF_CUtlVector);
+        pointer.ctor(growSize, initialCapacity, typeSize);
+        STACK_RETURN(pointer);
+    }
+
     // Element access - get from specified index. Returns a pointer on success, returns NULL on failure.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
     // You can use the pointer methodmap in order to use read/write operations.

@@ -92,6 +92,15 @@ methodmap CUtlMemory < Pointer
         return pointer;
     }
 
+    // Constructor - allocate a new CUtlMemory onto the stack. When using the return value, you must use STACK_GETRETURN().
+    // You must specify the size of the type used with this CUtlMemory using the typeSize parameter.
+    public static STACK StackAlloc(int growSize = 0, int initialAllocationCount = 0, int typeSize = 4)
+    {
+        STACK_ALLOC(pointer, CUtlMemory, SIZEOF_CUtlMemory);
+        pointer.ctor(growSize, initialAllocationCount, typeSize);
+        STACK_RETURN(pointer);
+    }
+
     // Specify the invalid ('null') index that we'll only return on failure
     public static int InvalidIndex()
     {

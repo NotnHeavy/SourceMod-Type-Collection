@@ -15,6 +15,8 @@
 
 #define SIZEOF_Pointer 4
 
+#define FLT_MAX view_as<float>(0x7f7fffff)
+
 #include <smmem> // https://github.com/Scags/SM-Memory
 
 //////////////////////////////////////////////////////////////////////////////
@@ -26,7 +28,7 @@
 
 #define ARRAY Pointer
 #define STACK char[]
-#define STACK_RETURN(%1,%2) char SMTC_RETURN_%1[%2]; memcpy(AddressOfString(SMTC_RETURN_%1), %1, %2); return SMTC_RETURN_%1 // %1 = variable, %2 = size to allocate
+#define STACK_RETURN(%1) return SMTC_%1 // %1 = variable
 #define STACK_GETRETURN(%1,%2) view_as<%1>(AddressOfString(%2)) // %1 = methodmap, %2 = variable
 #define STACK_SIZEOF(%1) sizeof(SMTC_%1) // %1 = variable
 
@@ -99,6 +101,24 @@ methodmap Pointer
     public void ToBuffer(any[] buffer, int typeSize = 4)
     {
         memcpy(AddressOfArray(buffer), this, typeSize);
+    }
+
+    // Return the address of a cell.
+    public static Pointer Reference(any& cell)
+    {
+        return AddressOf(cell);
+    }
+
+    // Return the address of an array of cells.
+    public static Pointer ReferenceArray(any[] cell)
+    {
+        return AddressOfArray(cell);
+    }
+
+    // Return the address of a string.
+    public static Pointer ReferenceString(char[] cell)
+    {
+        return AddressOfString(cell);
     }
 }
 

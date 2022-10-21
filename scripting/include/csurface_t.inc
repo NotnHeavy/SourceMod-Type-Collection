@@ -72,10 +72,18 @@ methodmap CSurface_t < Pointer
     }
 
     // Constructor - allocate a new csurface_t onto the heap. Deallocation will be required when you are finished using free().
-    public static CSurface_t malloc(Pointer name = NULL, int surfaceProps = 0, USHORT flags = view_as<USHORT>(0))
+    public static CSurface_t Malloc(Pointer name = NULL, int surfaceProps = 0, USHORT flags = view_as<USHORT>(0))
     {
         CSurface_t pointer = malloc(SIZEOF_CSurface_t);
         pointer.ctor(name, surfaceProps, flags);
         return pointer;
+    }
+
+    // Constructor - allocate a new csurface_t onto the stack. When using the return value, you must use STACK_GETRETURN().
+    public static STACK StackAlloc(Pointer name = NULL, int surfaceProps = 0, USHORT flags = view_as<USHORT>(0))
+    {
+        STACK_ALLOC(pointer, CSurface_t, SIZEOF_CSurface_t);
+        pointer.ctor(name, surfaceProps, flags);
+        STACK_RETURN(pointer);
     }
 }

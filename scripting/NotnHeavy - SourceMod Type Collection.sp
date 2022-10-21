@@ -24,6 +24,9 @@
 #include "CGameTrace.inc"
 #include "shareddefs.inc"
 #include "vtable.inc"
+#include "VectorAligned.inc"
+#include "Ray_t.inc"
+#include "UTIL.inc"
 
 #include "tf/CTakeDamageInfo.inc"
 #include "tf/CTFRadiusDamageInfo.inc"
@@ -86,6 +89,8 @@ public void OnPluginStart()
     cgametrace_csurface_t_cbasetrace_cplane_tOperation();
     ctypesOperation();
     vtableOperation();
+    vectoralignedOperation();
+    ray_tOperation();
 
     PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
     PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
@@ -99,6 +104,44 @@ public void OnMapStart()
 public void OnPluginEnd()
 {
     VTable.ClearVTables();
+}
+
+static void ray_tOperation()
+{
+    Ray_t ray = Ray_t.Malloc();
+    ray.InitWithSize(Vector.ArrayReference({1.00, 2.00, 3.00}), Vector.ArrayReference({15.00, 3.00, 4.00}), Vector.ArrayReference({-2.00, -2.00, -2.00}), Vector.ArrayReference({2.00, 2.00, 2.00}));
+
+    PrintToServer("ray size: %i", SIZEOF(Ray_t));
+    PrintToServer("ray start: %f: %f: %f", ray.m_Start.X, ray.m_Start.Y, ray.m_Start.Z);
+    PrintToServer("ray delta: %f: %f: %f", ray.m_Delta.X, ray.m_Delta.Y, ray.m_Delta.Z);
+    PrintToServer("ray startoffset: %f: %f: %f", ray.m_StartOffset.X, ray.m_StartOffset.Y, ray.m_StartOffset.Z);
+    PrintToServer("ray extents: %f: %f: %f", ray.m_Extents.X, ray.m_Extents.Y, ray.m_Extents.Z);
+    PrintToServer("is ray: %i, is swept: %i", ray.m_IsRay, ray.m_IsSwept);
+
+    free(ray);
+    PrintToServer("");
+}
+
+static void vectoralignedOperation()
+{
+    STACK_ALLOC(vector, VectorAligned, SIZEOF(VectorAligned));
+    STACK_ALLOC(vector2, Vector, SIZEOF(Vector));
+    STACK_ALLOC(result, VectorAligned, SIZEOF(VectorAligned));
+
+    vector.X = 1.00;
+    vector.Y = 2.00;
+    vector.Z = 3.00;
+
+    vector2.X = 3.00;
+    vector2.Y = 4.00;
+    vector2.Z = 5.00;
+
+    result.Assign(vector2 + vector);
+    result.NormalizeInPlace();
+
+    PrintToServer("VectorAligned result: %f : %f : %f, sizeof(result): %i", result.X, result.Y, result.Z, SIZEOF(VectorAligned));
+
+    PrintToServer("");
 }
 
 static void vtableOperation()
@@ -601,9 +644,12 @@ static void pointerOperation()
 
 static STACK vectorReturn()
 {
+    Vector test = STACK_GETRETURN(Vector, Vector.StackAlloc(1.00, 2.00, 3.00));
+    PrintToServer("stackalloc'd test vector: %f: %f: %f", test.X, test.Y, test.Z);
+
     STACK_ALLOC(Return, Vector, SIZEOF(Vector));
     Return.X = 1.00;
     Return.Y = 434.00;
     Return.Z = 21393.00;
-    STACK_RETURN(Return, SIZEOF(Vector));
+    STACK_RETURN(Return);
 }

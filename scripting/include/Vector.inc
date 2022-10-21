@@ -102,6 +102,14 @@ methodmap Vector < Pointer
         return pointer;
     }
 
+    // Constructor - allocate a new vector onto the stack. When using the return value, you must use STACK_GETRETURN().
+    public static STACK StackAlloc(float x = 0.00, float y = 0.00, float z = 0.00)
+    {
+        STACK_ALLOC(pointer, Vector, SIZEOF_Vector);
+        pointer.ctor(x, y, z);
+        STACK_RETURN(pointer);
+    }
+
     // Base address...
     public Pointer Base()
     {
@@ -203,6 +211,18 @@ methodmap Vector < Pointer
     {
         memcpy(this, vector, SIZEOF_Vector);
     }
+
+    // Get a vector from an array.
+    public static Vector ArrayReference(float buffer[3])
+    {
+        return Vector(AddressOfArray(buffer));
+    }
+
+    // Get the vector from the accumulator.
+    public static Vector FromAccumulator()
+    {
+        return Vector(accumulatorAddress);
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -247,6 +267,55 @@ stock Vector operator-(const Vector vector)
 //////////////////////////////////////////////////////////////////////////////
 // VECTOR GLOBALS                                                           //
 //////////////////////////////////////////////////////////////////////////////
+
+stock void VectorClear(Vector vector)
+{
+    vector.X = 0.00;
+    vector.Y = 0.00;
+    vector.Z = 0.00;
+}
+
+stock void VectorCopy(Vector source, Vector destination)
+{
+    destination.X = source.X;
+    destination.Y = source.Y;
+    destination.Z = source.Z;
+}
+
+stock void VectorAdd(const Vector a, const Vector b, Vector result)
+{
+    result.X = a.X + b.X;
+    result.Y = a.Y + b.Y;
+    result.Z = a.Z + b.Z;
+}
+
+stock void VectorSubtract(const Vector a, const Vector b, Vector result)
+{
+    result.X = a.X - b.X;
+    result.Y = a.Y - b.Y;
+    result.Z = a.Z - b.Z;
+}
+
+stock void VectorMultiply(const Vector a, const Vector b, Vector result)
+{
+    result.X = a.X * b.X;
+    result.Y = a.Y * b.Y;
+    result.Z = a.Z * b.Z;
+}
+
+stock void VectorDivide(const Vector a, const Vector b, Vector result)
+{
+    result.X = a.X / b.X;
+    result.Y = a.Y / b.Y;
+    result.Z = a.Z / b.Z;
+}
+
+stock void VectorScale(const Vector vector, float scale, Vector result)
+{
+    result.X = vector.X * scale;
+    result.Y = vector.Y * scale;
+    result.Z = vector.Z * scale;
+}
 
 stock void CrossProduct(const Vector a, const Vector b, Vector result)
 {

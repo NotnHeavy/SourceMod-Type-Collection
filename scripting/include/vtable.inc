@@ -38,7 +38,7 @@ when calling these vpointers, you must dereference them.
 note that class methods on MSVC use the __thiscall calling convention, otherwise it's typically __cdecl.
 __cdecl passes arguments onto the stack right-to-left. the caller cleans the stack up after the function call.
 the this pointer is essentially the first argument.
-with __thiscall, the this pointer is actually stored in the ecx register instead. the callee cleans the stack up.
+with __thiscall, the this pointer is actually stored in the ecx register instead. the callee cleans the stack up (unless the arguments are variadic, then the caller cleans the stack up).
 */
 
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_VTABLE
@@ -152,6 +152,10 @@ methodmap VTable
         if (StrEqual(name, ""))
             return NULL;
 
+        VTable_Info baseVTableInfo = GetVTableInfo(base);
+        if (baseVTableInfo != NULL && length < baseVTableInfo.Size)
+            length = baseVTableInfo.Size;
+
         if (vtables == NULL)
         {
             vtables = calloc(1, SIZEOF_VTable_Info);
@@ -162,10 +166,6 @@ methodmap VTable
             vtablesLength += SIZEOF_VTable_Info;
             vtables = recalloc(vtables, 1, vtablesLength);
         }
-
-        VTable_Info baseVTableInfo = GetVTableInfo(base);
-        if (baseVTableInfo != NULL && length < baseVTableInfo.Size)
-            length = baseVTableInfo.Size;
 
         VTable_Info vtableInfo = view_as<VTable_Info>(vtables.Get(vtablesLength - SIZEOF_VTable_Info, 1));
         vtableInfo.ctor(name, length);
@@ -191,6 +191,7 @@ methodmap VTable
 
     // Register a new vpointer to a registered vtable.
     // If asmLength is set to FROM_EXISTING_SOURCE (0), the subroutine will not be copied over.
+    // Use FROM_EXISTING_SOURCE for pure virtual functions.
     public static Pointer RegisterVPointer(char[] name, int index, Pointer asm, SIZE_T asmLength = FROM_EXISTING_SOURCE)
     {
         VTable_Info info = GetVTableInfo(name);

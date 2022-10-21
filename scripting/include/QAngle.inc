@@ -90,6 +90,14 @@ methodmap QAngle < Pointer
         return pointer;
     }
 
+    // Constructor - allocate a new QAngle onto the stack. When using the return value, you must use STACK_GETRETURN().
+    public static STACK StackAlloc(float x = 0.00, float y = 0.00, float z = 0.00)
+    {
+        STACK_ALLOC(pointer, QAngle, SIZEOF_QAngle);
+        pointer.ctor(x, y, z);
+        STACK_RETURN(pointer);
+    }
+
     // Base address...
     public Pointer Base()
     {
@@ -163,7 +171,8 @@ stock QAngle operator/(const QAngle left, const QAngle right)
 // QANGLE GLOBALS                                                           //
 //////////////////////////////////////////////////////////////////////////////
 
-stock void VectorAdd(const QAngle a, const QAngle b, QAngle result)
+// Would be called VectorAdd, but there's no function overloading.
+stock void QAngleAdd(const QAngle a, const QAngle b, QAngle result)
 {
     result.X = a.X + b.X;
     result.Y = a.Y + b.Y;

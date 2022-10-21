@@ -123,6 +123,13 @@ methodmap CBaseTrace < Pointer
         return malloc(SIZEOF_CBaseTrace);
     }
 
+    // Constructor - allocate a new CBaseTrace onto the stack. When using the return value, you must use STACK_GETRETURN().
+    public static STACK StackAlloc()
+    {
+        char buffer[SIZEOF_CBaseTrace] = { 0, ... };
+        return buffer;
+    }
+
     // Displacement flag tests.
     public bool IsDispSurface()
     {
