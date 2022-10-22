@@ -27,8 +27,11 @@ enum OSType
 stock OSType OSTypeUsed;
 
 stock Pointer g_pTFPlayerClassDataMgr;
+stock Pointer enginetrace;
 
 stock DHookSetup SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive;
+
+stock Handle SMTC_SDKCall_IEngineTrace_TraceRay;
 
 stock Handle SMTC_SDKCall_CTFRadiusDamageInfo_CalculateFalloff;
 stock Handle SMTC_SDKCall_CTFRadiusDamageInfo_ApplyToEntity;
@@ -45,9 +48,18 @@ stock void SMTC_Initialize()
     
     OSTypeUsed = view_as<OSType>(config.GetOffset("OSTypeUsed"));
 
-    g_pTFPlayerClassDataMgr = view_as<Pointer>(config.GetAddress("g_pTFPlayerClassDataMgr"));
+    g_pTFPlayerClassDataMgr = config.GetAddress("g_pTFPlayerClassDataMgr");
+    enginetrace = config.GetAddress("enginetrace");
 
     SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive = DHookCreateFromConf(config, "CTFPlayer::OnTakeDamage_Alive()");
+
+    StartPrepSDKCall(SDKCall_Raw);
+    PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "IEngineTrace::TraceRay()");
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+    SMTC_SDKCall_IEngineTrace_TraceRay = EndPrepSDKCall();
 
     StartPrepSDKCall(SDKCall_Raw);
     PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFRadiusDamageInfo::CalculateFalloff()");

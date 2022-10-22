@@ -18,6 +18,53 @@
 // UITL.INC DATA                                                            //
 //////////////////////////////////////////////////////////////////////////////
 
+#if !defined MASK_ALL
+#define	MASK_ALL					        (0xFFFFFFFF)
+// everything that is normally solid
+#define	MASK_SOLID						(CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_WINDOW|CONTENTS_MONSTER|CONTENTS_GRATE)
+// everything that blocks player movement
+#define	MASK_PLAYERSOLID				        (CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_PLAYERCLIP|CONTENTS_WINDOW|CONTENTS_MONSTER|CONTENTS_GRATE)
+// blocks npc movement
+#define	MASK_NPCSOLID					        (CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_MONSTERCLIP|CONTENTS_WINDOW|CONTENTS_MONSTER|CONTENTS_GRATE)
+// water physics in these contents
+#define	MASK_WATER						(CONTENTS_WATER|CONTENTS_MOVEABLE|CONTENTS_SLIME)
+// everything that blocks lighting
+#define	MASK_OPAQUE						(CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_OPAQUE)
+// everything that blocks lighting, but with monsters added.
+#define MASK_OPAQUE_AND_NPCS			                (MASK_OPAQUE|CONTENTS_MONSTER)
+// everything that blocks line of sight for AI
+#define MASK_BLOCKLOS					        (CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_BLOCKLOS)
+// everything that blocks line of sight for AI plus NPCs
+#define MASK_BLOCKLOS_AND_NPCS			                (MASK_BLOCKLOS|CONTENTS_MONSTER)
+// everything that blocks line of sight for players
+#define	MASK_VISIBLE					        (MASK_OPAQUE|CONTENTS_IGNORE_NODRAW_OPAQUE)
+// everything that blocks line of sight for players, but with monsters added.
+#define MASK_VISIBLE_AND_NPCS			                (MASK_OPAQUE_AND_NPCS|CONTENTS_IGNORE_NODRAW_OPAQUE)
+// bullets see these as solid
+#define	MASK_SHOT						(CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_MONSTER|CONTENTS_WINDOW|CONTENTS_DEBRIS|CONTENTS_HITBOX)
+// non-raycasted weapons see this as solid (includes grates)
+#define MASK_SHOT_HULL					        (CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_MONSTER|CONTENTS_WINDOW|CONTENTS_DEBRIS|CONTENTS_GRATE)
+// hits solids (not grates) and passes through everything else
+#define MASK_SHOT_PORTAL				        (CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_WINDOW|CONTENTS_MONSTER)
+// everything normally solid, except monsters (world+brush only)
+#define MASK_SOLID_BRUSHONLY				        (CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_WINDOW|CONTENTS_GRATE)
+// everything normally solid for player movement, except monsters (world+brush only)
+#define MASK_PLAYERSOLID_BRUSHONLY			        (CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_WINDOW|CONTENTS_PLAYERCLIP|CONTENTS_GRATE)
+// everything normally solid for npc movement, except monsters (world+brush only)
+#define MASK_NPCSOLID_BRUSHONLY				        (CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_WINDOW|CONTENTS_MONSTERCLIP|CONTENTS_GRATE)
+// just the world, used for route rebuilding
+#define MASK_NPCWORLDSTATIC					(CONTENTS_SOLID|CONTENTS_WINDOW|CONTENTS_MONSTERCLIP|CONTENTS_GRATE)
+// These are things that can split areaportals
+#define MASK_SPLITAREAPORTAL				        (CONTENTS_WATER|CONTENTS_SLIME)
+
+// UNDONE: This is untested, any moving water
+#define MASK_CURRENT						(CONTENTS_CURRENT_0|CONTENTS_CURRENT_90|CONTENTS_CURRENT_180|CONTENTS_CURRENT_270|CONTENTS_CURRENT_UP|CONTENTS_CURRENT_DOWN)
+
+// everything that blocks corpse movement
+// UNDONE: Not used yet / may be deleted
+#define	MASK_DEADSOLID						(CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_WINDOW|CONTENTS_GRATE)
+#endif
+
 // The standard trace filter... NOTE: Most normal traces inherit from CTraceFilter!!!
 enum TraceType_t
 {
@@ -317,8 +364,9 @@ methodmap CTraceFilterHitAll < ITraceFilter
 // UITL.INC GLOBALS                                                         //
 //////////////////////////////////////////////////////////////////////////////
 
-public void UTIL_TraceLine(const Vector vecAbsStart, const Vector vecAbsEnd, int mask, ITraceFilter pFilter, TRACE_T& ptr)
+public void UTIL_TraceLine(const Vector& vecAbsStart, const Vector& vecAbsEnd, int mask, ITraceFilter& pFilter, TRACE_T& ptr)
 {
     Ray_t ray = STACK_GETRETURN(Ray_t, Ray_t.StackAlloc());
     ray.Init(vecAbsStart, vecAbsEnd);
+    SDKCall(SMTC_SDKCall_IEngineTrace_TraceRay, enginetrace, ray, mask, pFilter, ptr);
 }

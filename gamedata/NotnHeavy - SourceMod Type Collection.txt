@@ -23,6 +23,19 @@
 				}
 				"read" "0"
 			}
+			"enginetrace"
+			{
+				"windows"
+				{
+					"signature" "CBaseEntity::HandleShotImpactingWater()"
+					"read"      "55"
+				}
+				"linux"
+				{
+					"signature" "enginetrace"
+				}
+				"read" "0"
+			}
 		}
 		"Offsets"
 		{
@@ -31,6 +44,12 @@
 				"windows" "0"
 				"linux"   "1"
 				"mac"     "2"
+			}
+
+			"IEngineTrace::TraceRay()"
+			{
+				"windows" "16"
+				"linux"   "16"
 			}
 		}
         "Signatures"
@@ -44,6 +63,17 @@
 			{
 				"library" "server"
 				"linux"   "@g_pTFPlayerClassDataMgr"
+			}
+			"enginetrace"
+			{
+				"library" "server"
+				"linux"   "@enginetrace"
+			}
+
+			"CBaseEntity::HandleShotImpactingWater()"
+			{
+				"library" "server"
+				"windows" "\x53\x8B\xDC\x83\xEC\x08\x83\xE4\xF0\x83\xC4\x04\x55\x8B\x6B\x04\x89\x6C\x24\x04\x8B\xEC\x8B\x43\x08\x81\xEC\x08\x01\x00\x00\x83\xC0\x04" // xrefs to "gunshotsplash"
 			}
 
             "CTFPlayer::OnTakeDamage_Alive()"

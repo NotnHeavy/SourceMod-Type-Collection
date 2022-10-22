@@ -91,6 +91,7 @@ public void OnPluginStart()
     vtableOperation();
     vectoralignedOperation();
     ray_tOperation();
+    utilOperation();
 
     PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
     PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
@@ -104,6 +105,24 @@ public void OnMapStart()
 public void OnPluginEnd()
 {
     VTable.ClearVTables();
+}
+
+static void utilOperation()
+{
+    if (IsClientInGame(1))
+    {
+        Vector start = GetEntVector(1, Prop_Data, "m_vecAbsOrigin");
+        Vector end = STACK_GETRETURN(Vector, Vector.StackAlloc(start.X - 30.00, start.Y, start.Z));
+        CGameTrace trace = STACK_GETRETURN(CGameTrace, CGameTrace.StackAlloc());
+        CTraceFilterEntitiesOnly filter = STACK_GETRETURN(CTraceFilterEntitiesOnly, CTraceFilterEntitiesOnly.StackAlloc());
+        UTIL_TraceLine(start, end, MASK_SOLID, filter, trace);
+        PrintToServer("start: %f: %f: %f, end: %f: %f: %f", start.X, start.Y, start.Z, end.X, end.Y, end.Z);
+        PrintToServer("did the trace hit: %i", trace.DidHit());
+        if (trace.DidHit())
+            PrintToServer("entity hit: %i", trace.Dereference(CGAMETRACE_OFFSET_M_PENT));
+        
+        PrintToServer("");
+    }
 }
 
 static void ray_tOperation()
