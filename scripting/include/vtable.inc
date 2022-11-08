@@ -38,7 +38,7 @@ when calling these vpointers, you must dereference them.
 note that class methods on MSVC use the __thiscall calling convention, otherwise it's typically __cdecl.
 __cdecl passes arguments onto the stack right-to-left. the caller cleans the stack up after the function call.
 the this pointer is essentially the first argument.
-with __thiscall, the this pointer is actually stored in the ecx register instead. the callee cleans the stack up (unless the arguments are variadic, then the caller cleans the stack up).
+with __thiscall, the this pointer is actually stored in the ecx register instead. the callee cleans the stack up.
 */
 
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_VTABLE
@@ -123,6 +123,10 @@ methodmap VTable_Info < Pointer
 
         this.VTable = calloc(size, SIZEOF_Pointer);
         this.Malloc = calloc(size, SIZEOF_BOOL);
+
+        SetMemAccess(this, SIZEOF_VTable_Info, SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+        SetMemAccess(this.VTable, this.Size * SIZEOF_Pointer, SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+        SetMemAccess(this.Malloc, this.Size, SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
     }
 }
 
@@ -130,9 +134,10 @@ methodmap VTable_Info < Pointer
 // VTABLE FUNCTIONALITY                                                     //
 //////////////////////////////////////////////////////////////////////////////
 
-static VTable_Info GetVTableInfo(char[] name)
+static VTable_Info GetVTableInfo(char[] name, bool countLast = true)
 {
-    for (int i = 0; i < vtablesLength / SIZEOF_VTable_Info; ++i)
+    int length = vtablesLength / SIZEOF_VTable_Info - (countLast ? 0 : SIZEOF_VTable_Info);
+    for (int i = 0; i < length; ++i)
     {
         VTable_Info vtableInfo = view_as<VTable_Info>(vtables.Get(i, SIZEOF_VTable_Info));
         char buffer[32];
@@ -152,10 +157,6 @@ methodmap VTable
         if (StrEqual(name, ""))
             return NULL;
 
-        VTable_Info baseVTableInfo = GetVTableInfo(base);
-        if (baseVTableInfo != NULL && length < baseVTableInfo.Size)
-            length = baseVTableInfo.Size;
-
         if (vtables == NULL)
         {
             vtables = calloc(1, SIZEOF_VTable_Info);
@@ -166,6 +167,11 @@ methodmap VTable
             vtablesLength += SIZEOF_VTable_Info;
             vtables = recalloc(vtables, 1, vtablesLength);
         }
+        SetMemAccess(vtables, vtablesLength, SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+
+        VTable_Info baseVTableInfo = GetVTableInfo(base);
+        if (baseVTableInfo != NULL && length < baseVTableInfo.Size)
+            length = baseVTableInfo.Size;
 
         VTable_Info vtableInfo = view_as<VTable_Info>(vtables.Get(vtablesLength - SIZEOF_VTable_Info, 1));
         vtableInfo.ctor(name, length);
@@ -191,7 +197,6 @@ methodmap VTable
 
     // Register a new vpointer to a registered vtable.
     // If asmLength is set to FROM_EXISTING_SOURCE (0), the subroutine will not be copied over.
-    // Use FROM_EXISTING_SOURCE for pure virtual functions.
     public static Pointer RegisterVPointer(char[] name, int index, Pointer asm, SIZE_T asmLength = FROM_EXISTING_SOURCE)
     {
         VTable_Info info = GetVTableInfo(name);
@@ -243,6 +248,12 @@ methodmap VTable
     public static Pointer GetObjectVTable(Pointer obj)
     {
         return obj.Dereference();
+    }
+
+    // Grab an object's vpointer.
+    public static Pointer GetObjectVPointer(Pointer obj, int index)
+    {
+        return view_as<Pointer>(obj.Dereference()).Get(index);
     }
 
     // Override an object's vtable.
