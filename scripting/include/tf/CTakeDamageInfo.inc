@@ -272,9 +272,9 @@ methodmap CTakeDamageInfo < Pointer
     // Constructor - allocate a new CTakeDamageInfo onto the stack. When using the return value, you must use STACK_GETRETURN().
     public static STACK StackAlloc(int inflictor, int attacker, int weapon, const Vector damageForce, const Vector damagePosition, float damage, int bitsDamageType, int killType, Vector reportedPosition = view_as<Vector>(NULL))
     {
-        STACK_ALLOC(pointer, CTakeDamageInfo, SIZEOF_CTakeDamageInfo);
-        pointer.ctor(inflictor, attacker, weapon, damageForce, damagePosition, damage, bitsDamageType, killType, reportedPosition);
-        STACK_RETURN(pointer);
+        char buffer[SIZEOF_CTakeDamageInfo];
+        view_as<CTakeDamageInfo>(AddressOfString(buffer)).ctor(inflictor, attacker, weapon, damageForce, damagePosition, damage, bitsDamageType, killType, reportedPosition);
+        return buffer;
     }
 
     // Set the crit type. The victim parameter will not be utilised if SMTC.inc is not included.

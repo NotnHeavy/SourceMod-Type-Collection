@@ -153,21 +153,13 @@ enum
     SIZEOF_CTraceFilterHitAll = SIZEOF_ITraceFilter                    // sizeof(CTraceFilterHitAll);
 }
 
-static char windows_CTraceFilter_GetTraceType[] = "\x33\xC0\xC3";
-static char windows_CTraceFilterEntitiesOnly_GetTraceType[] = "\xB8\x02\x00\x00\x00\xC3";
-static char windows_CTraceFilterWorldOnly_ShouldHitEntity[] = "\x32\xC0\xC2\x08\x00";
-static char windows_CTraceFilterWorldOnly_GetTraceType[] = "\xB8\x01\x00\x00\x00\xC3";
-static char windows_CTraceFilterWorldAndPropsOnly_ShouldHitEntity[] = "\x32\xC0\xC2\x08\x00";
-static char windows_CTraceFilterWorldAndPropsOnly_GetTraceType[] = "\x33\xC0\xC3";
-static char windows_CTraceFilterHitAll_ShouldHitEntity[] = "\xB0\x01\xC2\x08\x00";
-
-static char linux_CTraceFilter_GetTraceType[] = "\x55\x31\xC0\x89\xE5\x5D\xC3"; // @_ZNK12CTraceFilter12GetTraceTypeEv
-static char linux_CTraceFilterEntitiesOnly_GetTraceType[] = "\x55\xB8\x02\x00\x00\x00\x89\xE5\x5D\xC3"; // @_ZNK24CTraceFilterEntitiesOnly12GetTraceTypeEv
-static char linux_CTraceFilterWorldOnly_ShouldHitEntity[] = "\x55\x31\xC0\x5D\xC3";
-static char linux_CTraceFilterWorldOnly_GetTraceType[] = "\x55\xB8\x01\x00\x00\x00\x89\xE5\x5D\xC3";
-static char linux_CTraceFilterWorldAndPropsOnly_ShouldHitEntity[] = "\x55\x31\xC0\x5D\xC3";
-static char linux_CTraceFilterWorldAndPropsOnly_GetTraceType[] = "\x55\x31\xC0\x89\xE5\x5D\xC3";
-static char linux_CTraceFilterHitAll_ShouldHitEntity[] = "\x55\xB8\x01\x00\x00\x00\x89\xE5\x5D\xC3";
+static char CTraceFilter_GetTraceType[] = "\x33\xC0\xC3";
+static char CTraceFilterEntitiesOnly_GetTraceType[] = "\xB8\x02\x00\x00\x00\xC3";
+static char CTraceFilterWorldOnly_ShouldHitEntity[] = "\x32\xC0\xC2\x08\x00";
+static char CTraceFilterWorldOnly_GetTraceType[] = "\xB8\x01\x00\x00\x00\xC3";
+static char CTraceFilterWorldAndPropsOnly_ShouldHitEntity[] = "\x32\xC0\xC2\x08\x00";
+static char CTraceFilterWorldAndPropsOnly_GetTraceType[] = "\x33\xC0\xC3";
+static char CTraceFilterHitAll_ShouldHitEntity[] = "\xB0\x01\xC2\x08\x00";
 
 //////////////////////////////////////////////////////////////////////////////
 // SMTC_UTILForward()                                                       //
@@ -190,25 +182,25 @@ public void SMTC_UTILForward()
 
     // class CTraceFilter : public ITraceFilter
     VTable.CreateVTable("CTraceFilter", 2, "ITraceFilter");
-    VTable.RegisterVPointer("CTraceFilter", 1, AddressOfString(SMTC.GetOperatingSystem() == OSTYPE_WINDOWS ? windows_CTraceFilter_GetTraceType : linux_CTraceFilter_GetTraceType));
+    VTable.RegisterVPointer("CTraceFilter", 1, AddressOfString(CTraceFilter_GetTraceType));
 
     // class CTraceFilterEntitiesOnly : public ITraceFilter
     VTable.CreateVTable("CTraceFilterEntitiesOnly", 2, "ITraceFilter");
-    VTable.RegisterVPointer("CTraceFilterEntitiesOnly", 1, AddressOfString(SMTC.GetOperatingSystem() == OSTYPE_WINDOWS ? windows_CTraceFilterEntitiesOnly_GetTraceType : linux_CTraceFilterEntitiesOnly_GetTraceType));
+    VTable.RegisterVPointer("CTraceFilterEntitiesOnly", 1, AddressOfString(CTraceFilterEntitiesOnly_GetTraceType));
 
     // class CTraceFilterWorldOnly: public ITraceFilter
     VTable.CreateVTable("CTraceFilterWorldOnly", 2, "ITraceFilter");
-    VTable.RegisterVPointer("CTraceFilterWorldOnly", 0, AddressOfString(SMTC.GetOperatingSystem() == OSTYPE_WINDOWS ? windows_CTraceFilterWorldOnly_ShouldHitEntity : linux_CTraceFilterWorldOnly_ShouldHitEntity));
-    VTable.RegisterVPointer("CTraceFilterWorldOnly", 1, AddressOfString(SMTC.GetOperatingSystem() == OSTYPE_WINDOWS ? windows_CTraceFilterWorldOnly_GetTraceType : linux_CTraceFilterWorldOnly_GetTraceType));
+    VTable.RegisterVPointer("CTraceFilterWorldOnly", 0, AddressOfString(CTraceFilterWorldOnly_ShouldHitEntity));
+    VTable.RegisterVPointer("CTraceFilterWorldOnly", 1, AddressOfString(CTraceFilterWorldOnly_GetTraceType));
 
     // class CTraceFilterWorldAndPropsOnly : public ITraceFilter
     VTable.CreateVTable("CTraceFilterWorldAndPropsOnly", 2, "ITraceFilter");
-    VTable.RegisterVPointer("CTraceFilterWorldAndPropsOnly", 0, AddressOfString(SMTC.GetOperatingSystem() == OSTYPE_WINDOWS ? windows_CTraceFilterWorldAndPropsOnly_ShouldHitEntity : linux_CTraceFilterWorldAndPropsOnly_ShouldHitEntity));
-    VTable.RegisterVPointer("CTraceFilterWorldAndPropsOnly", 1, AddressOfString(SMTC.GetOperatingSystem() == OSTYPE_WINDOWS ? windows_CTraceFilterWorldAndPropsOnly_GetTraceType : linux_CTraceFilterWorldAndPropsOnly_GetTraceType));
+    VTable.RegisterVPointer("CTraceFilterWorldAndPropsOnly", 0, AddressOfString(CTraceFilterWorldAndPropsOnly_ShouldHitEntity));
+    VTable.RegisterVPointer("CTraceFilterWorldAndPropsOnly", 1, AddressOfString(CTraceFilterWorldAndPropsOnly_GetTraceType));
 
     // class CTraceFilterHitAll : public CTraceFilter
     VTable.CreateVTable("CTraceFilterHitAll", 2, "ITraceFilter");
-    VTable.RegisterVPointer("CTraceFilterHitAll", 0, AddressOfString(SMTC.GetOperatingSystem() == OSTYPE_WINDOWS ? windows_CTraceFilterHitAll_ShouldHitEntity : linux_CTraceFilterHitAll_ShouldHitEntity));
+    VTable.RegisterVPointer("CTraceFilterHitAll", 0, AddressOfString(CTraceFilterHitAll_ShouldHitEntity));
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -241,9 +233,9 @@ methodmap ITraceFilter < Pointer
     // Constructor - allocate a new ITraceFilter onto the stack. When using the return value, you must use STACK_GETRETURN().
     public static STACK StackAlloc()
     {
-        STACK_ALLOC(pointer, ITraceFilter, SIZEOF_ITraceFilter);
-        pointer.ctor();
-        STACK_RETURN(pointer);
+        char buffer[SIZEOF_ITraceFilter];
+        view_as<ITraceFilter>(AddressOfString(buffer)).ctor();
+        return buffer;
     }
 }
 
@@ -277,9 +269,9 @@ methodmap CTraceFilter < ITraceFilter
     // Constructor - allocate a new CTraceFilter onto the stack. When using the return value, you must use STACK_GETRETURN().
     public static STACK StackAlloc()
     {
-        STACK_ALLOC(pointer, CTraceFilter, SIZEOF_CTraceFilter);
-        pointer.ctor();
-        STACK_RETURN(pointer);
+        char buffer[SIZEOF_CTraceFilter];
+        view_as<CTraceFilter>(AddressOfString(buffer)).ctor();
+        return buffer;
     }
 }
 
@@ -313,9 +305,9 @@ methodmap CTraceFilterEntitiesOnly < ITraceFilter
     // Constructor - allocate a new CTraceFilterEntitiesOnly onto the stack. When using the return value, you must use STACK_GETRETURN().
     public static STACK StackAlloc()
     {
-        STACK_ALLOC(pointer, CTraceFilterEntitiesOnly, SIZEOF_CTraceFilterEntitiesOnly);
-        pointer.ctor();
-        STACK_RETURN(pointer);
+        char buffer[SIZEOF_CTraceFilterEntitiesOnly];
+        view_as<CTraceFilterEntitiesOnly>(AddressOfString(buffer)).ctor();
+        return buffer;
     }
 }
 
@@ -349,9 +341,9 @@ methodmap CTraceFilterWorldOnly < ITraceFilter
     // Constructor - allocate a new CTraceFilterWorldOnly onto the stack. When using the return value, you must use STACK_GETRETURN().
     public static STACK StackAlloc()
     {
-        STACK_ALLOC(pointer, CTraceFilterWorldOnly, SIZEOF_CTraceFilterWorldOnly);
-        pointer.ctor();
-        STACK_RETURN(pointer);
+        char buffer[SIZEOF_CTraceFilterWorldOnly];
+        view_as<CTraceFilterWorldOnly>(AddressOfString(buffer)).ctor();
+        return buffer;
     }
 }
 
@@ -385,9 +377,9 @@ methodmap CTraceFilterWorldAndPropsOnly < ITraceFilter
     // Constructor - allocate a new CTraceFilterWorldAndPropsOnly onto the stack. When using the return value, you must use STACK_GETRETURN().
     public static STACK StackAlloc()
     {
-        STACK_ALLOC(pointer, CTraceFilterWorldAndPropsOnly, SIZEOF_CTraceFilterWorldAndPropsOnly);
-        pointer.ctor();
-        STACK_RETURN(pointer);
+        char buffer[SIZEOF_CTraceFilterWorldAndPropsOnly];
+        view_as<CTraceFilterWorldAndPropsOnly>(AddressOfString(buffer)).ctor();
+        return buffer;
     }
 }
 
@@ -421,9 +413,9 @@ methodmap CTraceFilterHitAll < ITraceFilter
     // Constructor - allocate a new CTraceFilterHitAll onto the stack. When using the return value, you must use STACK_GETRETURN().
     public static STACK StackAlloc()
     {
-        STACK_ALLOC(pointer, CTraceFilterHitAll, SIZEOF_CTraceFilterHitAll);
-        pointer.ctor();
-        STACK_RETURN(pointer);
+        char buffer[SIZEOF_CTraceFilterHitAll];
+        view_as<CTraceFilterHitAll>(AddressOfString(buffer)).ctor();
+        return buffer;
     }
 }
 
@@ -433,7 +425,7 @@ methodmap CTraceFilterHitAll < ITraceFilter
 
 public void UTIL_TraceLine(const Vector& vecAbsStart, const Vector& vecAbsEnd, int mask, ITraceFilter& pFilter, TRACE_T& ptr)
 {
-    Ray_t ray = STACK_GETRETURN(Ray_t, Ray_t.StackAlloc());
+    Ray_t ray = STACK_GETRETURN(Ray_t.StackAlloc());
     ray.Init(vecAbsStart, vecAbsEnd);
     SDKCall(SMTC_SDKCall_IEngineTrace_TraceRay, enginetrace, ray, mask, pFilter, ptr);
 }

@@ -93,9 +93,9 @@ methodmap QAngle < Pointer
     // Constructor - allocate a new QAngle onto the stack. When using the return value, you must use STACK_GETRETURN().
     public static STACK StackAlloc(float x = 0.00, float y = 0.00, float z = 0.00)
     {
-        STACK_ALLOC(pointer, QAngle, SIZEOF_QAngle);
-        pointer.ctor(x, y, z);
-        STACK_RETURN(pointer);
+        char buffer[SIZEOF_QAngle];
+        view_as<QAngle>(AddressOfString(buffer)).ctor(x, y, z);
+        return buffer;
     }
 
     // Base address...

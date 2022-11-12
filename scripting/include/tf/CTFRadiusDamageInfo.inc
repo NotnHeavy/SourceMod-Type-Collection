@@ -158,8 +158,8 @@ methodmap CTFRadiusDamageInfo < Pointer
     // Constructor - allocate a new CTFRadiusDamageInfo onto the stack. When using the return value, you must use STACK_GETRETURN().
     public static STACK StackAlloc(CTakeDamageInfo info, const Vector source, float radius, int ignore = ENTITY_NULL, float rjRadius = 0.00, float forceScale = 1.00)
     {
-        STACK_ALLOC(pointer, CTFRadiusDamageInfo, SIZEOF_CTFRadiusDamageInfo);
-        pointer.ctor(info, source, radius, ignore, rjRadius, forceScale);
-        STACK_RETURN(pointer);
+        char buffer[SIZEOF_CTFRadiusDamageInfo];
+        view_as<CTFRadiusDamageInfo>(AddressOfString(buffer)).ctor(info, source, radius, ignore, rjRadius, forceScale);
+        return buffer;
     }
 }

@@ -99,9 +99,9 @@ methodmap CUtlVector < Pointer
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
     public static STACK StackAlloc(int growSize = 0, int initialCapacity = 0, int typeSize = 4)
     {
-        STACK_ALLOC(pointer, CUtlVector, SIZEOF_CUtlVector);
-        pointer.ctor(growSize, initialCapacity, typeSize);
-        STACK_RETURN(pointer);
+        char buffer[SIZEOF_CUtlVector];
+        view_as<CUtlVector>(AddressOfString(buffer)).ctor(growSize, initialCapacity, typeSize);
+        return buffer;
     }
 
     // Element access - get from specified index. Returns a pointer on success, returns NULL on failure.

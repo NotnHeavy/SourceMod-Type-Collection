@@ -93,7 +93,7 @@ methodmap Ray_t < Pointer
     // Constructor - allocate a new Ray_t onto the stack. When using the return value, you must use STACK_GETRETURN().
     public static STACK StackAlloc()
     {
-        char buffer[SIZEOF_CGameTrace] = { 0, ... };
+        char buffer[SIZEOF_Ray_t] = { 0, ... };
         return buffer;
     }
 

@@ -82,8 +82,8 @@ methodmap CSurface_t < Pointer
     // Constructor - allocate a new csurface_t onto the stack. When using the return value, you must use STACK_GETRETURN().
     public static STACK StackAlloc(Pointer name = NULL, int surfaceProps = 0, USHORT flags = view_as<USHORT>(0))
     {
-        STACK_ALLOC(pointer, CSurface_t, SIZEOF_CSurface_t);
-        pointer.ctor(name, surfaceProps, flags);
-        STACK_RETURN(pointer);
+        char buffer[SIZEOF_CSurface_t];
+        view_as<CSurface_t>(AddressOfString(buffer)).ctor(name, surfaceProps, flags);
+        return buffer;
     }
 }

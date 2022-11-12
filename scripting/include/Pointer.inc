@@ -28,9 +28,16 @@
 
 #define ARRAY Pointer
 #define STACK char[]
-#define STACK_RETURN(%1) return SMTC_%1 // %1 = variable
-#define STACK_GETRETURN(%1,%2) view_as<%1>(AddressOfString(%2)) // %1 = methodmap, %2 = variable
+#define STACK_RETURNREF(%1) return SMTC_%1 // Return a variable allocated with STACK_ALLOC. %1 = variable
+#define STACK_RETURNVALUE(%1, %2) char SMTC_%1[%2]; memcpy(AddressOfString(SMTC_%1), %1, %2); return SMTC_%1
+#define STACK_GETRETURN(%1) AddressOfString(%1) // %1 = variable
 #define STACK_SIZEOF(%1) sizeof(SMTC_%1) // %1 = variable
+
+#define SIZEOF_int 4
+#define SIZEOF_float 4
+#define SIZEOF_any 4
+#define SIZEOF_bool 1
+#define SIZEOF_char 1
 
 //////////////////////////////////////////////////////////////////////////////
 // POINTER METHODMAP                                                        //
@@ -255,12 +262,24 @@ stock int PointerStrLen(Pointer pointer)
 }
 
 // Store pointer into a char buffer.
-stock void PointerToCharBuffer(Pointer pointer, char[] buffer, int maxlen)
+stock void PointerToCharBuffer(Pointer pointer, char[] buffer, int maxlen = 2147483648)
 {
     for (int i = 0; i < maxlen; ++i)
     {
         char value = pointer.Dereference(i, NumberType_Int8);
         buffer[i] = value;
+        if (value == '\0') // NUL
+            break;
+    }
+}
+
+// Store char buffer into a pointer.
+stock void CharBufferToPointer(char[] buffer, Pointer pointer, int maxlen = 2147483648)
+{
+    for (int i = 0; i < maxlen; ++i)
+    {
+        char value = buffer[i];
+        pointer.Write(value, i, NumberType_Int8);
         if (value == '\0') // NUL
             break;
     }

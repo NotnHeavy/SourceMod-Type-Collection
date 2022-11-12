@@ -105,9 +105,9 @@ methodmap Vector < Pointer
     // Constructor - allocate a new vector onto the stack. When using the return value, you must use STACK_GETRETURN().
     public static STACK StackAlloc(float x = 0.00, float y = 0.00, float z = 0.00)
     {
-        STACK_ALLOC(pointer, Vector, SIZEOF_Vector);
-        pointer.ctor(x, y, z);
-        STACK_RETURN(pointer);
+        char buffer[SIZEOF_Vector];
+        view_as<Vector>(AddressOfString(buffer)).ctor(x, y, z);
+        return buffer;
     }
 
     // Base address...

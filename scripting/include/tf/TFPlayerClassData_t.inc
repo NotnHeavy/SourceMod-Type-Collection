@@ -105,64 +105,34 @@ methodmap TFPlayerClassData_t < Pointer
         return view_as<TFPlayerClassData_t>(address);
     }
 
-    // Get the class name as a buffer.
-    public void m_szClassName_Get(char buffer[TF_NAME_LENGTH])
+    // Get the class name. This buffer size is 128 (TF_NAME_LENGTH).
+    property Pointer m_szClassName
     {
-        memcpy(AddressOfString(buffer), this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZCLASSNAME, TF_NAME_LENGTH);
+        public get() { return view_as<Pointer>(this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZCLASSNAME); }
     }
 
-    // Set the class name from a buffer.
-    public void m_szClassName_Set(char buffer[TF_NAME_LENGTH])
+    // Get the model name. This buffer size is 128 (TF_NAME_LENGTH).
+    property Pointer m_szModelName
     {
-        memcpy(this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZCLASSNAME, AddressOfString(buffer), TF_NAME_LENGTH);
+        public get() { return view_as<Pointer>(this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZMODELNAME); }
     }
 
-    // Get the model name as a buffer.
-    public void m_szModelName_Get(char buffer[TF_NAME_LENGTH])
+    // Get the HWM model name. This buffer size is 128 (TF_NAME_LENGTH).
+    property Pointer m_szHWMModelName
     {
-        memcpy(AddressOfString(buffer), this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZMODELNAME, TF_NAME_LENGTH);
+        public get() { return view_as<Pointer>(this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZHWMMODELNAME); }
     }
 
-    // Set the model name from a buffer.
-    public void m_szModelName_Set(char buffer[TF_NAME_LENGTH])
+    // Get the hand model name. This buffer size is 128 (TF_NAME_LENGTH).
+    property Pointer m_szHandModelName
     {
-        memcpy(this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZMODELNAME, AddressOfString(buffer), TF_NAME_LENGTH);
+        public get() { return view_as<Pointer>(this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZHANDMODELNAME); }
     }
 
-    // Get the HWM model name as a buffer.
-    public void m_szHWMModelName_Get(char buffer[TF_NAME_LENGTH])
+    // Get the localizable name. This buffer size is 128 (TF_NAME_LENGTH).
+    property Pointer m_szLocalizableName
     {
-        memcpy(AddressOfString(buffer), this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZMODELNAME, TF_NAME_LENGTH);
-    }
-
-    // Set the HWM model name from a buffer.
-    public void m_szHWMModelName_Set(char buffer[TF_NAME_LENGTH])
-    {
-        memcpy(this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZHWMMODELNAME, AddressOfString(buffer), TF_NAME_LENGTH);
-    }
-
-    // Get the hand model name as a buffer.
-    public void m_szHandModelName_Get(char buffer[TF_NAME_LENGTH])
-    {
-        memcpy(AddressOfString(buffer), this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZHANDMODELNAME, TF_NAME_LENGTH);
-    }
-
-    // Set the hand model name from a buffer.
-    public void m_szHandModelName_Set(char buffer[TF_NAME_LENGTH])
-    {
-        memcpy(this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZHANDMODELNAME, AddressOfString(buffer), TF_NAME_LENGTH);
-    }
-
-    // Get the localizable name as a buffer.
-    public void m_szLocalizableName_Get(char buffer[TF_NAME_LENGTH])
-    {
-        memcpy(AddressOfString(buffer), this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZLOCALIZABLENAME, TF_NAME_LENGTH);
-    }
-
-    // Set the localizable name from a buffer.
-    public void m_szLocalizableName_Set(char buffer[TF_NAME_LENGTH])
-    {
-        memcpy(this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZLOCALIZABLENAME, AddressOfString(buffer), TF_NAME_LENGTH);
+        public get() { return view_as<Pointer>(this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZLOCALIZABLENAME); }
     }
 
     // Get the max speed for this class.
@@ -278,22 +248,13 @@ methodmap TFPlayerClassData_t < Pointer
         public set(Vector vector) { memcpy(this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_VECTHIRDPERSONOFFSET, vector, SIZEOF_Vector); }
     }
 
-    // Get a string from the m_szDeathSound buffer. Index must be 0 <= index < DEATH_SOUND_TOTAL. Returns false on failure, returns true and buffer gets filled on success.
-    public bool m_szDeathSound_Get(int index, char buffer[MAX_PLAYERCLASS_SOUND_LENGTH])
+    // Get a string pointer from the m_szDeathSound two-dimensional array. Index must be 0 <= index < DEATH_SOUND_TOTAL. Returns NULL on failure.
+    // Each buffer size in the m_szDeathSound two-dimensional array is 128 (MAX_PLAYERCLASS_SOUND_LENGTH).
+    public Pointer m_szDeathSound_Get(int index)
     {
         if (index < 0 || index >= view_as<int>(DEATH_SOUND_TOTAL))
-            return false;
-        memcpy(AddressOfString(buffer), this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZDEATHSOUND + index * MAX_PLAYERCLASS_SOUND_LENGTH, MAX_PLAYERCLASS_SOUND_LENGTH);
-        return true;
-    }
-
-     // Set a string in the m_szDeathSound buffer. Index must be 0 <= index < DEATH_SOUND_TOTAL. Returns false on failure, returns true and buffer gets filled on success.
-    public bool m_szDeathSound_Set(int index, char buffer[MAX_PLAYERCLASS_SOUND_LENGTH])
-    {
-        if (index < 0 || index >= view_as<int>(DEATH_SOUND_TOTAL))
-            return false;
-        memcpy(this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZDEATHSOUND + index * MAX_PLAYERCLASS_SOUND_LENGTH, AddressOfString(buffer), MAX_PLAYERCLASS_SOUND_LENGTH);
-        return true;
+            return NULL;
+        return view_as<Pointer>(this.Address + TFPLAYERCLASSDATA_T_OFFSET_M_SZDEATHSOUND + index * MAX_PLAYERCLASS_SOUND_LENGTH);
     }
 
     // Call constructor on existing type.
@@ -337,9 +298,9 @@ methodmap TFPlayerClassData_t < Pointer
     // Constructor - allocate a new TFPlayerClassData_t onto the stack. When using the return value, you must use STACK_GETRETURN().
     public static STACK StackAlloc()
     {
-        STACK_ALLOC(pointer, TFPlayerClassData_t, SIZEOF_TFPlayerClassData_t);
-        pointer.ctor();
-        STACK_RETURN(pointer);
+        char buffer[SIZEOF_TFPlayerClassData_t];
+        view_as<TFPlayerClassData_t>(AddressOfString(buffer)).ctor();
+        return buffer;
     }
 }
 

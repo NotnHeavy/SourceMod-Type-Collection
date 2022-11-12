@@ -56,13 +56,6 @@
 #define SIZEOF_BOOL 4
 #define SIZEOF_SIZE_T 4
 
-// Just last few things for SIZEOF().
-#define SIZEOF_int 4
-#define SIZEOF_float 4
-#define SIZEOF_any 4
-#define SIZEOF_bool 1
-#define SIZEOF_char 1
-
 //////////////////////////////////////////////////////////////////////////////
 // INSTANTIATE TAGS                                                         //
 //////////////////////////////////////////////////////////////////////////////

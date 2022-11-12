@@ -62,9 +62,9 @@ methodmap VectorAligned < Vector
     // Constructor - allocate a new VectorAlligned onto the stack. When using the return value, you must use STACK_GETRETURN().
     public static STACK StackAlloc(float x = 0.00, float y = 0.00, float z = 0.00)
     {
-        STACK_ALLOC(pointer, VectorAligned, SIZEOF_VectorAligned);
-        pointer.ctor(x, y, z);
-        STACK_RETURN(pointer);
+        char buffer[SIZEOF_VectorAligned];
+        view_as<VectorAligned>(AddressOfString(buffer)).ctor(x, y, z);
+        return buffer;
     }
 }
 

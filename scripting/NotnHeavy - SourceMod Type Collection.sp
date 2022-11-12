@@ -26,7 +26,7 @@
 #include "vtable.inc"
 #include "VectorAligned.inc"
 #include "Ray_t.inc"
-#include "UTIL.inc"
+//#include "UTIL.inc"
 
 #include "tf/CTakeDamageInfo.inc"
 #include "tf/CTFRadiusDamageInfo.inc"
@@ -109,12 +109,13 @@ public void OnPluginEnd()
 
 static void utilOperation()
 {
+    /*
     if (IsClientInGame(1))
     {
         Vector start = GetEntVector(1, Prop_Data, "m_vecAbsOrigin");
-        Vector end = STACK_GETRETURN(Vector, Vector.StackAlloc(start.X - 30.00, start.Y, start.Z));
-        CGameTrace trace = STACK_GETRETURN(CGameTrace, CGameTrace.StackAlloc());
-        CTraceFilterEntitiesOnly filter = STACK_GETRETURN(CTraceFilterEntitiesOnly, CTraceFilterEntitiesOnly.StackAlloc());
+        Vector end = STACK_GETRETURN(Vector.StackAlloc(start.X - 30.00, start.Y, start.Z));
+        CGameTrace trace = STACK_GETRETURN(CGameTrace.StackAlloc());
+        CTraceFilterEntitiesOnly filter = STACK_GETRETURN(CTraceFilterEntitiesOnly.StackAlloc());
         UTIL_TraceLine(start, end, MASK_SOLID, filter, trace);
         PrintToServer("start: %f: %f: %f, end: %f: %f: %f", start.X, start.Y, start.Z, end.X, end.Y, end.Z);
         PrintToServer("did the trace hit: %i", trace.DidHit());
@@ -123,6 +124,7 @@ static void utilOperation()
         
         PrintToServer("");
     }
+    */
 }
 
 static void ray_tOperation()
@@ -422,23 +424,16 @@ static void tfplayerclassdata_tOperation()
 
     TFPlayerClassData_t civilianData = GetPlayerClassData(TF_CLASS_CIVILIAN);
 
-    civilianData.m_szModelName_Get(buffer);
+    PointerToCharBuffer(civilianData.m_szModelName, buffer, sizeof(buffer));
     PrintToServer("Civilian model: %s", buffer);
-    civilianData.m_szHWMModelName_Get(buffer);
+    PointerToCharBuffer(civilianData.m_szHWMModelName, buffer, sizeof(buffer));
     PrintToServer("Civilian HWM model: %s", buffer);
-    civilianData.m_szHandModelName_Get(buffer);
+    PointerToCharBuffer(civilianData.m_szHandModelName, buffer, sizeof(buffer));
     PrintToServer("Civilian hands model: %s", buffer);
-    civilianData.m_szLocalizableName_Get(buffer);
+    PointerToCharBuffer(civilianData.m_szLocalizableName, buffer, sizeof(buffer));
     PrintToServer("Civilian localizable name: %s", buffer);
-    civilianData.m_szClassName_Get(buffer);
+    PointerToCharBuffer(civilianData.m_szClassName, buffer, sizeof(buffer));
     PrintToServer("Civilian class name: %s", buffer);
-
-    /*
-    TFPlayerClassData_t demomanData = GetPlayerClassData(TF_CLASS_DEMOMAN);
-    demomanData.m_szModelName_Set("models/player/pyro.mdl");
-    demomanData.m_szHWMModelName_Set("models/player/pyro.mdl");
-    demomanData.m_szHandModelName_Set("models/weapons/c_models/c_pyro_arms.mdl");
-    */
 
     PrintToServer("");
 }
@@ -654,7 +649,7 @@ static void pointerOperation()
     PrintToServer("where a was 10 and b was 20 before V_swap, pointer a: %i, pointer b: %i", a.Dereference(), b.Dereference());  
 
     // WHAT THE FUCK IS THIS
-    Vector test = STACK_GETRETURN(Vector, vectorReturn());
+    Vector test = STACK_GETRETURN(vectorReturn());
     PrintToServer("test.X, test.Y, test.Z: %f: %f: %f\n", test.X, test.Y, test.Z);
 
     free(a);
@@ -663,12 +658,14 @@ static void pointerOperation()
 
 static STACK vectorReturn()
 {
-    Vector test = STACK_GETRETURN(Vector, Vector.StackAlloc(1.00, 2.00, 3.00));
+    Vector test = STACK_GETRETURN(Vector.StackAlloc(1.00, 2.00, 3.00));
     PrintToServer("stackalloc'd test vector: %f: %f: %f", test.X, test.Y, test.Z);
 
     STACK_ALLOC(Return, Vector, SIZEOF(Vector));
     Return.X = 1.00;
     Return.Y = 434.00;
     Return.Z = 21393.00;
-    STACK_RETURN(Return);
+
+    Vector b = Return;
+    STACK_RETURNVALUE(b, SIZEOF(Vector));
 }
