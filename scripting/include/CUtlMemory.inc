@@ -9,8 +9,6 @@
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CUTLMEMORY
 
-#include "Pointer.inc"
-
 #pragma semicolon true 
 #pragma newdecls required
 
@@ -168,11 +166,10 @@ methodmap CUtlMemory < Pointer
             this.Purge();
             return;
         }
-        
-        this.m_nAllocationCount = elements;
 
         // Allocation count > 0, shrink it down.
-        this.m_pMemory = recalloc(this.m_pMemory, this.m_nAllocationCount, typeSize);
+        this.m_pMemory = recalloc(this.m_pMemory, elements, typeSize, this.m_nAllocationCount);
+        this.m_nAllocationCount = elements;
     }
 
     // Set the size by which the memory grows. You must specify the size of the type used with this CUtlMemory using the typeSize parameter.
@@ -263,12 +260,12 @@ methodmap CUtlMemory < Pointer
         // Use the grow rules specified for this memory (in m_nGrowSize).
         int allocationRequested = this.m_nAllocationCount + num;
         int newAllocationCount = UtlMemory_CalcNewAllocationCount(this.m_nAllocationCount, this.m_nGrowSize, allocationRequested, typeSize);
-        this.m_nAllocationCount = newAllocationCount;
 
         if (this.m_pMemory)
-            this.m_pMemory = recalloc(this.m_pMemory, this.m_nAllocationCount, typeSize);
+            this.m_pMemory = recalloc(this.m_pMemory, newAllocationCount, typeSize, this.m_nAllocationCount);
         else
-            this.m_pMemory = calloc(this.m_nAllocationCount, typeSize);
+            this.m_pMemory = calloc(newAllocationCount, typeSize);
+        this.m_nAllocationCount = newAllocationCount;
     }
 
     // Makes sure we've got at least this much memory. You must specify the size of the type used with this CUtlMemory using the typeSize parameter.
@@ -276,12 +273,12 @@ methodmap CUtlMemory < Pointer
     {
         if (this.m_nAllocationCount >= num || this.IsExternallyAllocated())
             return;
-        this.m_nAllocationCount = num;
 
         if (this.m_pMemory)
-            this.m_pMemory = recalloc(this.m_pMemory, this.m_nAllocationCount, typeSize);
+            this.m_pMemory = recalloc(this.m_pMemory, num, typeSize, this.m_nAllocationCount);
         else
-            this.m_pMemory = calloc(this.m_nAllocationCount, typeSize);
+            this.m_pMemory = calloc(num, typeSize);
+        this.m_nAllocationCount = num;
     }
 
     // Set the size by which the memory grows.

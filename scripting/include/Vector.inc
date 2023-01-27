@@ -9,10 +9,12 @@
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_VECTOR
 
-#include "Pointer.inc"
-
 #pragma semicolon true 
 #pragma newdecls required
+
+#if !defined VECTOR_CACHE_SIZE
+#define VECTOR_CACHE_SIZE 32
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // VECTOR DATA                                                              //
@@ -27,8 +29,15 @@ enum
     SIZEOF_Vector = VECTOR_OFFSET_Z + 4    // sizeof(Vector);
 }
 
-static float accumulator[3];
-static Address accumulatorAddress;
+// accumulator - user control
+static float accumulator_array[4]; // vector size + 1 to compensate for VectorAligned objects.
+static Vector accumulator;
+
+// cache - up to a user-specified size
+static float cache_array[VECTOR_CACHE_SIZE * 3 + 1]; // the + 1 is to compensate for VectorAligned objects.
+static Vector cache;
+static int cache_index = 0;
+
 Vector vec3_origin; // NOT INTENDED TO BE WRITTEN TO!
 
 //////////////////////////////////////////////////////////////////////////////
@@ -52,17 +61,6 @@ methodmap Vector < Pointer
     public Vector(Address address)
     {
         return view_as<Vector>(address);
-    }
-
-    // Constructor - allocate a new vector in the accumulator, a temporary storage location.
-    public static Vector Accumulator(float x = 0.00, float y = 0.00, float z = 0.00)
-    {
-        if (!accumulatorAddress)
-            accumulatorAddress = AddressOfArray(accumulator);
-        accumulator[0] = x;
-        accumulator[1] = y;
-        accumulator[2] = z;
-        return Vector(accumulatorAddress);
     }
 
     // X co-ordinate.
@@ -92,6 +90,28 @@ methodmap Vector < Pointer
         this.X = x;
         this.Y = y;
         this.Z = z;
+    }
+
+    // Constructor - allocate a new vector in place within the current pointer to the cache buffer. 
+    // The size of the cache is specified by VECTOR_CACHE_SIZE and when the end is reached, the
+    // pointer loops around.
+    public static Vector Cache(float x = 0.00, float y = 0.00, float z = 0.00)
+    {
+        if (!cache)
+            cache = AddressOfArray(cache_array);
+        Vector obj = view_as<Vector>(cache.Get(cache_index, SIZEOF_Vector));
+        cache_index = (cache_index + 1 < VECTOR_CACHE_SIZE) ? cache_index + 1 : 0;
+        obj.ctor(x, y, z);
+        return obj;
+    }
+
+    // Constructor - allocate a new vector in the accumulator, a temporary storage location.
+    public static Vector Accumulator(float x = 0.00, float y = 0.00, float z = 0.00)
+    {
+        if (!accumulator)
+            accumulator = AddressOfArray(accumulator_array);
+        accumulator.ctor(x, y, z);
+        return accumulator;
     }
 
     // Constructor - allocate a new vector onto the heap. Deallocation will be required when you are finished using this using free().
@@ -153,13 +173,13 @@ methodmap Vector < Pointer
     // Get the distance from this vector to the other one squared. The returned vector is stored onto the accumulator.
     public float DistToSqr(const Vector other)
     {
-        return Vector.Accumulator(this.X - other.X, this.Y - other.Y, this.Z - other.Z).LengthSqr();
+        return Vector.Cache(this.X - other.X, this.Y - other.Y, this.Z - other.Z).LengthSqr();
     }
 
     // Get the distance from this vector to the other one. The returned vector is stored onto the accumulator.
     public float DistTo(const Vector other)
     {
-        return Vector.Accumulator(this.X - other.X, this.Y - other.Y, this.Z - other.Z).Length();
+        return Vector.Cache(this.X - other.X, this.Y - other.Y, this.Z - other.Z).Length();
     }
 
     // Return the dot product between two vectors.
@@ -171,19 +191,19 @@ methodmap Vector < Pointer
     // Get the cross product between two vectors. The returned vector is stored onto the accumulator.
     public Vector Cross(const Vector other)
     {
-        return Vector.Accumulator(this.Y * other.Z - this.Z * other.Y, this.Z * other.X - this.X * other.Z, this.X * other.Y - this.Y * other.X);
+        return Vector.Cache(this.Y * other.Z - this.Z * other.Y, this.Z * other.X - this.X * other.Z, this.X * other.Y - this.Y * other.X);
     }
 
     // Returns a vector with the min in X, Y and Z. The returned vector is stored onto the accumulator.
     public Vector Min(const Vector other)
     {
-        return Vector.Accumulator(this.X < other.X ? this.X : other.X, this.Y < other.Y ? this.Y : other.Y, this.Z < other.Z ? this.Z : other.Z);
+        return Vector.Cache(this.X < other.X ? this.X : other.X, this.Y < other.Y ? this.Y : other.Y, this.Z < other.Z ? this.Z : other.Z);
     }
 
     // Returns a vector with the max in X, Y and Z. The returned vector is stored onto the accumulator.
     public Vector Max(const Vector other)
     {
-        return Vector.Accumulator(this.X > other.X ? this.X : other.X, this.Y > other.Y ? this.Y : other.Y, this.Z > other.Z ? this.Z : other.Z);
+        return Vector.Cache(this.X > other.X ? this.X : other.X, this.Y > other.Y ? this.Y : other.Y, this.Z > other.Z ? this.Z : other.Z);
     }
 
     // Is this vector's length greater than the provided magnitude?
@@ -221,7 +241,7 @@ methodmap Vector < Pointer
     // Get the vector from the accumulator.
     public static Vector FromAccumulator()
     {
-        return Vector(accumulatorAddress);
+        return accumulator;
     }
 }
 
@@ -231,37 +251,37 @@ methodmap Vector < Pointer
 
 stock Vector operator+(const Vector left, const Vector right)
 {
-    return Vector.Accumulator(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
+    return Vector.Cache(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
 }
 
 stock Vector operator-(const Vector left, const Vector right)
 {
-    return Vector.Accumulator(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
+    return Vector.Cache(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
 }
 
 stock Vector operator*(const Vector left, const Vector right)
 {
-    return Vector.Accumulator(left.X * right.X, left.Y * right.Y, left.Z * right.Z);
+    return Vector.Cache(left.X * right.X, left.Y * right.Y, left.Z * right.Z);
 }
 
 stock Vector operator/(const Vector left, const Vector right)
 {
-    return Vector.Accumulator(left.X / right.X, left.Y / right.Y, left.Z / right.Z);
+    return Vector.Cache(left.X / right.X, left.Y / right.Y, left.Z / right.Z);
 }
 
 stock Vector operator*(const Vector left, const float right)
 {
-    return Vector.Accumulator(left.X * right, left.Y * right, left.Z * right);
+    return Vector.Cache(left.X * right, left.Y * right, left.Z * right);
 }
 
 stock Vector operator/(const Vector left, const float right)
 {
-    return Vector.Accumulator(left.X / right, left.Y / right, left.Z / right);
+    return Vector.Cache(left.X / right, left.Y / right, left.Z / right);
 }
 
 stock Vector operator-(const Vector vector)
 {
-    return Vector.Accumulator(-vector.X, -vector.Y, -vector.Z);
+    return Vector.Cache(-vector.X, -vector.Y, -vector.Z);
 }
 
 //////////////////////////////////////////////////////////////////////////////

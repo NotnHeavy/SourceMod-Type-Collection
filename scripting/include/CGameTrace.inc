@@ -9,10 +9,8 @@
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CGAMETRACE
 
-#include "Pointer.inc"
 #include "CBaseTrace.inc"
 #include "csurface_t.inc"
-#include "ctypes.inc"
 
 #pragma semicolon true 
 #pragma newdecls required
@@ -75,10 +73,11 @@ methodmap CGameTrace < CBaseTrace
     }
 
     // physics bone hit by trace in studio
-    property SHORT physicsbone
+    // This member is a short.
+    property int physicsbone
     {
         public get() { return this.Dereference(CGAMETRACE_OFFSET_PHYSICSBONE, NumberType_Int16); }
-        public set(SHORT value) { this.Write(value, CGAMETRACE_OFFSET_PHYSICSBONE, NumberType_Int16); } 
+        public set(int value) { this.Write(value, CGAMETRACE_OFFSET_PHYSICSBONE, NumberType_Int16); } 
     }
 
     // Entity hit. Returns entity index on success, returns -1 on NULL.

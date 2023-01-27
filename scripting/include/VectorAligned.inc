@@ -7,7 +7,6 @@
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_VECTORALIGNED
 
-#include "Pointer.inc"
 #include "Vector.inc"
 
 #pragma semicolon true 
@@ -37,18 +36,26 @@ methodmap VectorAligned < Vector
         return view_as<VectorAligned>(address);
     }
 
-    // Constructor - allocate a new vector in the accumulator, a temporary storage location.
-    public static VectorAligned Accumulator(float x = 0.00, float y = 0.00, float z = 0.00)
-    {
-        return view_as<VectorAligned>(Vector.Accumulator(x, y, z));
-    }
-
     // Call constructor on existing type.
     public void ctor(float x = 0.00, float y = 0.00, float z = 0.00)
     {
         this.X = x;
         this.Y = y;
         this.Z = z;
+    }
+
+    // Constructor - allocate a new vector in place within the current pointer to the cache buffer. 
+    // The size of the cache is specified by VECTOR_CACHE_SIZE and when the end is reached, the
+    // pointer loops around.
+    public static VectorAligned Cache(float x = 0.00, float y = 0.00, float z = 0.00)
+    {
+        return view_as<VectorAligned>(Vector.Cache(x, y, z));
+    }
+
+    // Constructor - allocate a new vector in the accumulator, a temporary storage location.
+    public static VectorAligned Accumulator(float x = 0.00, float y = 0.00, float z = 0.00)
+    {
+        return view_as<VectorAligned>(Vector.Accumulator(x, y, z));
     }
 
     // Constructor - allocate a new VectorAlligned onto the heap. Deallocation will be required when you are finished using this using free().
@@ -74,70 +81,70 @@ methodmap VectorAligned < Vector
 
 stock VectorAligned operator-(const VectorAligned vector)
 {
-    return VectorAligned.Accumulator(-vector.X, -vector.Y, -vector.Z);
+    return VectorAligned.Cache(-vector.X, -vector.Y, -vector.Z);
 }
 
 stock VectorAligned operator*(const VectorAligned left, const float right)
 {
-    return VectorAligned.Accumulator(left.X * right, left.Y * right, left.Z * right);
+    return VectorAligned.Cache(left.X * right, left.Y * right, left.Z * right);
 }
 
 stock VectorAligned operator+(const VectorAligned left, const Vector right)
 {
-    return VectorAligned.Accumulator(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
+    return VectorAligned.Cache(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
 }
 
 stock VectorAligned operator-(const VectorAligned left, const Vector right)
 {
-    return VectorAligned.Accumulator(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
+    return VectorAligned.Cache(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
 }
 
 stock VectorAligned operator*(const VectorAligned left, const Vector right)
 {
-    return VectorAligned.Accumulator(left.X * right.X, left.Y * right.Y, left.Z * right.Z);
+    return VectorAligned.Cache(left.X * right.X, left.Y * right.Y, left.Z * right.Z);
 }
 
 stock VectorAligned operator/(const VectorAligned left, const Vector right)
 {
-    return VectorAligned.Accumulator(left.X / right.X, left.Y / right.Y, left.Z / right.Z);
+    return VectorAligned.Cache(left.X / right.X, left.Y / right.Y, left.Z / right.Z);
 }
 
 stock VectorAligned operator+(const VectorAligned left, const VectorAligned right)
 {
-    return VectorAligned.Accumulator(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
+    return VectorAligned.Cache(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
 }
 
 stock VectorAligned operator-(const VectorAligned left, const VectorAligned right)
 {
-    return VectorAligned.Accumulator(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
+    return VectorAligned.Cache(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
 }
 
 stock VectorAligned operator*(const VectorAligned left, const VectorAligned right)
 {
-    return VectorAligned.Accumulator(left.X * right.X, left.Y * right.Y, left.Z * right.Z);
+    return VectorAligned.Cache(left.X * right.X, left.Y * right.Y, left.Z * right.Z);
 }
 
 stock VectorAligned operator/(const VectorAligned left, const VectorAligned right)
 {
-    return VectorAligned.Accumulator(left.X / right.X, left.Y / right.Y, left.Z / right.Z);
+    return VectorAligned.Cache(left.X / right.X, left.Y / right.Y, left.Z / right.Z);
 }
 
 stock Vector operator+(const Vector left, const VectorAligned right)
 {
-    return Vector.Accumulator(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
+    return Vector.Cache(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
 }
 
 stock Vector operator-(const Vector left, const VectorAligned right)
 {
-    return Vector.Accumulator(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
+    return Vector.Cache(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
 }
 
 stock Vector operator*(const Vector left, const VectorAligned right)
 {
-    return Vector.Accumulator(left.X * right.X, left.Y * right.Y, left.Z * right.Z);
+    return Vector.Cache(left.X * right.X, left.Y * right.Y, left.Z * right.Z);
 }
 
 stock Vector operator/(const Vector left, const VectorAligned right)
 {
-    return Vector.Accumulator(left.X / right.X, left.Y / right.Y, left.Z / right.Z);
+    return Vector.Cache(left.X / right.X, left.Y / right.Y, left.Z / right.Z);
 }

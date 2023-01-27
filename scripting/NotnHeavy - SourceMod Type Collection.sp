@@ -11,9 +11,7 @@
 #include <smmem> // https://github.com/Scags/SM-Memory
 #include <dhooks> // Not actually needed, just used for tests.
 
-#include "SMTC"
-#include "ctypes.inc"
-#include "Pointer.inc"
+#include "SMTCHeader.inc"
 #include "include/Vector.inc"
 #include "QAngle.inc"
 #include "CUtlMemory.inc"
@@ -26,19 +24,21 @@
 #include "vtable.inc"
 #include "VectorAligned.inc"
 #include "Ray_t.inc"
-//#include "UTIL.inc"
+#include "UTIL.inc"
 
 #include "tf/CTakeDamageInfo.inc"
 #include "tf/CTFRadiusDamageInfo.inc"
 #include "tf/tf_shareddefs.inc"
 #include "tf/TFPlayerClassData_t.inc"
 
-static int CTFPlayer_m_hMyWearables;
+#include "SMTC.inc"
+
 static Handle SDKCall_CTFWearable_Equip;
-static Handle SDKCall_CBaseEntity_TakeDamage;
-static Handle SDKCall_CTFGameRules_RadiusDamage;
+stock static Handle SDKCall_CBaseEntity_TakeDamage;
 static DHookSetup DHooks_CTFPlayer_OnTakeDamage;
+static Handle SDKCall_CTFGameRules_RadiusDamage;
 static DHookSetup DHooks_CTFPlayer_TraceAttack;
+static Handle SDKCall_CBaseCombatCharacter_Weapon_ShootPosition;
 
 static int explosionModelIndex;
 
@@ -51,7 +51,6 @@ public void OnPluginStart()
     SMTC_Initialize();
 
     GameData config = LoadGameConfigFile("NotnHeavy - SourceMod Type Collection (tests)");
-    CTFPlayer_m_hMyWearables = config.GetOffset("CTFPlayer::m_hMyWearables");
 
     StartPrepSDKCall(SDKCall_Entity);
     PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CTFWearable::Equip");
@@ -75,6 +74,11 @@ public void OnPluginStart()
     DHooks_CTFPlayer_TraceAttack = DHookCreateFromConf(config, "CTFPlayer::TraceAttack()");
     DHookEnableDetour(DHooks_CTFPlayer_TraceAttack, false, CTFPlayer_TraceAttack);
 
+    StartPrepSDKCall(SDKCall_Entity);
+    PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CBaseCombatCharacter::Weapon_ShootPosition()");
+    PrepSDKCall_SetReturnInfo(SDKType_Vector, SDKPass_ByValue); // Vector
+    SDKCall_CBaseCombatCharacter_Weapon_ShootPosition = EndPrepSDKCall();
+
     delete config;
 
     //commitTests(); // TESTS/tests.inc
@@ -87,7 +91,6 @@ public void OnPluginStart()
     qangleOperation();
     tfplayerclassdata_tOperation();
     cgametrace_csurface_t_cbasetrace_cplane_tOperation();
-    ctypesOperation();
     vtableOperation();
     vectoralignedOperation();
     ray_tOperation();
@@ -107,30 +110,82 @@ public void OnPluginEnd()
     VTable.ClearVTables();
 }
 
+// UTIL.inc
+static STACK Weapon_ShootPosition(int pThis)
+{
+    Vector vecResult = STACK_GETRETURN(Vector.StackAlloc());
+    float buffer[3];
+    SDKCall(SDKCall_CBaseCombatCharacter_Weapon_ShootPosition, pThis, buffer);
+    vecResult.SetFromBuffer(buffer);
+    STACK_RETURNVALUE(vecResult, SIZEOF(Vector));
+}
 static void utilOperation()
 {
-    /*
+    // vtable checks
+    any obj;
+    char buffer[4];
+    VTable.HookOntoObject("CTraceFilter", AddressOf(obj));
+    PointerToCharBuffer(VTable.GetObjectVPointer(AddressOf(obj), 1).Dereference(), buffer, sizeof(buffer));
+    for (int i = 0; i < sizeof(buffer); ++i)
+    {
+        char variable = buffer[i];
+        PrintToServer("\\x%X \0\0", variable);
+    }
+    PrintToServer("");
+
+    VTable.CreateVTable("testie", 2, "CTraceFilter");
+    VTable.HookOntoObject("testie", AddressOf(obj));
+    PointerToCharBuffer(VTable.GetObjectVPointer(AddressOf(obj), 1).Dereference(), buffer, sizeof(buffer));
+    for (int i = 0; i < sizeof(buffer); ++i)
+    {
+        char variable = buffer[i];
+        PrintToServer("\\x%X \0\0", variable);
+    }
+    PrintToServer("");
+
+    // check trace enum
+    StartPrepSDKCall(SDKCall_Raw);
+    PrepSDKCall_SetVirtual(1);
+    PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+    Handle GetTraceType = EndPrepSDKCall();
+    CTraceFilterEntitiesOnly testFilter = STACK_GETRETURN(CTraceFilterEntitiesOnly.StackAlloc());
+    TraceType_t type = SDKCall(GetTraceType, testFilter);
+    PrintToServer("trace type of CTraceFilterEntitiesOnly: %i", type);
+    PrintToServer("");
+
+    // check global trace
+    PrintToServer("global trace: %u", enginetrace);
+
+
     if (IsClientInGame(1))
     {
-        Vector start = GetEntVector(1, Prop_Data, "m_vecAbsOrigin");
-        Vector end = STACK_GETRETURN(Vector.StackAlloc(start.X - 30.00, start.Y, start.Z));
-        CGameTrace trace = STACK_GETRETURN(CGameTrace.StackAlloc());
-        CTraceFilterEntitiesOnly filter = STACK_GETRETURN(CTraceFilterEntitiesOnly.StackAlloc());
-        UTIL_TraceLine(start, end, MASK_SOLID, filter, trace);
-        PrintToServer("start: %f: %f: %f, end: %f: %f: %f", start.X, start.Y, start.Z, end.X, end.Y, end.Z);
-        PrintToServer("did the trace hit: %i", trace.DidHit());
-        if (trace.DidHit())
-            PrintToServer("entity hit: %i", trace.Dereference(CGAMETRACE_OFFSET_M_PENT));
+        // same as shield bash code
+        int client = 1;
         
-        PrintToServer("");
+        // eye angles
+        float eyeanglesbuffer[3];
+        GetClientEyeAngles(client, eyeanglesbuffer);
+
+        // Setup the swing range.
+        Vector vecForward = STACK_GETRETURN(Vector.StackAlloc());
+        Vector vecStart = STACK_GETRETURN(Vector.StackAlloc());
+        Vector vecEnd = STACK_GETRETURN(Vector.StackAlloc());
+        AngleVectors(AddressOfArray(eyeanglesbuffer), vecForward);
+        vecStart.Assign(STACK_GETRETURN(Weapon_ShootPosition(client)));
+        vecEnd.Assign(vecStart + vecForward * 48.00);
+
+        // See if we hit anything.
+        CGameTrace trace = STACK_GETRETURN(CGameTrace.StackAlloc());
+        CTraceFilterSimple filter = STACK_GETRETURN(CTraceFilterSimple.StackAlloc(GetEntityAddress(client), COLLISION_GROUP_NONE));
+        UTIL_TraceHull(vecStart, vecEnd, -Vector.Cache(24.00, 24.00, 24.00), Vector.Cache(24.00, 24.00, 24.00), MASK_SOLID, filter, trace);
+        PrintToChatAll("TRACE HULL ATTEMPT! trace->m_pEnt: %i", trace.m_pEnt);
     }
-    */
 }
 
 static void ray_tOperation()
 {
     Ray_t ray = Ray_t.Malloc();
-    ray.InitWithSize(Vector.ArrayReference({1.00, 2.00, 3.00}), Vector.ArrayReference({15.00, 3.00, 4.00}), Vector.ArrayReference({-2.00, -2.00, -2.00}), Vector.ArrayReference({2.00, 2.00, 2.00}));
+    ray.InitHull(Vector.ArrayReference({1.00, 2.00, 3.00}), Vector.ArrayReference({15.00, 3.00, 4.00}), Vector.ArrayReference({-1.00, -1.00, -1.00}), Vector.ArrayReference({2.00, 2.00, 2.00}));
 
     PrintToServer("ray size: %i", SIZEOF(Ray_t));
     PrintToServer("ray start: %f: %f: %f", ray.m_Start.X, ray.m_Start.Y, ray.m_Start.Z);
@@ -141,6 +196,15 @@ static void ray_tOperation()
 
     free(ray);
     PrintToServer("");
+    
+    Ray_t testRay = STACK_GETRETURN(Ray_t.StackAlloc());
+    testRay.Init(Vector.ArrayReference({3.00, 5.00, 0.00}), Vector.ArrayReference({50.00, 30.00, 30.00}));
+
+    PrintToServer("testRay start: %f: %f: %f", testRay.m_Start.X, testRay.m_Start.Y, testRay.m_Start.Z);
+    PrintToServer("testRay delta: %f: %f: %f", testRay.m_Delta.X, testRay.m_Delta.Y, testRay.m_Delta.Z);
+    PrintToServer("testRay startoffset: %f: %f: %f", testRay.m_StartOffset.X, testRay.m_StartOffset.Y, testRay.m_StartOffset.Z);
+    PrintToServer("testRay extents: %f: %f: %f", testRay.m_Extents.X, testRay.m_Extents.Y, testRay.m_Extents.Z);
+    PrintToServer("is ray: %i, is swept: %i", testRay.m_IsRay, testRay.m_IsSwept);
 }
 
 static void vectoralignedOperation()
@@ -322,63 +386,11 @@ static void vtableOperation()
     PrintToServer("");
 }
 
-// this is kind of cursed
-static void ctypesOperation()
-{
-    // BYTE = UInt8_t
-    // CHAR = Int8_t
-    // USHORT = UInt16_t
-    // SHORT = Int16_t
-
-    // normal variables
-    BYTE byte = 5; // unsigned char byte = 5;
-    BYTE byte2 = 240;
-    PrintToServer("%i", BYTE(byte * byte2)); // byte * byte2 on its own is 1200. this should print 176.
-
-    CHAR character = 'h';
-    PrintToServer("%c%c", character, character + 1); // should be hi
-
-    // arrays
-    STACK_ALLOC(shortArray, ARRAY, SIZEOF(SHORT) * 4); // short shortArray[4];
-    SHORT shortArray_1 = 15; // short shortArray_1 = 15;
-    SHORT shortArray_2 = shortArray_1 * shortArray_1;
-    SHORT shortArray_3 = shortArray_2 - 300;
-    SHORT shortArray_4 = shortArray_1 % 4;
-    shortArray.Write(shortArray_1, 0, NumberType_Int16); // shortArray[0] = 15; // should be 15
-    shortArray.Write(shortArray_2, 2, NumberType_Int16); // shortArray[1] = shortArray_1 * shortArray_1; // should be 225
-    shortArray.Write(shortArray_3, 4, NumberType_Int16); // shortArray[2] = shortArray_2 = 300; // should be -75
-    shortArray.Write(shortArray_4, 6, NumberType_Int16); // shortArray[3] = shortArray_1 % 4; // should be 3
-
-    for (int i = 0; i < STACK_SIZEOF(shortArray) / SIZEOF(SHORT); ++i) // for (int i = 0; i < sizeof(shortArray) / sizeof(shortArray[0]); ++i)
-        PrintToServer("shortArray[%i]: %i", i, SHORT(shortArray.Dereference(i * 2, NumberType_Int16)).ToCell()); // std::cout << "shortArray[" << i << "]: " << shortArray[i] << std::endl;
-
-    // c string
-    STACK_ALLOC(str, ARRAY, SIZEOF(CHAR) * 32); // char str[32];
-    memcpy(str, AddressOfString("Hello world!"), STACK_SIZEOF(str));
-    
-    for (int i = 0; ; ++i)
-    {
-        CHAR character2 = str.Dereference(i, NumberType_Int8);
-        if (character2 == '\0')
-            break;
-        PrintToServer("%c", character2);
-    }
-
-    // last few things
-    SHORT value = 0x8000;
-    USHORT uvalue = 0x8000;
-    int valueInt = value;
-    int uvalueInt = uvalue;
-    PrintToServer("valueInt: %i, uvalueInt: %i", valueInt, uvalueInt); // should be "valueInt: -32768, uvalueInt: 32768"
-
-    PrintToServer("");
-}
-
 // also for CGameTrace
 MRESReturn CTFPlayer_TraceAttack(int entity, DHookParam parameters)
 {
     CGameTrace ptr = parameters.Get(3);
-    PrintToServer("CTFPlayer::TraceAttack() on %i, is headshot: %i", entity, ptr.hitgroup == HITGROUP_HEAD);
+    PrintToServer("CTFPlayer::TraceAttack() on %i, is headshot: %i", ptr.m_pEnt, ptr.hitgroup == HITGROUP_HEAD);
     return MRES_Ignored;
 }
 
@@ -486,19 +498,16 @@ static Action ctfradiusdamageinfoOperation(int client, const char[] argv, int ar
 static void ctakedamageinfoOperation()
 {
     // Player tests. (TF2)
+    /*
     if (IsClientInGame(1))
     {
-        /*
-        float buffer[3];
-        GetEntPropVector(1, Prop_Data, "m_vecAbsOrigin", buffer);
-        Vector damagePosition = AddressOfArray(buffer);
-        */
         Vector damagePosition = GetEntVector(1, Prop_Data, "m_vecAbsOrigin");
 
         CTakeDamageInfo hell = CTakeDamageInfo.Malloc(0, 0, 0, damagePosition, damagePosition, 100.00, DMG_BLAST, TF_CUSTOM_STICKBOMB_EXPLOSION, damagePosition);
         SDKCall(SDKCall_CBaseEntity_TakeDamage, 1, hell);
         free(hell);
     }
+    */
 
     // Server tests.
     CTakeDamageInfo info = CTakeDamageInfo.Malloc(0, 0, 0, vec3_origin, vec3_origin, 0.00, 0, 0);
@@ -521,7 +530,7 @@ static void cutlvectorOperation()
     // Player tests. (TF2)
     if (IsClientInGame(1))
     {
-        CUtlVector m_hMyWearables = CUtlVector(GetEntityAddress(1) + CTFPlayer_m_hMyWearables);
+        CUtlVector m_hMyWearables = CUtlVector(GetEntityAddress(1) + FindSendPropInfo("CTFPlayer", "m_hMyWearables"));
         PrintToServer("m_hMyWearables size: %i", m_hMyWearables.Count());
         for (int i = 0; i < m_hMyWearables.Count(); ++i)
             PrintToServer("m_hMyWearables[%i]: %i", i, m_hMyWearables.Get(i).DereferenceEHandle());
@@ -599,6 +608,8 @@ static void cutlvectorOperation()
 
 static void vectorOperation()
 {
+    PrintToServer("VECTOR CACHE SIZE: %i\n", VECTOR_CACHE_SIZE);
+
     Vector vector = Vector(AddressOfArray({3.00, 2.00, 1.00}));
     PrintToServer("Vector test: %f : %f : %f", vector.X, vector.Y, vector.Z);
 
@@ -632,9 +643,53 @@ static void vectorOperation()
 
     STACK_ALLOC(stackAllocatedVector, Vector, SIZEOF(Vector));
     stackAllocatedVector.X = 3144.00;
-    PrintToServer("stackAllocatedVector: %f: %f: %f\n", stackAllocatedVector.X, stackAllocatedVector.Y, stackAllocatedVector.Z);
+    PrintToServer("stackAllocatedVector: %f: %f: %f", stackAllocatedVector.X, stackAllocatedVector.Y, stackAllocatedVector.Z);
+
+    Vector accum = Vector.Accumulator(1.00, 2.00, 289132931.00);
+    PrintToServer("accum: %f: %f: %f", accum.X, accum.Y, accum.Z);
+    
+    accum.Assign(accum + Vector.Cache(1.00, 2.00, 4.00) * Vector.Cache(3.00, 3.00, 3.00) / Vector.Cache(1.00, 1.50, 2.00) - Vector.Cache(-25.00, 2.00, 1.00) * Vector.Cache(5.00, 5.00, 5.00));
+    PrintToServer("accum after cache-allocated operations: %f: %f: %f", accum.X, accum.Y, accum.Z);
 
     free(vectorMalloc);
+
+    // float buffer tests
+    PrintToServer("float buffer equivalent tests:\n");
+    float buffer[3] = {3.00, 2.00, 1.00};
+    PrintToServer("Vector test: %f : %f : %f", buffer[0], buffer[1], buffer[2]);
+
+    float buffer2[3] = {6.00, 5.00, 4.00};
+    PrintToServer("Vector malloc test: %f : %f : %f", buffer2[0], buffer2[1], buffer2[2]);
+
+    float buffer3[3];
+    float tempbuffer[3];
+    memcpy(AddressOfArray(tempbuffer), AddressOfArray(buffer2), SIZEOF(Vector));
+    ScaleVector(tempbuffer, 2.00);
+    AddVectors(buffer, tempbuffer, buffer3);
+    PrintToServer("Result vector: %f: %f: %f", buffer3[0], buffer3[1], buffer3[2]);
+
+    float buffer4[3];
+    buffer4[0] = 3.00;
+    PrintToServer("Result X: %f\nTest X: %f", buffer3[0], buffer4[0]);
+
+    PrintToServer("result.Length(): %f", GetVectorLength(buffer3));
+    PrintToServer("result.DistTo(test): %f", GetVectorDistance(buffer3, buffer4));
+    PrintToServer("result.Dot(test): %f", GetVectorDotProduct(buffer3, buffer4));
+
+    float buffer5[3];
+    GetVectorCrossProduct(buffer3, buffer4, buffer5);
+    PrintToServer("result.Cross(test): %f: %f: %f", buffer5[0], buffer5[1], buffer5[2]);
+
+    float buffer6[3] = {7.00, 8.00, 9.00};
+    float buffer7[3] = {1.00, 2.00, 3.00};
+    float buffer8[3] = {4.00, 5.00, 6.00};
+    GetVectorVectors(buffer6, buffer7, buffer8);
+    PrintToServer("forward/right/up after VectorVectors: %f: %f: %f, %f: %f: %f, %f: %f: %f", buffer6[0], buffer6[1], buffer6[2], buffer7[0], buffer7[1], buffer7[2], buffer8[0], buffer8[1], buffer8[2]);
+
+    PrintToServer("result.NormalizeInPlace(): %f", NormalizeVector(buffer3, buffer3));
+    PrintToServer("new co-ordinates for normalized vector: %f: %f: %f", buffer3[0], buffer3[1], buffer3[2]);
+
+    PrintToServer("");
 }
 
 static void pointerOperation()

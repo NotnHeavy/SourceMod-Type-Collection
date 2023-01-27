@@ -46,15 +46,20 @@
 				"mac"     "2"
 			}
 
+			"IEngineTrace::ClipRayToEntity()"
+			{
+				"windows" "2"
+				"linux"   "4"
+			}
 			"IEngineTrace::TraceRay()"
 			{
-				"windows" "16"
-				"linux"   "16"
+				"windows" "4"
+				"linux"   "4"
 			}
 		}
         "Signatures"
         {
-			"GetPlayerClassData()"
+			"GetPlayerClassData()" // offset aMultPlayerAimi ; "mult_player_aiming_movespeed", called twice at the top
 			{
 				"library" "server"
 				"windows" "\x55\x8B\xEC\x69\x4D\x08\xF0\x08\x00\x00"
@@ -70,30 +75,37 @@
 				"linux"   "@enginetrace"
 			}
 
+			"CTraceFilterSimple::ShouldHitEntity()"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x53\x8B\x5D\x0C\x56\x8B\x75\x08\x57\x53" // search vtable for CTraceFilterSimple, vfunc 0
+				"linux"	  "@_ZN18CTraceFilterSimple15ShouldHitEntityEP13IHandleEntityi"
+			}
+
 			"CBaseEntity::HandleShotImpactingWater()"
 			{
 				"library" "server"
 				"windows" "\x53\x8B\xDC\x83\xEC\x08\x83\xE4\xF0\x83\xC4\x04\x55\x8B\x6B\x04\x89\x6C\x24\x04\x8B\xEC\x8B\x43\x08\x81\xEC\x08\x01\x00\x00\x83\xC0\x04" // xrefs to "gunshotsplash"
 			}
 
-            "CTFPlayer::OnTakeDamage_Alive()"
+            "CTFPlayer::OnTakeDamage_Alive()" // offset aBleedingDurati ; "bleeding_duration"
 			{
 				"library" "server"
-				"windows" "\x55\x8B\xEC\x83\xEC\x2A\x56\x57\x8B\xF9\x8B\x0D\x2A\x2A\x2A\x2A\x89\x7D\x2A"
+				"windows" "\x55\x8B\xEC\x83\xEC\x7C\x56\x57"
 				"linux"   "@_ZN9CTFPlayer18OnTakeDamage_AliveERK15CTakeDamageInfo"
 			}
 
-			"CTFRadiusDamageInfo::CalculateFalloff()"
+			"CTFRadiusDamageInfo::CalculateFalloff()" // offset aMultDmgFalloff ; "mult_dmg_falloff"
 			{
 				"library" "server"
-				"windows" "\x55\x8B\xEC\x51\x56\x8B\xF1\x8B\x2A\x2A\x2A\x2A\x2A\x00\x04"
+				"windows" "\x55\x8B\xEC\x51\x56\x8B\xF1\x8B\x0E"
 				"linux"	  "@_ZN19CTFRadiusDamageInfo16CalculateFalloffEv"
 			}
-			"CTFRadiusDamageInfo::ApplyToEntity()"
+			"CTFRadiusDamageInfo::ApplyToEntity()" // offset aAddHealthOnRad ; "add_health_on_radius_damage", 2nd call above (call above GetTFWpnData)
 			{
 				"library" "server"
 				"windows" "\x55\x8B\xEC\x81\xEC\x3C\x01\x00\x00\x8B\xD1"
-				"linux"   "\x55\x89\xE5\x57\x89\xD7\x56\x31\xF6"
+				"linux"   "@_ZN19CTFRadiusDamageInfo13ApplyToEntityEP11CBaseEntity"
 			}
         }
         "Functions"

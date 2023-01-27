@@ -2,19 +2,17 @@
 // MADE BY NOTNHEAVY. USES GPL-3, AS PER REQUEST OF SOURCEMOD               //
 //////////////////////////////////////////////////////////////////////////////
 
-// these members are alligned!! (ok ty valve xx)
+// these members are aligned!! (ok ty valve xx)
 
-// Requires "Vector.inc", "ctypes.inc" and "cplane_t.inc".
+// Requires "Vector.inc" and "cplane_t.inc".
 
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CBASETRACE
 #endinput
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CBASETRACE
 
-#include "Pointer.inc"
 #include "Vector.inc"
 #include "cplane_t.inc"
-#include "ctypes.inc"
 
 #pragma semicolon true 
 #pragma newdecls required
@@ -97,10 +95,11 @@ methodmap CBaseTrace < Pointer
     }
 
     // displacement flags for marking surfaces with data
-    property USHORT dispFlags
+    // This member is an unsigned short.
+    property int dispFlags
     {
         public get() { return this.Dereference(CBASETRACE_OFFSET_DISPFLAGS, NumberType_Int16); }
-        public set(USHORT value) { this.Write(value, CBASETRACE_OFFSET_DISPFLAGS, NumberType_Int16); }
+        public set(int value) { this.Write(value, CBASETRACE_OFFSET_DISPFLAGS, NumberType_Int16); }
     }
 
     // if true, plane is not valid
@@ -133,22 +132,22 @@ methodmap CBaseTrace < Pointer
     // Displacement flag tests.
     public bool IsDispSurface()
     {
-        return this.dispFlags.And(DISPSURF_FLAG_SURFACE) != 0;
+        return this.dispFlags & DISPSURF_FLAG_SURFACE != 0;
     }
     public bool IsDispSurfaceWalkable()
     {
-        return this.dispFlags.And(DISPSURF_FLAG_WALKABLE) != 0;
+        return this.dispFlags & DISPSURF_FLAG_WALKABLE != 0;
     }
     public bool IsDispSurfaceBuildable()
     {
-        return this.dispFlags.And(DISPSURF_FLAG_BUILDABLE) != 0;
+        return this.dispFlags & DISPSURF_FLAG_BUILDABLE != 0;
     }
     public bool IsDispSurfaceProp1()
     {
-        return this.dispFlags.And(DISPSURF_FLAG_SURFPROP1) != 0;
+        return this.dispFlags & DISPSURF_FLAG_SURFPROP1 != 0;
     }
     public bool IsDispSurfaceProp2()
     {
-        return this.dispFlags.And(DISPSURF_FLAG_SURFPROP2) != 0;
+        return this.dispFlags & DISPSURF_FLAG_SURFPROP2 != 0;
     }
 }

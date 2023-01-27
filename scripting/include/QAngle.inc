@@ -7,10 +7,12 @@
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_QANGLE
 
-#include "Pointer.inc"
-
 #pragma semicolon true 
 #pragma newdecls required
+
+#if !defined QANGLE_CACHE_SIZE
+#define QANGLE_CACHE_SIZE 32
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // QANGLE DATA                                                              //
@@ -25,8 +27,14 @@ enum
     SIZEOF_QAngle = QANGLE_OFFSET_Z + 4    // sizeof(QAngle);
 }
 
-static float accumulator[3];
-static Address accumulatorAddress;
+// accumulator - user control
+static float accumulator_array[3];
+static QAngle accumulator;
+
+// cache - up to a user-specified size
+static float cache_array[QANGLE_CACHE_SIZE * 3 + 1]; // the + 1 is to compensate for VectorAligned objects.
+static QAngle cache;
+static int cache_index = 0;
 
 //////////////////////////////////////////////////////////////////////////////
 // QANGLE METHODMAP                                                         //
@@ -40,17 +48,6 @@ methodmap QAngle < Pointer
     public QAngle(Address address)
     {
         return view_as<QAngle>(address);
-    }
-
-    // Constructor - allocate a new QAngle in the accumulator, a temporary storage location.
-    public static QAngle Accumulator(float x = 0.00, float y = 0.00, float z = 0.00)
-    {
-        if (!accumulatorAddress)
-            accumulatorAddress = AddressOfArray(accumulator);
-        accumulator[0] = x;
-        accumulator[1] = y;
-        accumulator[2] = z;
-        return QAngle(accumulatorAddress);
     }
 
     // X co-ordinate.
@@ -80,6 +77,28 @@ methodmap QAngle < Pointer
         this.X = x;
         this.Y = y;
         this.Z = z;
+    }
+
+    // Constructor - allocate a new vector in place within the current pointer to the cache buffer. 
+    // The size of the cache is specified by QANGLE_CACHE_SIZE and when the end is reached, the
+    // pointer loops around.
+    public static QAngle Cache(float x = 0.00, float y = 0.00, float z = 0.00)
+    {
+        if (!cache)
+            cache = AddressOfArray(cache_array);
+        QAngle obj = view_as<QAngle>(cache.Get(cache_index, SIZEOF_QAngle));
+        cache_index = (cache_index + 1 < QANGLE_CACHE_SIZE) ? cache_index + 1 : 0;
+        obj.ctor(x, y, z);
+        return obj;
+    }
+
+    // Constructor - allocate a new QAngle in the accumulator, a temporary storage location.
+    public static QAngle Accumulator(float x = 0.00, float y = 0.00, float z = 0.00)
+    {
+        if (!accumulator)
+            accumulator = AddressOfArray(accumulator_array);
+        accumulator.ctor(x, y, z);
+        return accumulator;
     }
 
     // Constructor - allocate a new QAngle onto the heap. Deallocation will be required when you are finished using this using free().
@@ -149,22 +168,22 @@ methodmap QAngle < Pointer
 
 stock QAngle operator+(const QAngle left, const QAngle right)
 {
-    return QAngle.Accumulator(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
+    return QAngle.Cache(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
 }
 
 stock QAngle operator-(const QAngle left, const QAngle right)
 {
-    return QAngle.Accumulator(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
+    return QAngle.Cache(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
 }
 
 stock QAngle operator*(const QAngle left, const QAngle right)
 {
-    return QAngle.Accumulator(left.X * right.X, left.Y * right.Y, left.Z * right.Z);
+    return QAngle.Cache(left.X * right.X, left.Y * right.Y, left.Z * right.Z);
 }
 
 stock QAngle operator/(const QAngle left, const QAngle right)
 {
-    return QAngle.Accumulator(left.X / right.X, left.Y / right.Y, left.Z / right.Z);
+    return QAngle.Cache(left.X / right.X, left.Y / right.Y, left.Z / right.Z);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -233,7 +252,7 @@ stock QAngle GetEntQAngle(int entity, PropType type, const char[] property, cons
         return view_as<QAngle>(GetEntityAddress(entity) + FindDataMapInfo(entity, property) + index * SIZEOF_QAngle);
 }
 
-// Get a random QAngle. This QAngle is stored onto the accumulator and must be assigned to your desired QAngle, unless allocate is set to true.
+// Get a random QAngle. This QAngle is stored onto the accumulator and must be assigned to your desired QAngle, unless allocate is set to true, where it is malloc()'d instead.
 stock QAngle RandomAngle(float minValue, float maxValue, bool allocate = false)
 {
     QAngle random = allocate ? QAngle.Malloc() : QAngle.Accumulator();

@@ -9,9 +9,7 @@
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CPLANE_T
 
-#include "Pointer.inc"
 #include "Vector.inc"
-#include "ctypes.inc"
 
 #pragma semicolon true 
 #pragma newdecls required
@@ -61,47 +59,55 @@ methodmap CPlane_t < Pointer
     }
 
     // For fast side tests.
-    property BYTE type
+    // This member is an unsigned char.
+    property int type
     {
         public get() { return this.Dereference(CPLANE_T_OFFSET_TYPE, NumberType_Int8); }
-        public set(BYTE value) { this.Write(value, CPLANE_T_OFFSET_TYPE, NumberType_Int8); }
+        public set(int value) { this.Write(value, CPLANE_T_OFFSET_TYPE, NumberType_Int8); }
     }
 
     // signx + (signy << 1) + (signz << 1)
-    property BYTE signbits
+    property int signbits
     {
         public get() { return this.Dereference(CPLANE_T_OFFSET_SIGNBITS, NumberType_Int8); }
-        public set(BYTE value) { this.Write(value, CPLANE_T_OFFSET_SIGNBITS, NumberType_Int8); }
+        public set(int value) { this.Write(value, CPLANE_T_OFFSET_SIGNBITS, NumberType_Int8); }
     }
 
     // Get byte pad.
-    public BYTE pad_Get(BYTE index)
+    // This array uses unsigned chars.
+    // Returns 0 if invalid index, otherwise returns 1 and fills value parameter.
+    public int pad_Get(int index, int& value)
     {
         if (index < 0 || index >= 2)
-            return BYTE(0);
-        return this.Dereference(CPLANE_T_OFFSET_PAD + index, NumberType_Int8);
+            return 0;
+        value = this.Dereference(CPLANE_T_OFFSET_PAD + index, NumberType_Int8);
+        return 1;
     }
 
     // Set byte pad.
-    public void pad_Set(int index, BYTE value)
+    // This array uses unsigned chars.
+    // Returns 0 if invalid index, else 1.
+    public int pad_Set(int index, int value)
     {
         if (index < 0 || index >= 2)
-            return;
+            return 0;
         this.Write(value, CPLANE_T_OFFSET_PAD + index, NumberType_Int8);
+        return 1;
     }
 
     // Call constructor on existing type.
-    public void ctor(Vector normal = view_as<Vector>(NULL), float dist = 0.00, BYTE type = view_as<BYTE>(0), BYTE signbits = view_as<BYTE>(0), BYTE pad[2] = { view_as<BYTE>(0), view_as<BYTE>(0) })
+    public void ctor(Vector normal = NULL, float dist = 0.00, int type = 0, int signbits = 0, int pad[2] = { 0, 0 })
     {
         this.normal = normal;
         this.dist = dist;
         this.type = type;
         this.signbits = signbits;
-        memcpy(this.Address + CPLANE_T_OFFSET_PAD, AddressOfArray(pad), 2);
+        for (int i = 0; i < 2; ++i)
+            this.Write(pad[i], CPLANE_T_OFFSET_PAD + i, NumberType_Int8);
     }
 
     // Constructor - allocate a new cplane_t onto the heap. Deallocation will be required when you are finished using free().
-    public static CPlane_t Malloc(Vector normal = view_as<Vector>(NULL), float dist = 0.00, BYTE type = view_as<BYTE>(0), BYTE signbits = view_as<BYTE>(0), BYTE pad[2] = { view_as<BYTE>(0), view_as<BYTE>(0) })
+    public static CPlane_t Malloc(Vector normal = NULL, float dist = 0.00, int type = 0, int signbits = 0, int pad[2] = { 0, 0 })
     {
         CPlane_t pointer = malloc(SIZEOF_CPlane_t);
         pointer.ctor(normal, dist, type, signbits, pad);
@@ -109,7 +115,7 @@ methodmap CPlane_t < Pointer
     }
 
     // Constructor - allocate a new cplane_t onto the stack. When using the return value, you must use STACK_GETRETURN().
-    public static STACK StackAlloc(Vector normal = view_as<Vector>(NULL), float dist = 0.00, BYTE type = view_as<BYTE>(0), BYTE signbits = view_as<BYTE>(0), BYTE pad[2] = { view_as<BYTE>(0), view_as<BYTE>(0) })
+    public static STACK StackAlloc(Vector normal = NULL, float dist = 0.00, int type = 0, int signbits = 0, int pad[2] = { 0, 0 })
     {
         char buffer[SIZEOF_CPlane_t];
         view_as<CPlane_t>(AddressOfString(buffer)).ctor(normal, dist, type, signbits, pad);

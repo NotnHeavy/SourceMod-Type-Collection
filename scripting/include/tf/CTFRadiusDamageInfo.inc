@@ -2,14 +2,11 @@
 // MADE BY NOTNHEAVY. USES GPL-3, AS PER REQUEST OF SOURCEMOD               //
 //////////////////////////////////////////////////////////////////////////////
 
-// Include SMTC.inc and run SMTC_Initialize() to provide full functionality for CTFRadiusDamageInfo::CalculateFalloff() and get CTFRadiusDamageInfo::ApplyToEntity() to work.
-
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTFRADIUSDAMAGEINFO
 #endinput
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTFRADIUSDAMAGEINFO
 
-#include "Pointer.inc"
 #include "Vector.inc"
 #include "CTakeDamageInfo.inc"
 

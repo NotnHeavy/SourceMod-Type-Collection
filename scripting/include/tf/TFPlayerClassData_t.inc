@@ -4,14 +4,13 @@
 
 // tf_classdata.h
 
-// Requires "tf_shareddefs.inc" and "Vector.inc". Requires "SMTC.inc" and SMTC_Initialize() to have been called in order to access g_pTFPlayerClassDataMgr.
+// Requires "tf_shareddefs.inc" and "Vector.inc".
 
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TFPLAYERCLASSDATA_T
 #endinput
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TFPLAYERCLASSDATA_T
 
-#include "Pointer.inc"
 #include "Vector.inc"
 #include "tf_shareddefs.inc"
 
@@ -287,7 +286,7 @@ methodmap TFPlayerClassData_t < Pointer
         this.m_bParsed = false;  
     }
 
-    // Constructor - allocate a new CTFRadiusDamageInfo onto the heap. Deallocation will be required when you are finished using free().
+    // Constructor - allocate a new TFPlayerClassData_t onto the heap. Deallocation will be required when you are finished using free().
     public static TFPlayerClassData_t Malloc()
     {
         TFPlayerClassData_t pointer = malloc(SIZEOF_TFPlayerClassData_t);
@@ -310,7 +309,7 @@ methodmap TFPlayerClassData_t < Pointer
 
 stock TFPlayerClassData_t GetPlayerClassData(int class)
 {
-#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_SMTC
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_SMTCHEADER
     return view_as<TFPlayerClassData_t>(g_pTFPlayerClassDataMgr.Get(class, SIZEOF_TFPlayerClassData_t) + 12);
 #else
     ThrowError("GetPlayerClassData() requires SMTC.inc!");

@@ -7,34 +7,8 @@
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_SMTC
 
-#include <smmem>
-#include <dhooks>
-
 #pragma semicolon true 
 #pragma newdecls required
-
-//////////////////////////////////////////////////////////////////////////////
-// GLOBALS                                                                  //
-//////////////////////////////////////////////////////////////////////////////
-
-enum OSType
-{
-    OSTYPE_WINDOWS,
-    OSTYPE_LINUX,
-    OSTYPE_MACOS
-}
-
-stock OSType OSTypeUsed;
-
-stock Pointer g_pTFPlayerClassDataMgr;
-stock Pointer enginetrace;
-
-stock DHookSetup SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive;
-
-stock Handle SMTC_SDKCall_IEngineTrace_TraceRay;
-
-stock Handle SMTC_SDKCall_CTFRadiusDamageInfo_CalculateFalloff;
-stock Handle SMTC_SDKCall_CTFRadiusDamageInfo_ApplyToEntity;
 
 //////////////////////////////////////////////////////////////////////////////
 // INITIALIZER                                                              //
@@ -49,16 +23,26 @@ stock void SMTC_Initialize()
     OSTypeUsed = view_as<OSType>(config.GetOffset("OSTypeUsed"));
 
     g_pTFPlayerClassDataMgr = config.GetAddress("g_pTFPlayerClassDataMgr");
-    enginetrace = config.GetAddress("enginetrace");
+    enginetrace = CEngineTrace(config.GetAddress("enginetrace"));
+
+    CTraceFilterSimple_ShouldHitEntity = config.GetMemSig("CTraceFilterSimple::ShouldHitEntity()");
 
     SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive = DHookCreateFromConf(config, "CTFPlayer::OnTakeDamage_Alive()");
 
     StartPrepSDKCall(SDKCall_Raw);
+    PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "IEngineTrace::ClipRayToEntity()");
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const Ray_t&
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // unsigned int
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // IHandleEntity*
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // trace_t*
+    SMTC_SDKCall_IEngineTrace_ClipRayToEntity = EndPrepSDKCall();
+
+    StartPrepSDKCall(SDKCall_Raw);
     PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "IEngineTrace::TraceRay()");
-    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const Ray_t&
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // unsigned int
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // ITraceFilter*
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // trace_t*
     SMTC_SDKCall_IEngineTrace_TraceRay = EndPrepSDKCall();
 
     StartPrepSDKCall(SDKCall_Raw);
@@ -74,9 +58,15 @@ stock void SMTC_Initialize()
     delete config;
 
     // Call forwards.
+    #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_VECTOR
     SMTC_VectorForward();
-    SMTC_UTILForward();
+    #endif
+    #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTAKEDAMAGEINFO
     SMTC_CTakeDamageInfoForward();
+    #endif
+    #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_UTIL
+    SMTC_UTILForward();
+    #endif
 }
 
 //////////////////////////////////////////////////////////////////////////////

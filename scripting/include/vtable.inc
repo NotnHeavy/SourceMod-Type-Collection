@@ -49,14 +49,7 @@ with __thiscall, the this pointer is actually stored in the ecx register instead
 #pragma semicolon true 
 #pragma newdecls required
 
-#if !defined SIZE_T
-#define SIZE_T        int
-#define SIZEOF_SIZE_T 4
-#endif
-
 #define FROM_EXISTING_SOURCE 0
-
-#include "Pointer.inc"
 
 //////////////////////////////////////////////////////////////////////////////
 // GLOBALS                                                                  //
@@ -123,10 +116,6 @@ methodmap VTable_Info < Pointer
 
         this.VTable = calloc(size, SIZEOF_Pointer);
         this.Malloc = calloc(size, SIZEOF_BOOL);
-
-        SetMemAccess(this, SIZEOF_VTable_Info, SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
-        SetMemAccess(this.VTable, this.Size * SIZEOF_Pointer, SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
-        SetMemAccess(this.Malloc, this.Size, SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
     }
 }
 
@@ -157,6 +146,10 @@ methodmap VTable
         if (StrEqual(name, ""))
             return NULL;
 
+        VTable_Info baseVTableInfo = GetVTableInfo(base);
+        if (baseVTableInfo != NULL && length < baseVTableInfo.Size)
+            length = baseVTableInfo.Size;
+
         if (vtables == NULL)
         {
             vtables = calloc(1, SIZEOF_VTable_Info);
@@ -165,13 +158,8 @@ methodmap VTable
         else
         {
             vtablesLength += SIZEOF_VTable_Info;
-            vtables = recalloc(vtables, 1, vtablesLength);
+            vtables = recalloc(vtables, vtablesLength, SIZEOF_VTable_Info, vtablesLength - SIZEOF_VTable_Info);
         }
-        SetMemAccess(vtables, vtablesLength, SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
-
-        VTable_Info baseVTableInfo = GetVTableInfo(base);
-        if (baseVTableInfo != NULL && length < baseVTableInfo.Size)
-            length = baseVTableInfo.Size;
 
         VTable_Info vtableInfo = view_as<VTable_Info>(vtables.Get(vtablesLength - SIZEOF_VTable_Info, 1));
         vtableInfo.ctor(name, length);
@@ -208,6 +196,7 @@ methodmap VTable
             memcpy(vpointer, asm, asmLength);
             info.VTable.Write(vpointer, index * SIZEOF_Pointer);
             info.Malloc.Write(true, index, NumberType_Int8);
+            SetMemAccess(vpointer, asmLength, SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
             return vpointer;
         }
         else

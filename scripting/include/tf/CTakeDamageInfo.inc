@@ -2,14 +2,11 @@
 // MADE BY NOTNHEAVY. USES GPL-3, AS PER REQUEST OF SOURCEMOD               //
 //////////////////////////////////////////////////////////////////////////////
 
-// Include SMTC.inc and run SMTC_Initialize() to fix the bug with mini-crit setting using the full crit effect instead.
-
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTAKEDAMAGEINFO
 #endinput
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTAKEDAMAGEINFO
 
-#include "Pointer.inc"
 #include "Vector.inc"
 
 #pragma semicolon true 
@@ -253,7 +250,7 @@ methodmap CTakeDamageInfo < Pointer
     }
 
     // Call constructor on existing type.
-    public void ctor(int inflictor, int attacker, int weapon, const Vector damageForce, const Vector damagePosition, float damage, int bitsDamageType, int killType, Vector reportedPosition = view_as<Vector>(NULL) /* ffs */)
+    public void ctor(int inflictor, int attacker, int weapon, const Vector damageForce, const Vector damagePosition, float damage, int bitsDamageType, int killType, Vector reportedPosition = NULL)
     {
         Vector vecReported = vec3_origin;
         if (reportedPosition != NULL)
@@ -262,7 +259,7 @@ methodmap CTakeDamageInfo < Pointer
     }
 
     // Constructor - allocate a new CTakeDamageInfo onto the heap. Deallocation will be required when you are finished using free().
-    public static CTakeDamageInfo Malloc(int inflictor, int attacker, int weapon, const Vector damageForce, const Vector damagePosition, float damage, int bitsDamageType, int killType, Vector reportedPosition = view_as<Vector>(NULL))
+    public static CTakeDamageInfo Malloc(int inflictor, int attacker, int weapon, const Vector damageForce, const Vector damagePosition, float damage, int bitsDamageType, int killType, Vector reportedPosition = NULL)
     {
         CTakeDamageInfo pointer = malloc(SIZEOF_CTakeDamageInfo);
         pointer.ctor(inflictor, attacker, weapon, damageForce, damagePosition, damage, bitsDamageType, killType, reportedPosition);
@@ -270,7 +267,7 @@ methodmap CTakeDamageInfo < Pointer
     }
 
     // Constructor - allocate a new CTakeDamageInfo onto the stack. When using the return value, you must use STACK_GETRETURN().
-    public static STACK StackAlloc(int inflictor, int attacker, int weapon, const Vector damageForce, const Vector damagePosition, float damage, int bitsDamageType, int killType, Vector reportedPosition = view_as<Vector>(NULL))
+    public static STACK StackAlloc(int inflictor, int attacker, int weapon, const Vector damageForce, const Vector damagePosition, float damage, int bitsDamageType, int killType, Vector reportedPosition = NULL)
     {
         char buffer[SIZEOF_CTakeDamageInfo];
         view_as<CTakeDamageInfo>(AddressOfString(buffer)).ctor(inflictor, attacker, weapon, damageForce, damagePosition, damage, bitsDamageType, killType, reportedPosition);
@@ -295,7 +292,7 @@ methodmap CTakeDamageInfo < Pointer
 // MISCELLANEOUS                                                            //
 //////////////////////////////////////////////////////////////////////////////
 
-// This fixes the bug where mini-crits toggled manually shows the full crit effect instead. 
+// This fixes the bug where mini-crits toggled manually show the full crit effect instead. 
 // This is due to DMG_CRIT being toggled when using either mini-crits or crits, and DMG_CRIT
 // defaulting to the full crit effect.
 static Action SMTC_ClientHurt(Event event, const char[] name, bool dontBroadcast)
@@ -307,7 +304,7 @@ static Action SMTC_ClientHurt(Event event, const char[] name, bool dontBroadcast
     return Plugin_Changed;
 }
 
-// pre-call CTFPlayer::OnTakeDamage_Alive()
+// Pre-call CTFPlayer::OnTakeDamage_Alive()
 // If the crit type is not CRIT_MINI, reset the SMTC_PlayerTakingMiniCrits counter.
 static MRESReturn SMTC_CTFPlayer_OnTakeDamage_Alive(int entity, DHookReturn returnValue, DHookParam parameters)
 {

@@ -11,7 +11,6 @@
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CUTLVECTOR
 
-#include "Pointer.inc"
 #include "CUtlMemory.inc"
 
 #pragma semicolon true

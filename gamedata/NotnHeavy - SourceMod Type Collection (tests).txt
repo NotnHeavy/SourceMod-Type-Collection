@@ -4,39 +4,43 @@
     {
         "Offsets"
         {
-            "CTFPlayer::m_hMyWearables"
-			{
-				"windows" "3520"
-				"linux"   "3540"
-			}
-
             "CTFWearable::Equip"
             {
-                "windows" "229"
-                "linux"   "235"
+                "windows" "232"
+                "linux"   "238"
+            }
+			"CBaseCombatCharacter::Weapon_ShootPosition()"
+            {
+                "windows" "275"
+                "linux"   "276"
             }
         }
         "Signatures"
         {
-            "CBaseEntity::TakeDamage"
+			"ImageBase"
 			{
 				"library" "server"
-				"windows" "\x55\x8B\xEC\x83\xEC\x74\x57\x8B\xF9\x8B\x0D\x2A\x2A\x2A\x2A"
+				"windows" "\x4D\x5A"
+			}
+            "CBaseEntity::TakeDamage" // offset aCbaseentityTak ; "CBaseEntity::TakeDamage:  with inputInf"...
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x81\xEC\x98\x00\x00\x00\x53\x8B\xD9"
 				"linux"   "@_ZN11CBaseEntity10TakeDamageERK15CTakeDamageInfo"
 			}
-            "CTFPlayer::OnTakeDamage"
+            "CTFPlayer::OnTakeDamage" // offset aAbortedPlayerC ; "    ABORTED: Player can't take damage f"...
 			{
 				"library" "server"
-				"windows" "\x55\x8B\xEC\x81\xEC\x2A\x2A\x2A\x2A\x56\x8B\x75\x2A\x57\x8B\xF9\x8D\x8D\x2A\x2A\x2A\x2A"
+				"windows" "\x55\x8B\xEC\x81\xEC\xA4\x05\x00\x00"
 				"linux"	  "@_ZN9CTFPlayer12OnTakeDamageERK15CTakeDamageInfo"
 			}
-			"CTFPlayer::TraceAttack()"
+			"CTFPlayer::TraceAttack()" // offset aUberchargeTran ; "ubercharge_transfer"
 			{
 				"library" "server"
 				"windows" "\x55\x8B\xEC\x81\xEC\x90\x00\x00\x00\x57\x8B\xF9\x80\xBF\xF9\x00\x00\x00\x02"
 				"linux"   "@_ZN9CTFPlayer11TraceAttackERK15CTakeDamageInfoRK6VectorP10CGameTraceP15CDmgAccumulator"
 			}
-			"CTFGameRules::RadiusDamage"
+			"CTFGameRules::RadiusDamage" // offset aAddHealthOnRad ; "add_health_on_radius_damage"
 			{
 				"library" "server"
 				"windows" "\x55\x8B\xEC\x81\xEC\x24\x08\x00\x00\x53"

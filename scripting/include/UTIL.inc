@@ -2,17 +2,50 @@
 // MADE BY NOTNHEAVY. USES GPL-3, AS PER REQUEST OF SOURCEMOD               //
 //////////////////////////////////////////////////////////////////////////////
 
+// Requires "Ray_t.inc" and "vtable.inc".
+
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_UTIL
 #endinput
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_UTIL
 
-#include "Pointer.inc"
 #include "Ray_t.inc"
 #include "vtable.inc"
 
 #pragma semicolon true 
 #pragma newdecls required
+
+//////////////////////////////////////////////////////////////////////////////
+// CONST.H                                                                  //
+//////////////////////////////////////////////////////////////////////////////
+
+enum // Collision_Group_t
+{
+	COLLISION_GROUP_NONE  = 0,
+	COLLISION_GROUP_DEBRIS,			// Collides with nothing but world and static stuff
+	COLLISION_GROUP_DEBRIS_TRIGGER, // Same as debris, but hits triggers
+	COLLISION_GROUP_INTERACTIVE_DEBRIS,	// Collides with everything except other interactive debris or debris
+	COLLISION_GROUP_INTERACTIVE,	// Collides with everything except interactive debris or debris
+	COLLISION_GROUP_PLAYER,
+	COLLISION_GROUP_BREAKABLE_GLASS,
+	COLLISION_GROUP_VEHICLE,
+	COLLISION_GROUP_PLAYER_MOVEMENT,  // For HL2, same as Collision_Group_Player, for
+										// TF2, this filters out other players and CBaseObjects
+	COLLISION_GROUP_NPC,			// Generic NPC group
+	COLLISION_GROUP_IN_VEHICLE,		// for any entity inside a vehicle
+	COLLISION_GROUP_WEAPON,			// for any weapons that need collision detection
+	COLLISION_GROUP_VEHICLE_CLIP,	// vehicle clip brush to restrict vehicle movement
+	COLLISION_GROUP_PROJECTILE,		// Projectiles!
+	COLLISION_GROUP_DOOR_BLOCKER,	// Blocks entities not permitted to get near moving doors
+	COLLISION_GROUP_PASSABLE_DOOR,	// Doors that the player shouldn't collide with
+	COLLISION_GROUP_DISSOLVING,		// Things that are dissolving are in this group
+	COLLISION_GROUP_PUSHAWAY,		// Nonsolid on client and server, pushaway in player code
+
+	COLLISION_GROUP_NPC_ACTOR,		// Used so NPCs in scripts ignore the player.
+	COLLISION_GROUP_NPC_SCRIPTED,	// USed for NPCs in scripts that should not collide with each other
+
+	LAST_SHARED_COLLISION_GROUP
+};
 
 //////////////////////////////////////////////////////////////////////////////
 // BSPFLAGS.H                                                               //
@@ -143,23 +176,38 @@ enum TraceType_t
 
 enum
 {
-    ITRACEFILTER_OFFSET_VTABLE = 0,                                    // void* vtable;
+    ITRACEFILTER_OFFSET_VTABLE = 0,                                                                                     // void* vtable;
 
-    SIZEOF_ITraceFilter = ITRACEFILTER_OFFSET_VTABLE + SIZEOF_Pointer, // sizeof(ITraceFilter);
-    SIZEOF_CTraceFilter = SIZEOF_ITraceFilter,                         // sizeof(CTraceFilter);
-    SIZEOF_CTraceFilterEntitiesOnly = SIZEOF_ITraceFilter,             // sizeof(CTraceFilterEntitiesOnly);
-    SIZEOF_CTraceFilterWorldOnly = SIZEOF_ITraceFilter,                // sizeof(CTraceFilterWorldOnly);
-    SIZEOF_CTraceFilterWorldAndPropsOnly = SIZEOF_ITraceFilter,        // sizeof(CTraceFilterWorldAndPropsOnly);
-    SIZEOF_CTraceFilterHitAll = SIZEOF_ITraceFilter                    // sizeof(CTraceFilterHitAll);
+    SIZEOF_ITraceFilter = ITRACEFILTER_OFFSET_VTABLE + SIZEOF_Pointer,                                                  // sizeof(ITraceFilter);
+    SIZEOF_CTraceFilter = SIZEOF_ITraceFilter,                                                                          // sizeof(CTraceFilter);
+    SIZEOF_CTraceFilterEntitiesOnly = SIZEOF_ITraceFilter,                                                              // sizeof(CTraceFilterEntitiesOnly);
+    SIZEOF_CTraceFilterWorldOnly = SIZEOF_ITraceFilter,                                                                 // sizeof(CTraceFilterWorldOnly);
+    SIZEOF_CTraceFilterWorldAndPropsOnly = SIZEOF_ITraceFilter,                                                         // sizeof(CTraceFilterWorldAndPropsOnly);
+    SIZEOF_CTraceFilterHitAll = SIZEOF_ITraceFilter,                                                                    // sizeof(CTraceFilterHitAll);
+    
+    CTRACEFILTERSIMPLE_OFFSET_M_PPASSENT = ITRACEFILTER_OFFSET_VTABLE + SIZEOF_Pointer,                                 // const IHandleEntity *m_pPassEnt;
+    CTRACEFILTERSIMPLE_OFFSET_M_COLLISIONGROUP = CTRACEFILTERSIMPLE_OFFSET_M_PPASSENT + SIZEOF_Pointer,                 // int m_collisionGroup;
+    CTRACEFILTERSIMPLE_OFFSET_M_PEXTRASHOULDHITCHECKFUNCTION = CTRACEFILTERSIMPLE_OFFSET_M_COLLISIONGROUP + SIZEOF_int, // bool (__cdecl*)(IHandleEntity* pHandleEntity, int contentsMask);
+    SIZEOF_CTraceFilterSimple = CTRACEFILTERSIMPLE_OFFSET_M_PEXTRASHOULDHITCHECKFUNCTION + SIZEOF_Pointer               // sizeof(CTraceFilterSimple);
 }
 
 static char CTraceFilter_GetTraceType[] = "\x33\xC0\xC3";
+
 static char CTraceFilterEntitiesOnly_GetTraceType[] = "\xB8\x02\x00\x00\x00\xC3";
+
 static char CTraceFilterWorldOnly_ShouldHitEntity[] = "\x32\xC0\xC2\x08\x00";
 static char CTraceFilterWorldOnly_GetTraceType[] = "\xB8\x01\x00\x00\x00\xC3";
+
 static char CTraceFilterWorldAndPropsOnly_ShouldHitEntity[] = "\x32\xC0\xC2\x08\x00";
 static char CTraceFilterWorldAndPropsOnly_GetTraceType[] = "\x33\xC0\xC3";
+
 static char CTraceFilterHitAll_ShouldHitEntity[] = "\xB0\x01\xC2\x08\x00";
+
+// ??_7CTraceFilterSimple@@6B@
+static char CTraceFilterSimple_SetPassEntity_Windows[] = "\x55\x8B\xEC\x8B\x45\x08\x89\x41\x04\x5D\xC2\x04\x00";
+static char CTraceFilterSimple_SetPassEntity_Linux[] = "\x55\x89\xE5\x8B\x55\x0C\x8B\x45\x08\x89\x50\x04\x5D\xC3";
+static char CTraceFilterSimple_SetCollisionGroup_Windows[] = "\x55\x8B\xEC\x56\xFF\x75\x08\x8B\xF1\xE8\xE2\xE9\xDD\xFF\xC6\x86\xD8\x08\x00\x00\x01\x5E\x5D\xC2\x04\x00";
+static char CTraceFilterSimple_SetCollisionGroup_Linux[] = "\x55\x89\xE5\x8B\x55\x0C\x8B\x45\x08\x89\x50\x08\x5D\xC3";
 
 //////////////////////////////////////////////////////////////////////////////
 // SMTC_UTILForward()                                                       //
@@ -199,8 +247,14 @@ public void SMTC_UTILForward()
     VTable.RegisterVPointer("CTraceFilterWorldAndPropsOnly", 1, AddressOfString(CTraceFilterWorldAndPropsOnly_GetTraceType));
 
     // class CTraceFilterHitAll : public CTraceFilter
-    VTable.CreateVTable("CTraceFilterHitAll", 2, "ITraceFilter");
+    VTable.CreateVTable("CTraceFilterHitAll", 2, "CTraceFilter");
     VTable.RegisterVPointer("CTraceFilterHitAll", 0, AddressOfString(CTraceFilterHitAll_ShouldHitEntity));
+
+    // class CTraceFilterSimple : public CTraceFilter
+    VTable.CreateVTable("CTraceFilterSimple", 4, "CTraceFilter");
+    VTable.RegisterVPointer("CTraceFilterSimple", 0, CTraceFilterSimple_ShouldHitEntity);
+    VTable.RegisterVPointer("CTraceFilterSimple", 2, ((SMTC.GetOperatingSystem() == OSTYPE_WINDOWS) ? AddressOfString(CTraceFilterSimple_SetPassEntity_Windows) : AddressOfString(CTraceFilterSimple_SetPassEntity_Linux)));
+    VTable.RegisterVPointer("CTraceFilterSimple", 3, ((SMTC.GetOperatingSystem() == OSTYPE_WINDOWS) ? AddressOfString(CTraceFilterSimple_SetCollisionGroup_Windows) : AddressOfString(CTraceFilterSimple_SetCollisionGroup_Linux)));
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -388,7 +442,7 @@ methodmap CTraceFilterWorldAndPropsOnly < ITraceFilter
 //////////////////////////////////////////////////////////////////////////////
 
 // This trace filter considers everything. This is not intended to be derived from.
-methodmap CTraceFilterHitAll < ITraceFilter
+methodmap CTraceFilterHitAll < CTraceFilter
 {
     // Constructor - wrap around an existing address to make way for an CTraceFilterHitAll object.
     public CTraceFilterHitAll(Address address)
@@ -420,12 +474,87 @@ methodmap CTraceFilterHitAll < ITraceFilter
 }
 
 //////////////////////////////////////////////////////////////////////////////
+// CTraceFilterSimple methodmap                                             //
+//////////////////////////////////////////////////////////////////////////////
+
+// An expansion on CTraceFilter, used as the default trace object for the UTIL_Trace* functions.
+methodmap CTraceFilterSimple < CTraceFilter
+{
+    // Constructor - wrap around an existing address to make way for an CTraceFilterHitAll object.
+    public CTraceFilterSimple(Address address)
+    {
+        return view_as<CTraceFilterSimple>(address);
+    }
+
+    // The pass entity.
+    property Pointer m_pPassEnt
+    {
+        public get() { return this.Dereference(CTRACEFILTERSIMPLE_OFFSET_M_PPASSENT); }
+        public set(Pointer value) { this.Write(value, CTRACEFILTERSIMPLE_OFFSET_M_PPASSENT); }
+    }
+    
+    // The collision group type.
+    property int m_collisionGroup
+    {
+        public get() { return this.Dereference(CTRACEFILTERSIMPLE_OFFSET_M_COLLISIONGROUP); }
+        public set(int value) { this.Write(value, CTRACEFILTERSIMPLE_OFFSET_M_COLLISIONGROUP); }
+    }
+
+    // When all hit entities are enumerated, this function is called after the CTraceFilter.ShouldHitEntity()
+    // function succeeds, for additional hit checks before deciding that an entity has been hit.
+    property Pointer m_pExtraShouldHitCheckFunction
+    {
+        public get() { return this.Dereference(CTRACEFILTERSIMPLE_OFFSET_M_PEXTRASHOULDHITCHECKFUNCTION); }
+        public set(Pointer value) { this.Write(value, CTRACEFILTERSIMPLE_OFFSET_M_PEXTRASHOULDHITCHECKFUNCTION); }
+    }
+
+    // Call constructor on existing type.
+    public void ctor(Pointer passentity, int collisionGroup, Pointer pExtraShouldHitCheckFn = NULL)
+    {
+        VTable.HookOntoObject("CTraceFilterSimple", this.Address);
+        this.m_pPassEnt = passentity;
+        this.m_collisionGroup = collisionGroup;
+        this.m_pExtraShouldHitCheckFunction = pExtraShouldHitCheckFn;
+        
+    }
+
+    // Constructor - allocate a new CTraceFilterSimple onto the heap. Deallocation will be required when you are finished using this using free().
+    public static CTraceFilterSimple Malloc(Pointer passentity, int collisionGroup, Pointer pExtraShouldHitCheckFn = NULL)
+    {
+        CTraceFilterSimple pointer = malloc(SIZEOF_CTraceFilterSimple);
+        pointer.ctor(passentity, collisionGroup, pExtraShouldHitCheckFn);
+        return pointer;
+    }
+
+    // Constructor - allocate a new CTraceFilterSimple onto the stack. When using the return value, you must use STACK_GETRETURN().
+    public static STACK StackAlloc(Pointer passentity, int collisionGroup, Pointer pExtraShouldHitCheckFn = NULL)
+    {
+        char buffer[SIZEOF_CTraceFilterSimple];
+        view_as<CTraceFilterSimple>(AddressOfString(buffer)).ctor(passentity, collisionGroup, pExtraShouldHitCheckFn);
+        return buffer;
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////////
 // UITL.INC GLOBALS                                                         //
 //////////////////////////////////////////////////////////////////////////////
 
-public void UTIL_TraceLine(const Vector& vecAbsStart, const Vector& vecAbsEnd, int mask, ITraceFilter& pFilter, TRACE_T& ptr)
+stock void UTIL_TraceLine(const Vector vecAbsStart, const Vector vecAbsEnd, int mask, ITraceFilter pFilter, TRACE_T ptr)
 {
     Ray_t ray = STACK_GETRETURN(Ray_t.StackAlloc());
     ray.Init(vecAbsStart, vecAbsEnd);
-    SDKCall(SMTC_SDKCall_IEngineTrace_TraceRay, enginetrace, ray, mask, pFilter, ptr);
+    enginetrace.TraceRay(ray, mask, pFilter, ptr);
+}
+
+stock void UTIL_TraceHull(const Vector vecAbsStart, const Vector vecAbsEnd, const Vector hullMin, const Vector hullMax, int mask, ITraceFilter pFilter, TRACE_T ptr)
+{
+    Ray_t ray = STACK_GETRETURN(Ray_t.StackAlloc());
+    ray.InitHull(vecAbsStart, vecAbsEnd, hullMin, hullMax);
+    enginetrace.TraceRay(ray, mask, pFilter, ptr);
+}
+
+stock void UTIL_TraceRay(const Ray_t ray, int mask, const int ignore, int collisionGroup, TRACE_T ptr, Pointer pExtraShouldHitCheckFn = NULL)
+{
+    CTraceFilterSimple traceFilter = STACK_GETRETURN(CTraceFilterSimple.StackAlloc(GetEntityAddress(ignore), collisionGroup, pExtraShouldHitCheckFn));
+    enginetrace.TraceRay(ray, mask, traceFilter, ptr);
 }

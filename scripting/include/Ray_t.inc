@@ -7,7 +7,6 @@
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_RAY_T
 
-#include "Pointer.inc"
 #include "VectorAligned.inc"
 
 #pragma semicolon true 
@@ -109,12 +108,21 @@ methodmap Ray_t < Pointer
         this.m_IsRay = true;
 
         // Offset m_Start to be in the center of the box...
-        VectorClear(this.m_Extents);
-        VectorCopy(start, this.m_Extents);
+        VectorClear(this.m_StartOffset);
+        VectorCopy(start, this.m_Start);
+
+        PrintToServer("---INIT---");
+        PrintToServer("this.m_Start: %f: %f: %f", this.m_Start.X, this.m_Start.Y, this.m_Start.Z);
+        PrintToServer("this.m_Delta: %f: %f: %f", this.m_Delta.X, this.m_Delta.Y, this.m_Delta.Z);
+        PrintToServer("this.m_IsRay: %i", this.m_IsRay);
+        PrintToServer("this.m_IsSwept: %i", this.m_IsSwept);
+        PrintToServer("this.m_Extents: %f: %f: %f", this.m_Extents.X, this.m_Extents.Y, this.m_Extents.Z);
+        PrintToServer("this.m_StartOffset: %f: %f: %f", this.m_StartOffset.X, this.m_StartOffset.Y, this.m_StartOffset.Z);
+        PrintToServer("---INIT---");
     }
 
     // Initialize the ray with the start/end and mins/maxs.
-    public void InitWithSize(const Vector start, const Vector end, const Vector mins, const Vector maxs)
+    public void InitHull(const Vector start, const Vector end, const Vector mins, const Vector maxs)
     {
         VectorSubtract(end, start, this.m_Delta);
         
@@ -135,7 +143,7 @@ methodmap Ray_t < Pointer
     // This vector is stored onto the accumulator and must be assigned to your desired vector, unless allocate is set to true.
     public Vector InvDelta(bool allocate = false)
     {
-        STACK_ALLOC(vecInvDelta, Vector, SIZEOF(Vector));
+        Vector vecInvDelta = STACK_GETRETURN(Vector.StackAlloc());
         for (int iAxis = 0; iAxis < 3; ++iAxis)
         {
             int delta = this.m_Delta.Dereference(iAxis * SIZEOF(int));
