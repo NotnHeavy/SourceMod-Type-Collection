@@ -172,10 +172,10 @@ methodmap Pointer
     }
     
     // Essentially a strlen() replica for pointers.
-    public int strlen(Pointer pointer)
+    public int strlen()
     {
         int length;
-        for (int i = 0; pointer.Dereference(i, NumberType_Int8) != 0; ++i)
+        for (int i = 0; this.Dereference(i, NumberType_Int8) != 0; ++i)
             ++length;
         return length;
     }
