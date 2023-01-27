@@ -170,6 +170,39 @@ methodmap Pointer
     {
         return Pointer(this.Address + view_as<Address>(index * typeSize));
     }
+    
+    // Essentially a strlen() replica for pointers.
+    public int strlen(Pointer pointer)
+    {
+        int length;
+        for (int i = 0; pointer.Dereference(i, NumberType_Int8) != 0; ++i)
+            ++length;
+        return length;
+    }
+
+    // Store pointer into a char buffer.
+    public void ToCharBuffer(char[] buffer, int maxlen = -1)
+    {
+        for (int i = 0; i < maxlen; ++i)
+        {
+            char value = this.Dereference(i, NumberType_Int8);
+            buffer[i] = value;
+            if (value == '\0') // NUL
+                break;
+        }
+    }
+
+    // Store char buffer into a pointer.
+    public void CharBufferToPointer(char[] buffer, int maxlen = -1)
+    {
+        for (int i = 0; i < maxlen; ++i)
+        {
+            char value = buffer[i];
+            this.Write(value, i, NumberType_Int8);
+            if (value == '\0') // NUL
+                break;
+        }
+    }
 
     // Store into a buffer. You must specify the size of the type used with this pointer using the typeSize parameter.
     public void ToBuffer(char[] buffer, int typeSize = 4)
@@ -318,37 +351,4 @@ stock void V_swap(Pointer x, Pointer y, int typeSize = 4)
 stock float FloatMakePositive(float f)
 {
     return view_as<float>(view_as<int>(f) & 0x77777777); // evil floating point bit level hacking
-}
-
-// strlen, but on a char pointer, rather than a char array.
-stock int PointerStrLen(Pointer pointer)
-{
-    int length;
-    for (int i = 0; pointer.Dereference(i, NumberType_Int8) != 0; ++i)
-        ++length;
-    return length;
-}
-
-// Store pointer into a char buffer.
-stock void PointerToCharBuffer(Pointer pointer, char[] buffer, int maxlen = 2147483648)
-{
-    for (int i = 0; i < maxlen; ++i)
-    {
-        char value = pointer.Dereference(i, NumberType_Int8);
-        buffer[i] = value;
-        if (value == '\0') // NUL
-            break;
-    }
-}
-
-// Store char buffer into a pointer.
-stock void CharBufferToPointer(char[] buffer, Pointer pointer, int maxlen = 2147483648)
-{
-    for (int i = 0; i < maxlen; ++i)
-    {
-        char value = buffer[i];
-        pointer.Write(value, i, NumberType_Int8);
-        if (value == '\0') // NUL
-            break;
-    }
 }

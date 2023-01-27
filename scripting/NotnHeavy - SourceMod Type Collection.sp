@@ -125,7 +125,7 @@ static void utilOperation()
     any obj;
     char buffer[4];
     VTable.HookOntoObject("CTraceFilter", AddressOf(obj));
-    PointerToCharBuffer(VTable.GetObjectVPointer(AddressOf(obj), 1).Dereference(), buffer, sizeof(buffer));
+    Pointer(VTable.GetObjectVPointer(AddressOf(obj), 1).Dereference()).ToCharBuffer(buffer, sizeof(buffer));
     for (int i = 0; i < sizeof(buffer); ++i)
     {
         char variable = buffer[i];
@@ -135,7 +135,7 @@ static void utilOperation()
 
     VTable.CreateVTable("testie", 2, "CTraceFilter");
     VTable.HookOntoObject("testie", AddressOf(obj));
-    PointerToCharBuffer(VTable.GetObjectVPointer(AddressOf(obj), 1).Dereference(), buffer, sizeof(buffer));
+    Pointer(VTable.GetObjectVPointer(AddressOf(obj), 1).Dereference()).ToCharBuffer(buffer, sizeof(buffer));
     for (int i = 0; i < sizeof(buffer); ++i)
     {
         char variable = buffer[i];
@@ -436,15 +436,15 @@ static void tfplayerclassdata_tOperation()
 
     TFPlayerClassData_t civilianData = GetPlayerClassData(TF_CLASS_CIVILIAN);
 
-    PointerToCharBuffer(civilianData.m_szModelName, buffer, sizeof(buffer));
+    civilianData.m_szModelName.ToCharBuffer(buffer, sizeof(buffer));
     PrintToServer("Civilian model: %s", buffer);
-    PointerToCharBuffer(civilianData.m_szHWMModelName, buffer, sizeof(buffer));
+    civilianData.m_szHWMModelName.ToCharBuffer(buffer, sizeof(buffer));
     PrintToServer("Civilian HWM model: %s", buffer);
-    PointerToCharBuffer(civilianData.m_szHandModelName, buffer, sizeof(buffer));
+    civilianData.m_szHandModelName.ToCharBuffer(buffer, sizeof(buffer));
     PrintToServer("Civilian hands model: %s", buffer);
-    PointerToCharBuffer(civilianData.m_szLocalizableName, buffer, sizeof(buffer));
+    civilianData.m_szLocalizableName.ToCharBuffer(buffer, sizeof(buffer));
     PrintToServer("Civilian localizable name: %s", buffer);
-    PointerToCharBuffer(civilianData.m_szClassName, buffer, sizeof(buffer));
+    civilianData.m_szClassName.ToCharBuffer(buffer, sizeof(buffer));
     PrintToServer("Civilian class name: %s", buffer);
 
     PrintToServer("");

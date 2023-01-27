@@ -130,7 +130,7 @@ static VTable_Info GetVTableInfo(char[] name, bool countLast = true)
     {
         VTable_Info vtableInfo = view_as<VTable_Info>(vtables.Get(i, SIZEOF_VTable_Info));
         char buffer[32];
-        PointerToCharBuffer(vtableInfo.Name, buffer, sizeof(buffer));
+        vtableInfo.Name.ToCharBuffer(buffer, sizeof(buffer));
         if (StrEqual(name, buffer))
             return vtableInfo;
     }

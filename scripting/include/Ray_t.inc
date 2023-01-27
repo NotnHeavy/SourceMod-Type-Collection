@@ -110,15 +110,6 @@ methodmap Ray_t < Pointer
         // Offset m_Start to be in the center of the box...
         VectorClear(this.m_StartOffset);
         VectorCopy(start, this.m_Start);
-
-        PrintToServer("---INIT---");
-        PrintToServer("this.m_Start: %f: %f: %f", this.m_Start.X, this.m_Start.Y, this.m_Start.Z);
-        PrintToServer("this.m_Delta: %f: %f: %f", this.m_Delta.X, this.m_Delta.Y, this.m_Delta.Z);
-        PrintToServer("this.m_IsRay: %i", this.m_IsRay);
-        PrintToServer("this.m_IsSwept: %i", this.m_IsSwept);
-        PrintToServer("this.m_Extents: %f: %f: %f", this.m_Extents.X, this.m_Extents.Y, this.m_Extents.Z);
-        PrintToServer("this.m_StartOffset: %f: %f: %f", this.m_StartOffset.X, this.m_StartOffset.Y, this.m_StartOffset.Z);
-        PrintToServer("---INIT---");
     }
 
     // Initialize the ray with the start/end and mins/maxs.
