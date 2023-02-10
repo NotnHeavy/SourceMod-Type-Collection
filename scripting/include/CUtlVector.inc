@@ -550,3 +550,21 @@ methodmap CUtlVector < Pointer
         free(this);
     }
 }
+
+//////////////////////////////////////////////////////////////////////////////
+// MISCELLANEOUS                                                            //
+//////////////////////////////////////////////////////////////////////////////
+
+// Re-allocate within a specific location in memory. You must specify the size of the type used with this global using the typeSize parameter.
+// Normally this would call the the constructor of the allocated memory, but that's not possible here.
+static void Construct(Pointer memory, int typeSize = 4)
+{
+    memset(memory, 0, typeSize);
+}
+
+// Re-allocate within a specific location in memory, from another source. You must specify the size of the type used with this global using the typeSize parameter.
+// Normally this would call the the constructor of the allocated memory, but that's not possible here.
+static void CopyConstruct(Pointer memory, Pointer source, int typeSize = 4)
+{
+    memcpy(memory, source, typeSize);
+}

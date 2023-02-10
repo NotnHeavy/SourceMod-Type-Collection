@@ -38,7 +38,7 @@ static float cache_array[VECTOR_CACHE_SIZE * 3 + 1]; // the + 1 is to compensate
 static Vector cache;
 static int cache_index = 0;
 
-Vector vec3_origin; // NOT INTENDED TO BE WRITTEN TO!
+stock Vector vec3_origin; // NOT INTENDED TO BE WRITTEN TO!
 
 //////////////////////////////////////////////////////////////////////////////
 // SMTC_VectorForward()                                                     //
@@ -376,16 +376,6 @@ stock bool VectorsAreEqual(const Vector left, const Vector right, float toleranc
     if (FloatMakePositive(left.Y - right.Y) > tolerance)
         return false;
     return FloatMakePositive(left.Z - right.Z) <= tolerance;
-}
-
-// The vector returned is a reference to an internal class member. For use with Prop_Send, you must specify the object class name (CTFPlayer for player entities, for example).
-stock Vector GetEntVector(int entity, PropType type, const char[] property, const char[] class = {'\0'}, int index = 0)
-{
-    // We are accessing an internal member, therefore we should probably get it as a reference instead.
-    if (type == Prop_Send)
-        return view_as<Vector>(GetEntityAddress(entity) + FindSendPropInfo(class, property) + index * SIZEOF_Vector);
-    else
-        return view_as<Vector>(GetEntityAddress(entity) + FindDataMapInfo(entity, property) + index * SIZEOF_Vector);
 }
 
 // Get a random vector. This vector is stored onto the accumulator and must be assigned to your desired vector, unless allocate is set to true.

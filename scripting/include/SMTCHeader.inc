@@ -21,6 +21,20 @@
 
 #define FLT_MAX view_as<float>(0x7f7fffff)
 
+#define M_E        2.71828182845904523536   // e
+#define M_LOG2E    1.44269504088896340736   // log2(e)
+#define M_LOG10E   0.434294481903251827651  // log10(e)
+#define M_LN2      0.693147180559945309417  // ln(2)
+#define M_LN10     2.30258509299404568402   // ln(10)
+#define M_PI       3.14159265358979323846   // pi
+#define M_PI_2     1.57079632679489661923   // pi/2
+#define M_PI_4     0.785398163397448309616  // pi/4
+#define M_1_PI     0.318309886183790671538  // 1/pi
+#define M_2_PI     0.636619772367581343076  // 2/pi
+#define M_2_SQRTPI 1.12837916709551257390   // 2/sqrt(pi)
+#define M_SQRT2    1.41421356237309504880   // sqrt(2)
+#define M_SQRT1_2  0.707106781186547524401  // 1/sqrt(2)
+
 //////////////////////////////////////////////////////////////////////////////
 // FUNCTION MACROS AND STACK (terrorist acts here)                          //
 //////////////////////////////////////////////////////////////////////////////
@@ -67,6 +81,7 @@ stock OSType OSTypeUsed;
 
 stock Pointer g_pTFPlayerClassDataMgr;
 stock CEngineTrace enginetrace;
+stock CTFGameRules g_pGameRules;
 
 stock Pointer CTraceFilterSimple_ShouldHitEntity;
 
@@ -75,8 +90,32 @@ stock DHookSetup SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive;
 stock Handle SMTC_SDKCall_IEngineTrace_ClipRayToEntity;
 stock Handle SMTC_SDKCall_IEngineTrace_TraceRay;
 
+stock Handle SMTC_SDKCall_CBaseEntity_TakeDamage;
 stock Handle SMTC_SDKCall_CTFRadiusDamageInfo_CalculateFalloff;
 stock Handle SMTC_SDKCall_CTFRadiusDamageInfo_ApplyToEntity;
+stock Handle SMTC_SDKCall_CTFGameRules_RadiusDamage;
+
+stock any m_RefEHandle_Offset;
+
+//////////////////////////////////////////////////////////////////////////////
+// CTFGAMERULES METHODMAP                                                   //
+//////////////////////////////////////////////////////////////////////////////
+
+// TF2 game rules. This is just used for organising a few function calls and does not re-construct CGameTrace.
+methodmap CTFGameRules
+{
+    // Constructor - wrap around an existing address to make way for a CTFGameRules object.
+    public CTFGameRules(Address address)
+    {
+        return view_as<CTFGameRules>(address);
+    }
+
+    // Apply damage within a specific radius using a CTFRadiusDamageInfo object.
+    public void RadiusDamage(any& info)
+    {
+        SDKCall(SMTC_SDKCall_CTFGameRules_RadiusDamage, this, info);
+    }
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // ENGINETRACE METHODMAP                                                    //
@@ -133,36 +172,6 @@ methodmap Pointer
     public void Write(any value, any offset = 0, NumberType bits = NumberType_Int32)
     {
         StoreToAddress(this.Address + offset, value, bits);
-    }
-
-    // Get the entity index from an EHANDLE. Taken from nosoop's stocksoup repository.
-    public int DereferenceEHandle(any offset = 0)
-    {
-        return EntRefToEntIndex(this.Dereference(offset) | (1 << 31));
-    }
-
-    // Write entity handle to this pointer's address. Taken from nosoop's stocksoup repository.
-    public void WriteEHandle(any index, any offset = 0)
-    {
-        this.Write(IsValidEntity(index) ? EntIndexToEntRef(index) & ~(1 << 31) : 0, offset);
-    }
-
-    // Get the entity index from an address. Taken from nosoop's stocksoup repository.
-    public int DereferenceEntity(any offset = 0)
-    {
-        static int offs_RefEHandle;
-        if (!offs_RefEHandle) 
-            offs_RefEHandle = getRefEHandleOffset();
-        Pointer address = this.Dereference(offset);
-        if (address == NULL)
-            return INVALID_ENT_REFERENCE;
-        return address.DereferenceEHandle(offs_RefEHandle);
-    }
-
-    // Write the entity address to this pointer.
-    public void WriteEntity(int entity, any offset = 0)
-    {
-        this.Write(IsValidEntity(entity) ? GetEntityAddress(entity) : Address_Null, offset);
     }
 
     // Get the array offset from the pointer's current address. You must specify the size of the type used with this pointer using the typeSize parameter.
@@ -230,34 +239,8 @@ methodmap Pointer
 }
 
 //////////////////////////////////////////////////////////////////////////////
-// MISCELLANEOUS                                                            //
+// POINTERS                                                                 //
 //////////////////////////////////////////////////////////////////////////////
-
-// Taken from nosoop's stocksoup repository.
-static int getRefEHandleOffset()
-{
-    // if we don't have it already, attempt to lookup offset based on SDK information
-    // CWorld is derived from CBaseEntity so it should have both offsets
-    int offs_angRotation = FindDataMapInfo(0, "m_angRotation"), offs_vecViewOffset = FindDataMapInfo(0, "m_vecViewOffset");
-    if (offs_angRotation == -1) 
-    {
-        ThrowError("Could not find offset for ((CBaseEntity) CWorld)::m_angRotation");
-    }
-    else if (offs_vecViewOffset == -1) 
-    {
-        ThrowError("Could not find offset for ((CBaseEntity) CWorld)::m_vecViewOffset");
-    } 
-    else if ((offs_angRotation + 0x0C) != (offs_vecViewOffset - 0x04)) 
-    {
-        char game[32];
-        GetGameFolderName(game, sizeof(game));
-        ThrowError("Could not confirm offset of CBaseEntity::m_RefEHandle "
-                ... "(incorrect assumption for game '%s'?)", game);
-    }
-
-    // offset seems right, cache it for the next call
-    return offs_angRotation + 0x0C;
-}
 
 // :D
 stock Address operator+(Address left, int right)
@@ -311,20 +294,6 @@ stock Pointer operator=(int value)
 stock Pointer operator=(Address value)
 {
     return view_as<Pointer>(value);
-}
-
-// Re-allocate within a specific location in memory. You must specify the size of the type used with this global using the typeSize parameter.
-// Normally this would call the the constructor of the allocated memory, but that's not possible here.
-stock void Construct(Pointer memory, int typeSize = 4)
-{
-    memset(memory, 0, typeSize);
-}
-
-// Re-allocate within a specific location in memory, from another source. You must specify the size of the type used with this global using the typeSize parameter.
-// Normally this would call the the constructor of the allocated memory, but that's not possible here.
-stock void CopyConstruct(Pointer memory, Pointer source, int typeSize = 4)
-{
-    memcpy(memory, source, typeSize);
 }
 
 // Re-allocates a block of memory for an array of num elements. Each byte is initialized as 0.

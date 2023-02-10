@@ -242,20 +242,40 @@ stock void AngleVectors(const QAngle angles, Vector& forwardVector = view_as<Vec
         up.SetFromBuffer(upBuffer);
 }
 
-// The QAngle returned is a reference to an internal class member. For use with Prop_Send, you must specify the object class name (CTFPlayer for player entities, for example).
-stock QAngle GetEntQAngle(int entity, PropType type, const char[] property, const char[] class = {'\0'}, int index = 0)
-{
-    // We are accessing an internal member, therefore we should probably get it as a reference instead.
-    if (type == Prop_Send)
-        return view_as<QAngle>(GetEntityAddress(entity) + FindSendPropInfo(class, property) + index * SIZEOF_QAngle);
-    else
-        return view_as<QAngle>(GetEntityAddress(entity) + FindDataMapInfo(entity, property) + index * SIZEOF_QAngle);
-}
-
 // Get a random QAngle. This QAngle is stored onto the accumulator and must be assigned to your desired QAngle, unless allocate is set to true, where it is malloc()'d instead.
 stock QAngle RandomAngle(float minValue, float maxValue, bool allocate = false)
 {
     QAngle random = allocate ? QAngle.Malloc() : QAngle.Accumulator();
     random.Random(minValue, maxValue);
     return random;
+}
+
+// Forward direction vector -> Euler angles
+stock void VectorAngles(const Vector& forwardVector, QAngle& angles)
+{
+    float tmp, yaw, pitch;
+
+    if (forwardVector.Y == 0.00 && forwardVector.Z == 0.00)
+    {
+        yaw = 0.00;
+        if (forwardVector.Z > 0.00)
+            pitch = 270.00;
+        else
+            pitch = 90.00;
+    }
+    else
+    {
+        yaw = (ArcTangent2(forwardVector.Y, forwardVector.Z) * 180.00 / M_PI);
+        if (yaw < 0.00)
+            yaw += 360.00;
+        
+        tmp = SquareRoot(forwardVector.X * forwardVector.X + forwardVector.Y * forwardVector.Y);
+        pitch = (ArcTangent2(-forwardVector.Z, tmp) * 180.00 / M_PI);
+        if (pitch < 0.00)
+            pitch += 360.00;
+    }
+
+    angles.X = pitch;
+    angles.Y = yaw;
+    angles.Z = 0.00;
 }

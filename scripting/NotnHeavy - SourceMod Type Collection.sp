@@ -25,6 +25,8 @@
 #include "VectorAligned.inc"
 #include "Ray_t.inc"
 #include "UTIL.inc"
+#include "CBaseEntity.inc"
+#include "CHandle.inc"
 
 #include "tf/CTakeDamageInfo.inc"
 #include "tf/CTFRadiusDamageInfo.inc"
@@ -95,6 +97,8 @@ public void OnPluginStart()
     vectoralignedOperation();
     ray_tOperation();
     utilOperation();
+    entityOperation(); // CBaseEntity.inc, CHandle.inc
+    gamerulesOperation();
 
     PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
     PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
@@ -108,6 +112,33 @@ public void OnMapStart()
 public void OnPluginEnd()
 {
     VTable.ClearVTables();
+}
+
+static void gamerulesOperation()
+{
+    PrintToServer("GAMERULES: %u\n", g_pGameRules);
+}
+
+static void entityOperation()
+{
+    if (IsClientInGame(1))
+    {
+        CBaseEntity entity = CBaseEntity.FromIndex(1);
+        CHandle handle = entity.m_RefEHandle;
+        PrintToServer("entity handle of client 1: %u", handle.m_Index);
+        PrintToServer("entity index from dereferencing entity handle: %i", handle.GetAsEntIndex());
+
+        // Get m_hMyWearables
+        CUtlVector vector = view_as<CUtlVector>(entity.GetEntPropPointer(Prop_Send, "m_hMyWearables"));
+        PrintToServer("CBaseEntity.FromIndex(1)->m_hMyWearables: %u, m_hMyWearables - player: %u", vector, entity);
+        for (int i = 0, size = vector.Count(); i < size; ++i)
+        {
+            EHANDLE entityFound = view_as<EHANDLE>(vector.Get(i));
+            PrintToServer("entity in CBaseEntity.FromIndex(1)->m_hMyWearables[%i]: %i", i, entityFound.GetAsEntIndex());
+        }
+
+        PrintToServer("");
+    }
 }
 
 // UTIL.inc
@@ -154,7 +185,7 @@ static void utilOperation()
     PrintToServer("");
 
     // check global trace
-    PrintToServer("global trace: %u", enginetrace);
+    PrintToServer("global trace: %u\n", enginetrace);
 
 
     if (IsClientInGame(1))
@@ -483,7 +514,7 @@ static Action ctfradiusdamageinfoOperation(int client, const char[] argv, int ar
         GetEntPropVector(1, Prop_Data, "m_vecAbsOrigin", buffer);
         Vector damagePosition = AddressOfArray(buffer);
 
-        CTakeDamageInfo damageInfo = CTakeDamageInfo.Malloc(client, client, client, damagePosition, damagePosition, 300.00, DMG_BLAST & DMG_HALF_FALLOFF, TF_CUSTOM_STICKBOMB_EXPLOSION, damagePosition);
+        CTakeDamageInfo damageInfo = CTakeDamageInfo.Malloc(CBaseEntity.FromIndex(client), CBaseEntity.FromIndex(client), CBaseEntity.FromIndex(client), damagePosition, damagePosition, 300.00, DMG_BLAST & DMG_HALF_FALLOFF, TF_CUSTOM_STICKBOMB_EXPLOSION, damagePosition);
         CTFRadiusDamageInfo radiusInfo = CTFRadiusDamageInfo.Malloc(damageInfo, damagePosition, 200.00);
         SDKCall(SDKCall_CTFGameRules_RadiusDamage, radiusInfo);
         free(damageInfo);
@@ -510,7 +541,7 @@ static void ctakedamageinfoOperation()
     */
 
     // Server tests.
-    CTakeDamageInfo info = CTakeDamageInfo.Malloc(0, 0, 0, vec3_origin, vec3_origin, 0.00, 0, 0);
+    CTakeDamageInfo info = CTakeDamageInfo.Malloc(CBaseEntity.FromIndex(0), CBaseEntity.FromIndex(0), CBaseEntity.FromIndex(0), vec3_origin, vec3_origin, 0.00, 0, 0);
     PrintToServer("info.m_vecDamagePosition: %f: %f: %f", info.m_vecDamagePosition.X, info.m_vecDamagePosition.Y, info.m_vecDamagePosition.Z);
     info.m_vecDamagePosition.X = 3.00;
     PrintToServer("info.m_vecDamagePosition.X: %f, vec3_origin.X: %f\n", info.m_vecDamagePosition.X, vec3_origin.X);
@@ -533,7 +564,7 @@ static void cutlvectorOperation()
         CUtlVector m_hMyWearables = CUtlVector(GetEntityAddress(1) + FindSendPropInfo("CTFPlayer", "m_hMyWearables"));
         PrintToServer("m_hMyWearables size: %i", m_hMyWearables.Count());
         for (int i = 0; i < m_hMyWearables.Count(); ++i)
-            PrintToServer("m_hMyWearables[%i]: %i", i, m_hMyWearables.Get(i).DereferenceEHandle());
+            PrintToServer("m_hMyWearables[%i]: %i", i, view_as<CHandle>(m_hMyWearables.Get(i)).GetAsEntIndex());
         PrintToServer("");
 
         // fuck it, gunboats
@@ -547,10 +578,10 @@ static void cutlvectorOperation()
         SetEntPropEnt(gunboats, Prop_Send, "m_hOwnerEntity", 1);
 
         // time to blow up valve headquarters
-        m_hMyWearables.Get(m_hMyWearables.AddToHead()).WriteEHandle(gunboats);
+        view_as<CHandle>(m_hMyWearables.Get(m_hMyWearables.AddToHead())).Set(CBaseEntity.FromIndex(gunboats));
         SDKCall(SDKCall_CTFWearable_Equip, gunboats, 1);
         for (int i = 0; i < m_hMyWearables.Count(); ++i)
-            PrintToServer("after adding, m_hMyWearables[%i]: %i", i, m_hMyWearables.Get(i).DereferenceEHandle());
+            PrintToServer("after adding, m_hMyWearables[%i]: %i", i, view_as<CHandle>(m_hMyWearables.Get(i)).GetAsEntIndex());
         PrintToServer("");
     }
 

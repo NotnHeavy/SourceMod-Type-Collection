@@ -36,6 +36,19 @@
 				}
 				"read" "0"
 			}
+			"g_pGameRules"
+			{
+				"windows"
+				{
+					"signature" "cc_ShowRespawnTimes()"
+					"read"      "13"
+				}
+				"linux"
+				{
+					"signature" "g_pGameRules"
+				}
+				"read" "0"
+			}
 		}
 		"Offsets"
 		{
@@ -49,7 +62,7 @@
 			"IEngineTrace::ClipRayToEntity()"
 			{
 				"windows" "2"
-				"linux"   "4"
+				"linux"   "2"
 			}
 			"IEngineTrace::TraceRay()"
 			{
@@ -64,6 +77,11 @@
 				"library" "server"
 				"windows" "\x55\x8B\xEC\x69\x4D\x08\xF0\x08\x00\x00"
 			}
+			"cc_ShowRespawnTimes()" // offset aShowTheMinResp ; "Show the min respawn times for the team", call below
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x81\xEC\x18\x01\x00\x00\x56\x57\x8B\x3D\x2A\x2A\x2A\x2A"
+			}
 			"g_pTFPlayerClassDataMgr"
 			{
 				"library" "server"
@@ -74,18 +92,23 @@
 				"library" "server"
 				"linux"   "@enginetrace"
 			}
-
-			"CTraceFilterSimple::ShouldHitEntity()"
+			"g_pGameRules"
 			{
 				"library" "server"
-				"windows" "\x55\x8B\xEC\x53\x8B\x5D\x0C\x56\x8B\x75\x08\x57\x53" // search vtable for CTraceFilterSimple, vfunc 0
+				"linux"   "@g_pGameRules"
+			}
+
+			"CTraceFilterSimple::ShouldHitEntity()" // search vtable for CTraceFilterSimple, vfunc 0
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x53\x8B\x5D\x0C\x56\x8B\x75\x08\x57\x53"
 				"linux"	  "@_ZN18CTraceFilterSimple15ShouldHitEntityEP13IHandleEntityi"
 			}
 
-			"CBaseEntity::HandleShotImpactingWater()"
+			"CBaseEntity::HandleShotImpactingWater()"  // xrefs to "gunshotsplash"
 			{
 				"library" "server"
-				"windows" "\x53\x8B\xDC\x83\xEC\x08\x83\xE4\xF0\x83\xC4\x04\x55\x8B\x6B\x04\x89\x6C\x24\x04\x8B\xEC\x8B\x43\x08\x81\xEC\x08\x01\x00\x00\x83\xC0\x04" // xrefs to "gunshotsplash"
+				"windows" "\x53\x8B\xDC\x83\xEC\x08\x83\xE4\xF0\x83\xC4\x04\x55\x8B\x6B\x04\x89\x6C\x24\x04\x8B\xEC\x8B\x43\x08\x81\xEC\x08\x01\x00\x00\x83\xC0\x04"
 			}
 
             "CTFPlayer::OnTakeDamage_Alive()" // offset aBleedingDurati ; "bleeding_duration"
@@ -95,6 +118,12 @@
 				"linux"   "@_ZN9CTFPlayer18OnTakeDamage_AliveERK15CTakeDamageInfo"
 			}
 
+			"CBaseEntity::TakeDamage()" // offset aCbaseentityTak ; "CBaseEntity::TakeDamage:  with inputInf"...
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x81\xEC\x98\x00\x00\x00\x53\x8B\xD9"
+				"linux"   "@_ZN11CBaseEntity10TakeDamageERK15CTakeDamageInfo"
+			}
 			"CTFRadiusDamageInfo::CalculateFalloff()" // offset aMultDmgFalloff ; "mult_dmg_falloff"
 			{
 				"library" "server"
@@ -106,6 +135,12 @@
 				"library" "server"
 				"windows" "\x55\x8B\xEC\x81\xEC\x3C\x01\x00\x00\x8B\xD1"
 				"linux"   "@_ZN19CTFRadiusDamageInfo13ApplyToEntityEP11CBaseEntity"
+			}
+			"CTFGameRules::RadiusDamage()" // offset aAddHealthOnRad ; "add_health_on_radius_damage"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x81\xEC\x24\x08\x00\x00\x53"
+				"linux"	  "@_ZN12CTFGameRules12RadiusDamageER19CTFRadiusDamageInfo"
 			}
         }
         "Functions"

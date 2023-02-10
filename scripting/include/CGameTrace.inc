@@ -81,10 +81,10 @@ methodmap CGameTrace < CBaseTrace
     }
 
     // Entity hit. Returns entity index on success, returns -1 on NULL.
-    property int m_pEnt
+    property CBaseEntity m_pEnt
     {
-        public get() { return this.DereferenceEntity(CGAMETRACE_OFFSET_M_PENT); }
-        public set(int value) { this.WriteEntity(value, CGAMETRACE_OFFSET_M_PENT); }
+        public get() { return this.Dereference(CGAMETRACE_OFFSET_M_PENT); }
+        public set(CBaseEntity value) { this.Write(value, CGAMETRACE_OFFSET_M_PENT); }
     }
 
     // Box hit by trace in studio.
@@ -126,24 +126,13 @@ methodmap CGameTrace < CBaseTrace
     // Returns true if we hit something and it wasn't the world.
     public bool DidHitNonWorldEntity()
     {
-        return this.m_pEnt != -1 && !this.DidHitWorld();
+        return this.m_pEnt != NULL && !this.DidHitWorld();
     }
 
     // Gets the entity's network index if the trace has hit an entity.
 	// If not, returns -1.
     public int GetEntityIndex()
     {
-        return this.m_pEnt;
+        return this.m_pEnt.entindex();
     }
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// MISCELLANEOUS                                                            //
-//////////////////////////////////////////////////////////////////////////////
-
-// As determined by CWorld::RequiredEdictIndex(), the world entity always has entity index 0.
-// TODO: Move to better place?
-public int GetWorldEntity()
-{
-    return 0;
 }

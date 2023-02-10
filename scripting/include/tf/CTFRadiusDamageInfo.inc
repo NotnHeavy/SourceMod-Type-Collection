@@ -67,10 +67,10 @@ methodmap CTFRadiusDamageInfo < Pointer
     }
 
     // Is there an entity that we should ignore?
-    property int pEntityIgnore
+    property CBaseEntity pEntityIgnore
     {
-        public get() { return this.DereferenceEntity(CTFRADIUSDAMAGEINFO_OFFSET_M_PENTITYTARGET); }
-        public set(int value) { this.WriteEntity(value, CTFRADIUSDAMAGEINFO_OFFSET_M_PENTITYTARGET); }
+        public get() { return this.Dereference(CTFRADIUSDAMAGEINFO_OFFSET_M_PENTITYTARGET); }
+        public set(CBaseEntity value) { this.Write(value, CTFRADIUSDAMAGEINFO_OFFSET_M_PENTITYTARGET); }
     }
 
     // Radius to use to calculate RJ, to maintain RJs when damage/radius changes on a RL.
@@ -88,10 +88,10 @@ methodmap CTFRadiusDamageInfo < Pointer
     }
 
     // The target being directly hit, if any.
-    property int m_pEntityTarget
+    property CBaseEntity m_pEntityTarget
     {
-        public get() { return this.DereferenceEntity(CTFRADIUSDAMAGEINFO_OFFSET_M_PENTITYTARGET); }
-        public set(int value) { this.WriteEntity(value, CTFRADIUSDAMAGEINFO_OFFSET_M_PENTITYTARGET); }
+        public get() { return this.Dereference(CTFRADIUSDAMAGEINFO_OFFSET_M_PENTITYTARGET); }
+        public set(CBaseEntity value) { this.Write(value, CTFRADIUSDAMAGEINFO_OFFSET_M_PENTITYTARGET); }
     }
 
     // Falloff amount. These are used during the application of the RadiusDamage.
@@ -120,17 +120,17 @@ methodmap CTFRadiusDamageInfo < Pointer
     }
 
     // Attempt to apply the radius damage to the specified entity. Requires SMTC_Initialize() to have been called.
-    public void ApplyToEntity()
+    public void ApplyToEntity(CBaseEntity pEntity)
     {
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_SMTC
-        SDKCall(SMTC_SDKCall_CTFRadiusDamageInfo_ApplyToEntity, this);
+        SDKCall(SMTC_SDKCall_CTFRadiusDamageInfo_ApplyToEntity, this, pEntity);
 #else
         ThrowError("CTFRadiusDamageInfo::ApplyToEntity() requires SMTC.inc!");
 #endif
     }
     
     // Call constructor on existing type.
-    public void ctor(CTakeDamageInfo info, const Vector source, float radius, int ignore = ENTITY_NULL, float rjRadius = 0.00, float forceScale = 1.00)
+    public void ctor(CTakeDamageInfo info, const Vector source, float radius, CBaseEntity ignore = NULL, float rjRadius = 0.00, float forceScale = 1.00)
     {
         this.dmgInfo = info;
         this.vecSrc = source;
@@ -139,13 +139,13 @@ methodmap CTFRadiusDamageInfo < Pointer
         this.flRJRadius = rjRadius;
         this.flFalloff = 0.00;
         this.m_flForceScale = forceScale;
-        this.m_pEntityTarget = ENTITY_NULL;
+        this.m_pEntityTarget = NULL;
 
         this.CalculateFalloff();
     }
 
     // Constructor - allocate a new CTFRadiusDamageInfo onto the heap. Deallocation will be required when you are finished using free().
-    public static CTFRadiusDamageInfo Malloc(CTakeDamageInfo info, const Vector source, float radius, int ignore = ENTITY_NULL, float rjRadius = 0.00, float forceScale = 1.00)
+    public static CTFRadiusDamageInfo Malloc(CTakeDamageInfo info, const Vector source, float radius, CBaseEntity ignore = NULL, float rjRadius = 0.00, float forceScale = 1.00)
     {
         CTFRadiusDamageInfo pointer = malloc(SIZEOF_CTFRadiusDamageInfo);
         pointer.ctor(info, source, radius, ignore, rjRadius, forceScale);
@@ -153,7 +153,7 @@ methodmap CTFRadiusDamageInfo < Pointer
     }
 
     // Constructor - allocate a new CTFRadiusDamageInfo onto the stack. When using the return value, you must use STACK_GETRETURN().
-    public static STACK StackAlloc(CTakeDamageInfo info, const Vector source, float radius, int ignore = ENTITY_NULL, float rjRadius = 0.00, float forceScale = 1.00)
+    public static STACK StackAlloc(CTakeDamageInfo info, const Vector source, float radius, CBaseEntity ignore = NULL, float rjRadius = 0.00, float forceScale = 1.00)
     {
         char buffer[SIZEOF_CTFRadiusDamageInfo];
         view_as<CTFRadiusDamageInfo>(AddressOfString(buffer)).ctor(info, source, radius, ignore, rjRadius, forceScale);

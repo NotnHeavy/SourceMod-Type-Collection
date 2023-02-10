@@ -100,24 +100,24 @@ methodmap CTakeDamageInfo < Pointer
     }
 
     // The inflictor. This can be any entity.
-    property int m_hInflictor
+    property CHandle m_hInflictor
     {
-        public get() { return this.DereferenceEHandle(CTAKEDAMAGEINFO_OFFSET_M_HINFLICTOR); }
-        public set(int value) { this.WriteEHandle(value, CTAKEDAMAGEINFO_OFFSET_M_HINFLICTOR); }
+        public get() { return view_as<CHandle>(this.Address + CTAKEDAMAGEINFO_OFFSET_M_HINFLICTOR); }
+        public set(CHandle value) { memcpy(this.Address + CTAKEDAMAGEINFO_OFFSET_M_HINFLICTOR, value, SIZEOF_CHandle); }
     }
 
     // The attacker. If set, this is a CTFPlayer entity.
-    property int m_hAttacker
+    property CHandle m_hAttacker
     {
-        public get() { return this.DereferenceEHandle(CTAKEDAMAGEINFO_OFFSET_M_HATTACKER); }
-        public set(int value) { this.WriteEHandle(value, CTAKEDAMAGEINFO_OFFSET_M_HATTACKER); }
+        public get() { return view_as<CHandle>(this.Address + CTAKEDAMAGEINFO_OFFSET_M_HATTACKER); }
+        public set(CHandle value) { memcpy(this.Address + CTAKEDAMAGEINFO_OFFSET_M_HATTACKER, value, SIZEOF_CHandle); }
     }
 
     // The weapon. If set, this is a CTFWeaponBase entity.
-    property int m_hWeapon
+    property CHandle m_hWeapon
     {
-        public get() { return this.DereferenceEHandle(CTAKEDAMAGEINFO_OFFSET_M_HWEAPON); }
-        public set(int value) { this.WriteEHandle(value, CTAKEDAMAGEINFO_OFFSET_M_HWEAPON); }
+        public get() { return view_as<CHandle>(this.Address + CTAKEDAMAGEINFO_OFFSET_M_HWEAPON); }
+        public set(CHandle value) { memcpy(this.Address + CTAKEDAMAGEINFO_OFFSET_M_HWEAPON, value, SIZEOF_CHandle); }
     }
 
     // The amount of damage to deal.
@@ -191,10 +191,10 @@ methodmap CTakeDamageInfo < Pointer
     }
 
     // Who gave us the ability to do extra damage?
-    property int m_hDamageBonusProvider
+    property CHandle m_hDamageBonusProvider
     {
-        public get() { return this.DereferenceEHandle(CTAKEDAMAGEINFO_OFFSET_M_HDAMAGEBONUSPROVIDER); }
-        public set(int value) { this.WriteEHandle(value, CTAKEDAMAGEINFO_OFFSET_M_HDAMAGEBONUSPROVIDER); }
+        public get() { return view_as<CHandle>(this.Address + CTAKEDAMAGEINFO_OFFSET_M_HDAMAGEBONUSPROVIDER); }
+        public set(CHandle value) { memcpy(this.Address + CTAKEDAMAGEINFO_OFFSET_M_HDAMAGEBONUSPROVIDER, value, SIZEOF_CHandle); }
     }
 
     // Deal damage to own teammates. Would be a damage type but there's a limited amount possible.
@@ -219,15 +219,15 @@ methodmap CTakeDamageInfo < Pointer
     }
     
     // Set up the CTakeDamageInfo object.
-    public void Init(int inflictor, int attacker, int weapon, const Vector damageForce, const Vector damagePosition, const Vector reportedPosition, float damage, int damageType, int customDamage)
+    public void Init(CBaseEntity inflictor, CBaseEntity attacker, CBaseEntity weapon, const Vector damageForce, const Vector damagePosition, const Vector reportedPosition, float damage, int damageType, int customDamage)
     {
-        this.m_hInflictor = inflictor;
+        this.m_hInflictor.Set(inflictor);
         if (attacker)
-            this.m_hAttacker = attacker;
+            this.m_hAttacker.Set(attacker);
         else
-            this.m_hAttacker = inflictor;
+            this.m_hAttacker.Set(inflictor);
 
-        this.m_hWeapon = weapon;
+        this.m_hWeapon.Set(weapon);
 
         this.m_flDamage = damage;
 
@@ -250,7 +250,7 @@ methodmap CTakeDamageInfo < Pointer
     }
 
     // Call constructor on existing type.
-    public void ctor(int inflictor, int attacker, int weapon, const Vector damageForce, const Vector damagePosition, float damage, int bitsDamageType, int killType, Vector reportedPosition = NULL)
+    public void ctor(CBaseEntity inflictor, CBaseEntity attacker, CBaseEntity weapon, const Vector damageForce, const Vector damagePosition, float damage, int bitsDamageType, int killType, Vector reportedPosition = NULL)
     {
         Vector vecReported = vec3_origin;
         if (reportedPosition != NULL)
@@ -259,7 +259,7 @@ methodmap CTakeDamageInfo < Pointer
     }
 
     // Constructor - allocate a new CTakeDamageInfo onto the heap. Deallocation will be required when you are finished using free().
-    public static CTakeDamageInfo Malloc(int inflictor, int attacker, int weapon, const Vector damageForce, const Vector damagePosition, float damage, int bitsDamageType, int killType, Vector reportedPosition = NULL)
+    public static CTakeDamageInfo Malloc(CBaseEntity inflictor, CBaseEntity attacker, CBaseEntity weapon, const Vector damageForce, const Vector damagePosition, float damage, int bitsDamageType, int killType, Vector reportedPosition = NULL)
     {
         CTakeDamageInfo pointer = malloc(SIZEOF_CTakeDamageInfo);
         pointer.ctor(inflictor, attacker, weapon, damageForce, damagePosition, damage, bitsDamageType, killType, reportedPosition);
@@ -267,7 +267,7 @@ methodmap CTakeDamageInfo < Pointer
     }
 
     // Constructor - allocate a new CTakeDamageInfo onto the stack. When using the return value, you must use STACK_GETRETURN().
-    public static STACK StackAlloc(int inflictor, int attacker, int weapon, const Vector damageForce, const Vector damagePosition, float damage, int bitsDamageType, int killType, Vector reportedPosition = NULL)
+    public static STACK StackAlloc(CBaseEntity inflictor, CBaseEntity attacker, CBaseEntity weapon, const Vector damageForce, const Vector damagePosition, float damage, int bitsDamageType, int killType, Vector reportedPosition = NULL)
     {
         char buffer[SIZEOF_CTakeDamageInfo];
         view_as<CTakeDamageInfo>(AddressOfString(buffer)).ctor(inflictor, attacker, weapon, damageForce, damagePosition, damage, bitsDamageType, killType, reportedPosition);

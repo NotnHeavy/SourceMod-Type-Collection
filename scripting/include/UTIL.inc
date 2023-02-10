@@ -2,7 +2,7 @@
 // MADE BY NOTNHEAVY. USES GPL-3, AS PER REQUEST OF SOURCEMOD               //
 //////////////////////////////////////////////////////////////////////////////
 
-// Requires "Ray_t.inc" and "vtable.inc".
+// Requires "Ray_t.inc", "Vector.inc", "CGameTrace.inc" and "vtable.inc".
 
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_UTIL
 #endinput
@@ -10,6 +10,8 @@
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_UTIL
 
 #include "Ray_t.inc"
+#include "Vector.inc"
+#include "CGameTrace.inc"
 #include "vtable.inc"
 
 #pragma semicolon true 
