@@ -14,6 +14,8 @@
 #define QANGLE_CACHE_SIZE 32
 #endif
 
+#include "Vector.inc"
+
 //////////////////////////////////////////////////////////////////////////////
 // QANGLE DATA                                                              //
 //////////////////////////////////////////////////////////////////////////////
@@ -255,7 +257,7 @@ stock void VectorAngles(const Vector& forwardVector, QAngle& angles)
 {
     float tmp, yaw, pitch;
 
-    if (forwardVector.Y == 0.00 && forwardVector.Z == 0.00)
+    if (forwardVector.Y == 0.00 && forwardVector.X == 0.00)
     {
         yaw = 0.00;
         if (forwardVector.Z > 0.00)
@@ -265,7 +267,7 @@ stock void VectorAngles(const Vector& forwardVector, QAngle& angles)
     }
     else
     {
-        yaw = (ArcTangent2(forwardVector.Y, forwardVector.Z) * 180.00 / M_PI);
+        yaw = (ArcTangent2(forwardVector.Y, forwardVector.X) * 180.00 / M_PI);
         if (yaw < 0.00)
             yaw += 360.00;
         

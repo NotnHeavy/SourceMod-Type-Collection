@@ -2,6 +2,8 @@
 // MADE BY NOTNHEAVY. USES GPL-3, AS PER REQUEST OF SOURCEMOD               //
 //////////////////////////////////////////////////////////////////////////////
 
+// In the future I'll look into implementing a more-general include for this object present in the Source SDK 2013. This include for the time being is TF2-specific.
+
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTAKEDAMAGEINFO
 #endinput
 #endif
