@@ -164,9 +164,18 @@ methodmap Vector < Pointer
     public float NormalizeInPlace()
     {
         float magnitude = this.Length();
-        this.X /= magnitude;
-        this.Y /= magnitude;
-        this.Z /= magnitude;
+        if (magnitude > 0.00)
+        {
+            this.X /= magnitude;
+            this.Y /= magnitude;
+            this.Z /= magnitude;
+        }
+        else
+        {
+            this.X = 0.00;
+            this.Y = 0.00;
+            this.Z = 0.00;
+        }
         return magnitude;
     }
 
