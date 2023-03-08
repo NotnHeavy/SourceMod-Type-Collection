@@ -25,6 +25,10 @@ stock void SMTC_Initialize()
     g_pTFPlayerClassDataMgr = config.GetAddress("g_pTFPlayerClassDataMgr");
     enginetrace = CEngineTrace(config.GetAddress("enginetrace"));
     g_pGameRules = CTFGameRules(config.GetAddress("g_pGameRules"));
+    
+    #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TF_POINT_T
+    SMTC_tf_point_t_vtable = config.GetAddress("tf_point_t_vtable");
+    #endif
 
     CTraceFilterSimple_ShouldHitEntity = config.GetMemSig("CTraceFilterSimple::ShouldHitEntity()");
 
@@ -68,6 +72,16 @@ stock void SMTC_Initialize()
     SMTC_SDKCall_CTFGameRules_RadiusDamage = EndPrepSDKCall();
 
     delete config;
+
+    // Generate the string function sdkcalls beforehand.
+    STACK_ALLOC(str1, Pointer, 1);
+    STACK_ALLOC(str2, Pointer, 1);
+    str1.strlen();
+    str1.strnlen(1);
+    str1.strcmp(str2);
+    str1.strncmp(str2, 1);
+    str1.strchr('S');
+    str1.strstr(str2);
 
     // For generating an offset on plugin start, getting datamap props from the world entity will not work 
     // because the world entity has not yet been initialised. Instead, I decided to go with getting the props

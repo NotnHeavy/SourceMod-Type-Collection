@@ -14,6 +14,16 @@
                 "windows" "275"
                 "linux"   "276"
             }
+			"CTFFlameManager::m_Points"
+			{
+				"windows" "1180"
+				"linux"   "1204"
+			}
+			"CTFFlameManager::AddPoint()"
+			{
+				"windows" "198"
+				"linux"   "199"
+			}
         }
         "Signatures"
         {
@@ -88,6 +98,20 @@
 						"type" "int"
 					}
 				}
+			}
+			"CTFFlameManager::AddPoint()"
+			{
+				"offset"		"CTFFlameManager::AddPoint()"
+				"hooktype"		"entity"
+				"this"			"entity"
+				"return"		"bool"
+				"arguments"
+				{
+					"nSpawnTime"
+					{
+						"type"	"int"
+					}
+				}	
 			}
         }
     }

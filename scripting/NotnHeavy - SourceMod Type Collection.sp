@@ -11,6 +11,8 @@
 #include <smmem> // https://github.com/Scags/SM-Memory
 #include <dhooks> // Not actually needed, just used for tests.
 
+#define SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT false
+
 #include "SMTCHeader.inc"
 #include "include/Vector.inc"
 #include "QAngle.inc"
@@ -32,6 +34,8 @@
 #include "tf/CTFRadiusDamageInfo.inc"
 #include "tf/tf_shareddefs.inc"
 #include "tf/TFPlayerClassData_t.inc"
+#include "tf/tf_point_t.inc"
+#include "tf/flame_point_t"
 
 #include "SMTC.inc"
 
@@ -41,18 +45,21 @@ static DHookSetup DHooks_CTFPlayer_OnTakeDamage;
 static Handle SDKCall_CTFGameRules_RadiusDamage;
 static DHookSetup DHooks_CTFPlayer_TraceAttack;
 static Handle SDKCall_CBaseCombatCharacter_Weapon_ShootPosition;
+static DynamicHook DHooks_CTFFlameManager_AddPoint;
 
 static int explosionModelIndex;
 
+static any CTFFlameManager_m_Points;
+
 public void OnPluginStart()
 {
-    PrintToServer("------------------------------------------------------------------");
-
     LoadTranslations("common.phrases");
 
-    SMTC_Initialize();
+    //SMTC_Initialize();
 
     GameData config = LoadGameConfigFile("NotnHeavy - SourceMod Type Collection (tests)");
+
+    CTFFlameManager_m_Points = config.GetOffset("CTFFlameManager::m_Points");
 
     StartPrepSDKCall(SDKCall_Entity);
     PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CTFWearable::Equip");
@@ -81,10 +88,18 @@ public void OnPluginStart()
     PrepSDKCall_SetReturnInfo(SDKType_Vector, SDKPass_ByValue); // Vector
     SDKCall_CBaseCombatCharacter_Weapon_ShootPosition = EndPrepSDKCall();
 
+    DHooks_CTFFlameManager_AddPoint = DynamicHook.FromConf(config, "CTFFlameManager::AddPoint()");
+
     delete config;
 
     //commitTests(); // TESTS/tests.inc
+}
 
+public void OnMapStart()
+{
+    explosionModelIndex = PrecacheModel("sprites/sprite_fire01.vmt");
+    PrintToServer("------------------------------------------------------------------");
+    SMTC_Initialize();
     pointerOperation();
     vectorOperation();
     cutlvectorOperation(); // oh god
@@ -104,14 +119,47 @@ public void OnPluginStart()
     PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
 }
 
-public void OnMapStart()
-{
-    explosionModelIndex = PrecacheModel("sprites/sprite_fire01.vmt");
-}
-
 public void OnPluginEnd()
 {
     VTable.ClearVTables();
+}
+
+// flame_point_t.inc, tf_point_t.inc
+MRESReturn CTFFlameManager_AddPoint(int entity, DHookReturn returnValue, DHookParam parameters)
+{
+    CBaseEntity flamemanager = CBaseEntity.FromIndex(entity);
+    if (flamemanager == NULL)
+        return MRES_Ignored;
+
+    CBaseEntity owner = flamemanager.GetEntPropHandle(Prop_Send, "m_hAttacker");
+    if (owner == NULL)
+        return MRES_Ignored;
+
+    CBaseEntity weapon = flamemanager.GetEntPropHandle(Prop_Send, "m_hOwnerEntity");
+    if (weapon == NULL)
+        return MRES_Ignored;
+
+    CUtlVector vector = CUtlVector(flamemanager.Address + CTFFlameManager_m_Points);
+
+    for (int i = 0, size = vector.m_Size; i < size; ++i)
+    {
+        Flame_Point_t pFlamePoint = vector.Get(i).Dereference();
+        if (pFlamePoint == NULL)
+            continue;
+        
+        // this is not client predicted!
+        pFlamePoint.m_flLifeTime = 1.00; // make flames last a second :D
+        pFlamePoint.m_vecVelocity *= 2.00; // make them twice as fast as well
+    }
+
+    return MRES_Ignored;
+}
+public void OnEntityCreated(int index, const char[] classname)
+{
+	if (StrEqual(classname, "tf_flame_manager"))
+	{
+		DHooks_CTFFlameManager_AddPoint.HookEntity(Hook_Post, index, CTFFlameManager_AddPoint);
+	}
 }
 
 static void gamerulesOperation()
@@ -410,6 +458,11 @@ static void vtableOperation()
             VTable.IsObjectUsingRegisteredVTable(player, buffer);
             PrintToServer("does entity index 1 (%i) have obj vtable: %i", player, StrEqual(buffer, "obj"));
         }
+
+        // just test vtables with malloc'd asm
+        char testvpointer[] = "THIS ISN'T ACTUAL CODE";
+        VTable.CreateVTable("testing!", 1);
+        VTable.RegisterVPointer("testing!", 0, AddressOfString(testvpointer), strlen(testvpointer));
     }
     else
         PrintToServer("Not using Windows; skipping vtableOperation()...");
@@ -725,6 +778,8 @@ static void vectorOperation()
 
 static void pointerOperation()
 {
+    strlen("test");
+
     Pointer a = malloc(4);
     a.Write(10);
 
@@ -736,10 +791,56 @@ static void pointerOperation()
 
     // WHAT THE FUCK IS THIS
     Vector test = STACK_GETRETURN(vectorReturn());
-    PrintToServer("test.X, test.Y, test.Z: %f: %f: %f\n", test.X, test.Y, test.Z);
+    PrintToServer("test.X, test.Y, test.Z: %f: %f: %f", test.X, test.Y, test.Z);
+    
+    Pointer str1 = Pointer(AddressOfString("ABDJHSABDSDHAJASDHSDHJSDAHBJASDHJ"));
+    Pointer str2 = Pointer(AddressOfString("abc"));
+    Pointer str3 = Pointer(AddressOfString("abd"));
+    Pointer str4 = malloc(50);
+
+    PrintToServer("strlen(\"ABDJHSABDSDHAJASDHSDHJSDAHBJASDHJ\"): %u", str1.strlen());
+    PrintToServer("strnlen(\"ABDJHSABDSDHAJASDHSDHJSDAHBJASDHJ\", 20): %u", str1.strnlen(20));
+    PrintToServer("strcmp(\"abc\", \"abc\"): %i", str2.strcmp(str2));
+    PrintToServer("strcmp(\"abc\", \"abd\"): %i", str2.strcmp(str3));
+    PrintToServer("strncmp(\"ABDJHSABDSDHAJASDHSDHJSDAHBJASDHJ\", \"ABDJHSABDSDHAJASDHSDHJSDAHBJASDHJ\", 5): %i", str1.strncmp(str1, 5));
+    
+    str4.strcpy(str1);
+    char buffer[50];
+    str4.ToCharBuffer(buffer);
+    PrintToServer("strcpy(str4, str1): %s", buffer);
+
+    str4.strcat(str2);
+    str4.ToCharBuffer(buffer);
+    PrintToServer("strcat(str4, str2): %s", buffer);
+
+    str4.strncat(AddressOfString("Hi. How to make electric guitar."), 10);
+    str4.ToCharBuffer(buffer);
+    PrintToServer("strncat(str4, \"Hi. How to make electric guitar.\", 10): %s", buffer);
+
+    str4.strncpy(AddressOfString("ZYXWVU"), 3);
+    str4.ToCharBuffer(buffer);
+    PrintToServer("strncpy(str4, \"ZYXWVU\", 3): %s", buffer);
+
+    str1.strchr('J').ToCharBuffer(buffer);
+    PrintToServer("strchr(\"ABDJHSABDSDHAJASDHSDHJSDAHBJASDHJ\", 'J'): %s", buffer);
+
+    str1.strrchr('A').ToCharBuffer(buffer);
+    PrintToServer("strrchr(\"ABDJHSABDSDHAJASDHSDHJSDAHBJASDHJ\", 'A'): %s", buffer);
+    
+    str1.strset('B');
+    str1.ToCharBuffer(buffer);
+    PrintToServer("strset(str1, 'B'): %s", buffer);
+
+    str1.strnset('C', 5);
+    str1.ToCharBuffer(buffer);
+    PrintToServer("strnset(str1, 'C', 5): %s", buffer);
+
+    str1.strstr(AddressOfString("CCBB")).ToCharBuffer(buffer);
+    PrintToServer("strstr(str1, \"CCBB\"): %s\n", buffer);
 
     free(a);
     free(b);
+    free(str4);
 }
 
 static STACK vectorReturn()

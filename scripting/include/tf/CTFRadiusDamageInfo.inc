@@ -101,32 +101,16 @@ methodmap CTFRadiusDamageInfo < Pointer
         public set(float value) { this.Write(value, CTFRADIUSDAMAGEINFO_OFFSET_FLFALLOFF); }
     }
 
-    // Calculate the damage falloff over distance. Basic functionality is present without SMTC.inc, however for full functionality you must have called SMTC_Initialize().
+    // Calculate the damage falloff over distance. Requires SMTC_Initialize() to have been called.
     public void CalculateFalloff()
     {
-        // will add full functionality in here when i work on more tools. for now, only way to get full functionality is via SMTC_Initialize().
-#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_SMTC
         SDKCall(SMTC_SDKCall_CTFRadiusDamageInfo_CalculateFalloff, this);
-#else
-        if (this.dmgInfo.m_bitsDamageType & DMG_RADIUS_MAX)
-            this.flFalloff = 0.00;
-        else if (this.dmgInfo.m_bitsDamageType & DMG_HALF_FALLOFF)
-            this.flFalloff = 0.50;
-        else if (this.flRadius)
-            this.flFalloff = this.dmgInfo.m_flDamage / this.flRadius;
-        else
-            this.flFalloff = 1.00;
-#endif
     }
 
     // Attempt to apply the radius damage to the specified entity. Requires SMTC_Initialize() to have been called.
     public void ApplyToEntity(CBaseEntity pEntity)
     {
-#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_SMTC
         SDKCall(SMTC_SDKCall_CTFRadiusDamageInfo_ApplyToEntity, this, pEntity);
-#else
-        ThrowError("CTFRadiusDamageInfo::ApplyToEntity() requires SMTC.inc!");
-#endif
     }
     
     // Call constructor on existing type.

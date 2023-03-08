@@ -59,7 +59,7 @@ enum
 {
     VTABLE_INFO_OFFSET_NAME = 0,                                            // char Name[32];
     VTABLE_INFO_OFFSET_VTABLE = VTABLE_INFO_OFFSET_NAME + SIZEOF_CHAR * 32, // void* VTable;
-    VTABLE_INFO_OFFSET_MALLOC = VTABLE_INFO_OFFSET_VTABLE + SIZEOF_Pointer, // bool* Malloc;
+    VTABLE_INFO_OFFSET_MALLOC = VTABLE_INFO_OFFSET_VTABLE + SIZEOF_Pointer, // void* Malloc;
     VTABLE_INFO_OFFSET_SIZE = VTABLE_INFO_OFFSET_MALLOC + SIZEOF_Pointer,   // size_t Size;
 
     SIZEOF_VTable_Info = VTABLE_INFO_OFFSET_SIZE + SIZEOF_SIZE_T            // sizeof(VTable_Info);
@@ -93,7 +93,7 @@ methodmap VTable_Info < Pointer
         public set(Pointer value) { this.Write(value, VTABLE_INFO_OFFSET_VTABLE); }
     }
 
-    // An array depicting whether each vpointer has been malloc()'d.
+    // An array depicting containing each vpointer that is malloc()'d.
     property Pointer Malloc
     {
         public get() { return this.Dereference(VTABLE_INFO_OFFSET_MALLOC); }
@@ -115,7 +115,7 @@ methodmap VTable_Info < Pointer
         this.Size = size;
 
         this.VTable = calloc(size, SIZEOF_Pointer);
-        this.Malloc = calloc(size, SIZEOF_BOOL);
+        this.Malloc = calloc(size, SIZEOF_Pointer);
     }
 }
 
@@ -170,7 +170,7 @@ methodmap VTable
             for (int i = 0; i < baseVTableInfo.Size; ++i)
             {
                 if (vtableInfo.VTable.Dereference(i * SIZEOF_Pointer) != NULL)
-                    vtableInfo.Malloc.Write(false, i, NumberType_Int8);
+                    vtableInfo.Malloc.Write(NULL, i * SIZEOF_Pointer);
             }
         }
         return vtableInfo.VTable;
@@ -195,14 +195,14 @@ methodmap VTable
             Pointer vpointer = malloc(asmLength);
             memcpy(vpointer, asm, asmLength);
             info.VTable.Write(vpointer, index * SIZEOF_Pointer);
-            info.Malloc.Write(true, index, NumberType_Int8);
+            info.Malloc.Write(vpointer, index * SIZEOF_Pointer);
             SetMemAccess(vpointer, asmLength, SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
             return vpointer;
         }
         else
         {
             info.VTable.Write(asm, index * SIZEOF_Pointer);
-            info.Malloc.Write(false, index, NumberType_Int8);
+            info.Malloc.Write(NULL, index * SIZEOF_Pointer);
             return NULL;
         }
     }
@@ -218,19 +218,20 @@ methodmap VTable
         if (vpointer == NULL)
             return;
 
-        if (info.Malloc.Dereference(index, NumberType_Int8))
+        if (info.Malloc.Dereference(index * SIZEOF_Pointer) == vpointer)
             free(vpointer);
         info.VTable.Write(NULL, index * SIZEOF_Pointer);
-        info.Malloc.Write(true, index, NumberType_Int8);
+        info.Malloc.Write(NULL, index * SIZEOF_Pointer);
     }
 
     // Hook a registered vtable onto an existing object.
-    public static void HookOntoObject(char[] name, Pointer obj)
+    // There will be overhead if updateMemAccess is toggled.
+    public static void HookOntoObject(char[] name, Pointer obj, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         Pointer vtable = VTable.GetVTable(name);
         if (vtable == NULL)
             return;
-        obj.Write(vtable);
+        obj.Write(vtable, .updateMemAccess = updateMemAccess);
     }
 
     // Grab the pointer to an object's vtable.
@@ -246,18 +247,19 @@ methodmap VTable
     }
 
     // Override an object's vtable.
-    public static void ReplaceObjectVTable(Pointer obj, Pointer vtable)
+    // There will be overhead if updateMemAccess is toggled.
+    public static void ReplaceObjectVTable(Pointer obj, Pointer vtable, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        obj.Write(vtable);
+        obj.Write(vtable, .updateMemAccess = updateMemAccess);
     }
 
     // Override a vpointer on an existing object with another vpointer.
-    // This should not be used on vtables registered with this include, otherwise unwanted behaviour will occur. Use RemoveVPointer() and RegisterVPointer() instead.
-    public static void OverrideVPointer(Pointer vtable, Pointer vpointer, int index)
+    // There will be overhead if updateMemAccess is toggled.
+    public static void OverrideVPointer(Pointer vtable, Pointer vpointer, int index, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         if (vtable == NULL || vpointer == NULL)
             return;
-        vtable.Write(vpointer, index * SIZEOF_Pointer);
+        vtable.Write(vpointer, index * SIZEOF_Pointer, .updateMemAccess = updateMemAccess);
     }
 
     // Check to see if an object is using a vtable that is registered here.
@@ -295,7 +297,7 @@ methodmap VTable
             {
                 // the vpointer will only be free()'d if it has been instantiated with this include.
                 Pointer vpointer = vtableInfo.VTable.Dereference(v * SIZEOF_Pointer);
-                if (vpointer != NULL && vtableInfo.Malloc.Dereference(v, NumberType_Int8))
+                if (vpointer != NULL && vtableInfo.Malloc.Dereference(v * SIZEOF_Pointer) == vpointer)
                     free(vpointer);
             }
             free(vtableInfo.VTable);

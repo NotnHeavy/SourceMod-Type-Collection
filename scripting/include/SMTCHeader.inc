@@ -14,12 +14,45 @@
 #pragma semicolon true 
 #pragma newdecls required
 
+//////////////////////////////////////////////////////////////////////////////
+// TOGGLES                                                                  //
+//////////////////////////////////////////////////////////////////////////////
+
+// By default, Pointer.Write() will set memory access unless specified. Set this to false to not set memory access by default.
+#if !defined SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT
+#define SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT true
+#endif
+
+//////////////////////////////////////////////////////////////////////////////
+// TYPES                                                                    //
+//////////////////////////////////////////////////////////////////////////////
+
 #define NULL view_as<any>(0) // ((void*)0)
-#define ENTITY_NULL -1
+#define SIZE_T int
 
-#define SIZEOF_Pointer 4
+//////////////////////////////////////////////////////////////////////////////
+// MATHEMATICAL MACROS                                                      //
+//////////////////////////////////////////////////////////////////////////////
 
-#define FLT_MAX view_as<float>(0x7f7fffff)
+#define FLT_DECIMAL_DIG  9                                  // # of decimal digits of rounding precision
+#define FLT_DIG          6                                  // # of decimal digits of precision
+#define FLT_EPSILON      view_as<float>(0x34000000)         // smallest such that 1.0+FLT_EPSILON != 1.0
+#define FLT_HAS_SUBNORM  1                                  // type does support subnormal numbers
+#define FLT_GUARD        0
+#define FLT_MANT_DIG     24                                 // # of bits in mantissa
+#define FLT_MAX          view_as<float>(0x7f7fffff)         // max value
+#define FLT_MAX_10_EXP   38                                 // max decimal exponent
+#define FLT_MAX_EXP      128                                // max binary exponent
+#define FLT_MIN          view_as<float>(0x800000)           // min normalized positive value
+#define FLT_MIN_10_EXP   (-37)                              // min decimal exponent
+#define FLT_MIN_EXP      (-125)                             // min binary exponent
+#define FLT_NORMALIZE    0
+#define FLT_RADIX        2                                  // exponent radix
+#define FLT_TRUE_MIN     view_as<float>(0x1)                // min positive value
+
+#define INT_MIN	(-INT_MAX - 1)
+#define INT_MAX	2147483647
+#define INT_WIDTH 32
 
 #define M_E        2.71828182845904523536   // e
 #define M_LOG2E    1.44269504088896340736   // log2(e)
@@ -64,7 +97,7 @@
 #define SIZEOF_BOOL 4
 #define SIZEOF_SIZE_T 4
 
-#define SIZE_T int
+#define SIZEOF_Pointer 4
 
 //////////////////////////////////////////////////////////////////////////////
 // GLOBALS                                                                  //
@@ -83,6 +116,8 @@ stock Pointer g_pTFPlayerClassDataMgr;
 stock CEngineTrace enginetrace;
 stock CTFGameRules g_pGameRules;
 
+stock Pointer SMTC_tf_point_t_vtable;
+
 stock Pointer CTraceFilterSimple_ShouldHitEntity;
 
 stock DHookSetup SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive;
@@ -94,6 +129,14 @@ stock Handle SMTC_SDKCall_CBaseEntity_TakeDamage;
 stock Handle SMTC_SDKCall_CTFRadiusDamageInfo_CalculateFalloff;
 stock Handle SMTC_SDKCall_CTFRadiusDamageInfo_ApplyToEntity;
 stock Handle SMTC_SDKCall_CTFGameRules_RadiusDamage;
+
+// generated with msvc
+static char func_strlen[] = "\x55\x8B\xEC\x8B\x4D\x08\x8B\xC1\xF6\xC1\x03\x74\x0D\x0F\x1F\x00\x80\x38\x00\x74\x4D\x40\xA8\x03\x75\xF6\x53\x56\x0F\x1F\x40\x00\x8B\x18\x8B\xF0\x8B\xCB\x83\xC0\x04\xF7\xD1\x8D\x93\xFF\xFE\xFE\xFE\x23\xD1\xF7\xC2\x80\x80\x80\x80\x74\xE5\x84\xDB\x74\x3B\x8B\xCB\xC1\xE9\x08\x84\xC9\x74\x28\x8B\xCB\xC1\xE9\x10\x84\xC9\x74\x15\xC1\xEB\x18\x84\xDB\x75\xC8\x2B\x75\x08\x8D\x46\x03\x5E\x5B\x5D\xC3\x2B\xC1\x5D\xC3\x2B\x75\x08\x8D\x46\x02\x5E\x5B\x5D\xC3\x2B\x75\x08\x8D\x46\x01\x5E\x5B\x5D\xC3\x2B\x75\x08\x8B\xC6\x5E\x5B\x5D\xC3";
+static char func_strnlen[] = "\x55\x8B\xEC\x8B\x45\x0C\x8B\x4D\x08\x56\x8D\x34\x01\x85\xC0\x75\x03\x5E\x5D\xC3\x83\xC8\xFF\x3B\xF1\x0F\x42\xF0\x8B\xC1\xF6\xC1\x03\x74\x0A\x80\x38\x00\x74\x60\x40\xA8\x03\x75\xF6\x3B\xC6\x73\x59\x8D\x50\xFE\x53\x66\x66\x66\x0F\x1F\x84\x00\x00\x00\x00\x00\x8B\x5A\x02\x83\xC2\x04\x8D\x83\xFF\xFE\xFE\xFE\xA9\x80\x80\x80\x80\x74\x28\x8D\x42\xFE\x84\xDB\x74\x2A\x8B\xCB\x8D\x42\xFF\xC1\xE9\x08\x84\xC9\x74\x1E\x8B\xCB\x8B\xC2\xC1\xE9\x10\x84\xC9\x74\x13\xC1\xEB\x18\x8D\x42\x01\x84\xDB\x74\x09\x8D\x4A\x02\x8B\xC6\x3B\xCE\x72\xBC\x8B\x4D\x08\x5B\x3B\xC6\x0F\x46\xF0\x2B\xF1\x8B\xC6\x5E\x5D\xC3";
+static char func_strcmp[] = "\x55\x8B\xEC\x8B\x4D\x0C\x56\x8B\x75\x08\x8A\x16\x84\xD2\x74\x15\x8A\xC2\x2B\xF1\x8A\xD0\x3A\x01\x75\x0B\x8A\x44\x0E\x01\x41\x8A\xD0\x84\xC0\x75\xEF\x0F\xB6\x09\x0F\xB6\xC2\x2B\xC1\x5E\x5D\xC3";
+static char func_strncmp[] = "\x55\x8B\xEC\x8B\x4D\x10\x53\x56\x85\xC9\x74\x1B\x8B\x75\x0C\x8B\x45\x08\x8A\x1E\x8D\x76\x01\x8A\x10\x3A\xD3\x75\x10\x40\x84\xD2\x74\x05\x83\xE9\x01\x75\xEB\x5E\x33\xC0\x5B\x5D\xC3\x0F\xB6\xCB\x0F\xB6\xC2\x5E\x2B\xC1\x5B\x5D\xC3";
+static char func_strchr[] = "\x55\x8B\xEC\x8A\x45\x0C\x53\x8B\x5D\x08\x56\xF6\xC3\x03\x74\x14\x8A\x0B\x3A\xC8\x0F\x84\x86\x00\x00\x00\x84\xC9\x74\x7C\x43\xF6\xC3\x03\x75\xEC\x0F\xB6\xC0\x8B\xF0\xC1\xE6\x08\x0B\xF0\x8B\xC6\xC1\xE0\x10\x0B\xF0\x8B\x0B\x8B\xC3\x89\x4D\x08\x83\xC3\x04\x8D\x91\xFF\xFE\xFE\x7E\xF7\xD1\x33\xD1\xF7\xC2\x00\x01\x01\x81\x75\x17\x8B\x55\x08\x33\xD6\x8D\x8A\xFF\xFE\xFE\x7E\xF7\xD2\x33\xCA\xF7\xC1\x00\x01\x01\x81\x74\xCD\x8A\x4D\x0C\x8B\x55\x08\x3A\xD1\x74\x2A\x84\xD2\x74\x24\x8A\x50\x01\x40\x3A\xD1\x74\x1E\x84\xD2\x74\x18\x8A\x50\x01\x40\x3A\xD1\x74\x12\x84\xD2\x74\x0C\x8A\x50\x01\x40\x3A\xD1\x74\x06\x84\xD2\x75\x9B\x33\xC0\x5E\x5B\x5D\xC3\x5E\x8B\xC3\x5B\x5D\xC3";
+static char func_strstr[] = "\x55\x8B\xEC\x53\x56\x8B\x75\x08\x57\x8A\x0E\x84\xC9\x74\x33\x8B\x7D\x0C\x8B\xD6\x2B\xD7\x8A\x1F\x3A\xCB\x75\x1D\x8B\xC7\x84\xC9\x74\x12\x8A\x08\x84\xC9\x74\x21\x38\x0C\x02\x75\x0C\x40\x80\x3C\x02\x00\x75\xEE\x80\x38\x00\x74\x10\x8A\x4E\x01\x46\x42\x84\xC9\x75\xD6\x5F\x5E\x33\xC0\x5B\x5D\xC3\x5F\x8B\xC6\x5E\x5B\x5D\xC3";
 
 stock any m_RefEHandle_Offset;
 
@@ -169,9 +212,9 @@ methodmap Pointer
     }
 
     // Write to the address this pointer is holding, with a given offset.
-    public void Write(any value, any offset = 0, NumberType bits = NumberType_Int32)
+    public void Write(any value, any offset = 0, NumberType bits = NumberType_Int32, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        StoreToAddress(this.Address + offset, value, bits);
+        StoreToAddress(this.Address + offset, value, bits, updateMemAccess);
     }
 
     // Get the array offset from the pointer's current address. You must specify the size of the type used with this pointer using the typeSize parameter.
@@ -180,37 +223,217 @@ methodmap Pointer
         return Pointer(this.Address + view_as<Address>(index * typeSize));
     }
     
-    // Essentially a strlen() replica for pointers.
+    // Get the string length.
     public int strlen()
     {
-        int length;
-        for (int i = 0; this.Dereference(i, NumberType_Int8) != 0; ++i)
-            ++length;
-        return length;
+        static Handle SMTC_SDKCall_strlen;
+        if (SMTC_SDKCall_strlen == null)
+        {
+            // If we don't set execution perms, the function will just crash. This will have massive overhead initially, but will be fine later on.
+            // To be fair, so do the SDKCall natives...
+            SetMemAccess(AddressOfString(func_strlen), sizeof(func_strlen), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+            
+            StartPrepSDKCall(SDKCall_Static);
+            PrepSDKCall_SetAddress(AddressOfString(func_strlen));
+            PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const char*
+            PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // int
+            SMTC_SDKCall_strlen = EndPrepSDKCall();
+        }
+        int x = this.Dereference();
+        if (x & 0xFF == 0) return 0;
+        if (x & 0xFF00 == 0) return 1;
+        if (x & 0xFF0000 == 0) return 2;
+        if (x & 0xFF000000 == 0) return 3;
+        return SDKCall(SMTC_SDKCall_strlen, this); // This is WAY faster than doing it in SourceMod, unless the string is really short...
     }
 
-    // Store pointer into a char buffer.
+    // Get the string length, scanning up to maxlen characters. 
+    // Return maxlen if no NUL is found.
+    public int strnlen(int maxlen)
+    {
+        static Handle SMTC_SDKCall_strnlen;
+        if (SMTC_SDKCall_strnlen == null)
+        {
+            SetMemAccess(AddressOfString(func_strnlen), sizeof(func_strnlen), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+            
+            StartPrepSDKCall(SDKCall_Static);
+            PrepSDKCall_SetAddress(AddressOfString(func_strnlen));
+            PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // const char*
+            PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // int
+            PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // int
+            SMTC_SDKCall_strnlen = EndPrepSDKCall();
+        }
+        return SDKCall(SMTC_SDKCall_strnlen, this, maxlen);
+    }
+
+    // Compares two strings lexographically.
+    public int strcmp(any string)
+    {
+        static Handle SMTC_SDKCall_strcmp;
+        if (SMTC_SDKCall_strcmp == null)
+        {
+            SetMemAccess(AddressOfString(func_strcmp), sizeof(func_strcmp), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+            
+            StartPrepSDKCall(SDKCall_Static);
+            PrepSDKCall_SetAddress(AddressOfString(func_strcmp));
+            PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const char*
+            PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const char*
+            PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // int
+            SMTC_SDKCall_strcmp = EndPrepSDKCall();
+        }
+        return SDKCall(SMTC_SDKCall_strcmp, this, string);
+    }
+
+    // Compares two strings parts lexographically.
+    public int strncmp(any string, int length)
+    {
+        static Handle SMTC_SDKCall_strncmp;
+        if (SMTC_SDKCall_strncmp == null)
+        {
+            SetMemAccess(AddressOfString(func_strncmp), sizeof(func_strncmp), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+            
+            StartPrepSDKCall(SDKCall_Static);
+            PrepSDKCall_SetAddress(AddressOfString(func_strncmp));
+            PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const char*
+            PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const char*
+            PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // int
+            PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // int
+            SMTC_SDKCall_strncmp = EndPrepSDKCall();
+        }
+        return SDKCall(SMTC_SDKCall_strncmp, this, string, length);
+    }
+
+    // Copies one string to another string.
+    public Pointer strcpy(any source)
+    {
+        return memcpy(this, source, view_as<Pointer>(source).strlen() + 1);
+    }
+
+    // Copies first n characters of source to destination.
+    public Pointer strncpy(any source, int n)
+    {
+        int size = view_as<Pointer>(source).strnlen(n);
+        if (size != n)
+            memset(this + size, '\0', n - size);
+        return memcpy(this, source, size);
+    }
+
+    // Append source on the end of destination.
+    public Pointer strcat(any source)
+    {
+        (this + this.strlen()).strcpy(source);
+        return this;
+    }
+
+    // Append first n characters of source on the end of destination.
+    public Pointer strncat(any source, int n)
+    {
+        Pointer s1 = this + this.strlen();
+        int ss = view_as<Pointer>(source).strnlen(n);
+        s1.Write('\0', ss, NumberType_Int8);
+        memcpy(s1, source, ss);
+        return this;
+    }
+
+    // Duplicate a string.
+    public Pointer strdup()
+    {
+        int len = this.strlen() + 1;
+        Pointer duplicate = malloc(len);
+        if (duplicate == NULL)
+            return NULL;
+        return memcpy(duplicate, this, len);
+    }
+
+    // Returns a pointer to the first occurring char in string, otherwise NULL.
+    public Pointer strchr(int c)
+    {
+        static Handle SMTC_SDKCall_strchr;
+        if (SMTC_SDKCall_strchr == null)
+        {
+            SetMemAccess(AddressOfString(func_strchr), sizeof(func_strchr), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+            
+            StartPrepSDKCall(SDKCall_Static);
+            PrepSDKCall_SetAddress(AddressOfString(func_strchr));
+            PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const char*
+            PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // int c
+            PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // int
+            SMTC_SDKCall_strchr = EndPrepSDKCall();
+        }
+        return SDKCall(SMTC_SDKCall_strchr, this, c);
+    }
+
+    // Returns a pointer to the last occurring char in string, otherwise NULL.
+    public Pointer strrchr(int c)
+    {
+        Pointer found, p, s = this;
+        if (c == '\0')
+            return s.strchr('\0');
+
+        found = NULL;
+        while ((p = s.strchr(c)) != NULL)
+        {
+            found = p;
+            s = p + 1;
+        }
+
+        return found;
+    }
+
+    // Set all characters of a string.
+    public void strset(int c)
+    {
+        memset(this, c, this.strlen());
+    }
+    
+    // Set all characters of a string up to a given length.
+    public void strnset(int c, int n)
+    {
+        int len = this.strlen();
+        if (n > len)
+            n = len;
+        memset(this, c, n);
+    }
+
+    // Returns a pointer to the first occurring string in string, otherwise NULL.
+    // Not an optimised function.
+    public Pointer strstr(any str)
+    {
+        static Handle SMTC_SDKCall_strstr;
+        if (SMTC_SDKCall_strstr == null)
+        {
+            SetMemAccess(AddressOfString(func_strstr), sizeof(func_strstr), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+            
+            StartPrepSDKCall(SDKCall_Static);
+            PrepSDKCall_SetAddress(AddressOfString(func_strstr));
+            PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const char*
+            PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const char*
+            PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // int
+            SMTC_SDKCall_strstr = EndPrepSDKCall();
+        }
+        return SDKCall(SMTC_SDKCall_strstr, this, str);
+    }
+
+    // Store pointer into a char buffer. maxlen should include NUL.
     public void ToCharBuffer(char[] buffer, int maxlen = -1)
     {
-        for (int i = 0; i < maxlen; ++i)
-        {
-            char value = this.Dereference(i, NumberType_Int8);
-            buffer[i] = value;
-            if (value == '\0') // NUL
-                break;
-        }
+        int length = this.strlen() + 1;
+        if (maxlen == -1)
+            maxlen = length;
+        else if (length < maxlen)
+            maxlen = length;
+        memcpy(AddressOfString(buffer), this, maxlen);
     }
 
-    // Store char buffer into a pointer.
+    // Store char buffer into a pointer. maxlen should include NUL.
     public void CharBufferToPointer(char[] buffer, int maxlen = -1)
     {
-        for (int i = 0; i < maxlen; ++i)
-        {
-            char value = buffer[i];
-            this.Write(value, i, NumberType_Int8);
-            if (value == '\0') // NUL
-                break;
-        }
+        int length = strlen(buffer) + 1;
+        if (maxlen == -1)
+            maxlen = length;
+        else if (length < maxlen)
+            maxlen = length;
+        memcpy(this, AddressOfString(buffer), maxlen);
     }
 
     // Store into a buffer. You must specify the size of the type used with this pointer using the typeSize parameter.
@@ -315,8 +538,13 @@ stock void V_swap(Pointer x, Pointer y, int typeSize = 4)
     free(temp);
 }
 
-// abs(), but for floats.
-// why did i make this it exists as a sm native
+// Return absolute of int.
+stock any abs(any x)
+{
+    return (x + 0xFFFFFFFF) ^ 0xFFFFFFFF; // sm uses cells which are 32-bit so we can just use 0xFFFFFFFF as our bitmask
+}
+
+// Valve fabs() implementation. You should use FloatAbs().
 stock float FloatMakePositive(float f)
 {
     return view_as<float>(view_as<int>(f) & 0x77777777); // evil floating point bit level hacking

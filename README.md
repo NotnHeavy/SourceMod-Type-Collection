@@ -1,6 +1,8 @@
 # SourceMod Type Collection
 
-This is basically just a dump of random methodmaps that I decided to make over time. Yes, that includes CUtlVector, all of your sins in one methodmap. Have fun!
+This is basically just a dump of random methodmaps that I decided to make over time. ~~Yes, that includes CUtlVector, all of your sins in one methodmap~~ Yes, that includes all sorts of atrocities such as my own small vtable API. Have fun!
+
+Note that this is only tested with TF2. For other games, you'll have to tweak the gamedata for the non-TF2 includes to your likings.
 
 ## How to use & dependencies
 You can just drag over your desired header files from here (located in ./scripting/include/) and add them to your own project. 
@@ -8,7 +10,7 @@ You can just drag over your desired header files from here (located in ./scripti
 At the very least, you'll need [Scags' SM-Memory Extension](https://github.com/Scags/SM-Memory).
 
 ## Includes present:
-In order to use the majority of these includes, you will have to include "SMTCHeader.inc" before all these includes, then "SMTC.inc" at the end of SMTC includes, and then call `SMTC_Initialize()` in `OnPluginStart()`. Includes marked with (w/o) do not require "SMTCHeader.inc" and "SMTC.inc".
+In order to use the majority of these includes, you will have to include "SMTCHeader.inc" before all these includes, then "SMTC.inc" at the end of SMTC includes, and then call `SMTC_Initialize()` in `OnMapStart()`. Includes marked with (w/o) do not require "SMTCHeader.inc" and "SMTC.inc".
 - SMTCHeader.inc: By default you will not need this, however some headers will require or take advantage of this. Whether a header uses this will be mentioned in its section. This header introduces a couple of globals - enginetrace being a notable one with a few tracing functions - that may be accessed by the headers requiring this header in particular. This header must be included at the top, above all other SMTC header. This also includes a methodmap mimicking a pointer, with a few associated methods. If you include this header, you will also need "SMTC.inc".
 - SMTC.inc: This header must be placed as the last header, below all other SMTC headers. This contains a function called `SMTC_Initialize()` which is used to initialize the globals specified in "SMTC.inc", alongside calling functions inside other headers that may have their own initialization processes. If you include this header, you will also need "SMTCHeader.inc".
 - Vector.inc: A 3D vector. No more of "float buffer[3]" all over the place. There are multiple ways of instantiating vector objects. `Vector.Malloc()` will dynamically allocate the vector and you are responsible for freeing it afterwards - only use this for long-lasting vectors. `Vector.StackAlloc()` must be used with `STACK_GETRETURN()` and allocates a vector onto the stack frame, using arrays behind the scenes. Use this similarly to how you declare any typical variables, however the code for this will be slightly more ugly. `Vector.Accumulator()` should only be used in functions which return a temporary vector object. `Vector.Cache()` should be used for working with multiple temporary vector objects at once, such as with arithmetic operations.
@@ -32,6 +34,8 @@ In order to use the majority of these includes, you will have to include "SMTCHe
 - tf/CTakeDamageInfo.inc: An object that contains all information for damaging players. Note that you will have to create your own DHooks (in particular, the OnTakeDamage ones) in order to utilise this methodmap fully. Note that there is a bug where if you toggle mini crits manually before `CTFGameRules::ApplyOnDamageModifyRules()` is called, due to mini crits and crits both toggling the DMG_CRIT damage type, the effect will default to the full crit one. This can be fixed by including SMTC.inc and calling `CTakeDamageInfo::SetCritType()` instead of modifying `CTakeDamageInfo::m_eCritType()` directly. This requires "Vector.inc".
 - tf/CTFRadiusDamageInfo.inc: An object that allows for damaging players within a specific radius. This requires "CTakeDamageInfo.inc" and "Vector.inc".
 - tf/TFPlayerClassData_t.inc: An object that holds data for each class in TF2. This can be used to interact with the game's `g_pTFPlayerClassDataMgr`, which holds data about all of TF2's classes. This requires "tf_shareddefs.inc" and "Vector.inc".
+- tf/tf_point_t.inc: An object that represents a point within a CTFPointManager entity. This requires "Vector.inc".
+- tf/flame_point_t.inc: An object that represents a flame point within a CTFFlameManager entity. This derives from tf_point_t and can be worked with to modify flames spewed from flamethrowers. This requires "tf_point_t.inc".
 
 ## Removed since previous versions (additions here will be cleared in the update after deprecation):
 - Nothing!

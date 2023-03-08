@@ -49,6 +49,20 @@
 				}
 				"read" "0"
 			}
+			"tf_point_t_vtable"
+			{
+				"windows"
+				{
+					"signature" "tf_point_t::~tf_point_t()"
+					"read"		"12"
+				}
+				"linux"
+				{
+					"signature" "tf_point_t::~tf_point_t()"
+					"read"		"8"
+				}
+				"read" "0"
+			}
 		}
 		"Offsets"
 		{
@@ -96,6 +110,14 @@
 			{
 				"library" "server"
 				"linux"   "@g_pGameRules"
+			}
+
+			// walk through tf_point_t vtable, go to first function
+			"tf_point_t::~tf_point_t()"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\xF6\x45\x08\x01\x56\x8B\xF1\xC7\x06\x2A\x2A\x2A\x2A\x74\x2A\x6A\x38"
+				"linux"   "@_ZN10tf_point_tD2Ev"
 			}
 
 			"CTraceFilterSimple::ShouldHitEntity()" // search vtable for CTraceFilterSimple, vfunc 0

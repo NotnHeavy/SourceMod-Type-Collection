@@ -151,3 +151,8 @@ public CBaseEntity GetWorldEntity()
 {
     return CBaseEntity.FromIndex(0);
 }
+
+stock CBaseEntity operator=(CHandle value)
+{
+    return value.Get();
+}
