@@ -83,6 +83,17 @@
 				"windows" "4"
 				"linux"   "4"
 			}
+
+			"CTFPointManager::AddPoint()"
+			{
+				"windows" "198"
+				"linux"   "199"
+			}
+			"CTFPointManager::m_Points"
+			{
+				"windows" "1180"
+				"linux"   "1204"
+			}
 		}
         "Signatures"
         {
@@ -180,6 +191,21 @@
 						"type" "int"
 					}
 				}
+			}
+
+			"CTFPointManager::AddPoint()"
+			{
+				"offset"   "CTFPointManager::AddPoint()"
+				"hooktype" "entity"
+				"this"	   "entity"
+				"return"   "bool"
+				"arguments"
+				{
+					"nSpawnTime"
+					{
+						"type"	"int"
+					}
+				}	
 			}
         }
     }

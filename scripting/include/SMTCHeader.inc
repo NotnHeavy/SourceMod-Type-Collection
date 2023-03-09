@@ -116,11 +116,15 @@ stock Pointer g_pTFPlayerClassDataMgr;
 stock CEngineTrace enginetrace;
 stock CTFGameRules g_pGameRules;
 
+stock any CTFPointManager_m_Points;
+
 stock Pointer SMTC_tf_point_t_vtable;
 
 stock Pointer CTraceFilterSimple_ShouldHitEntity;
 
-stock DHookSetup SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive;
+stock DynamicDetour SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive;
+
+stock DynamicHook SMTC_DHooks_CTFPointManager_AddPoint;
 
 stock Handle SMTC_SDKCall_IEngineTrace_ClipRayToEntity;
 stock Handle SMTC_SDKCall_IEngineTrace_TraceRay;
@@ -304,34 +308,49 @@ methodmap Pointer
     }
 
     // Copies one string to another string.
-    public Pointer strcpy(any source)
+    // There will be overhead if updateMemAccess is toggled.
+    public Pointer strcpy(any source, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        return memcpy(this, source, view_as<Pointer>(source).strlen() + 1);
+        if (updateMemAccess)
+            return memcpy(this, source, view_as<Pointer>(source).strlen() + 1);
+        else
+            return memcpyf(this, source, view_as<Pointer>(source).strlen() + 1);
     }
 
     // Copies first n characters of source to destination.
-    public Pointer strncpy(any source, int n)
+    // There will be overhead if updateMemAccess is toggled.
+    public Pointer strncpy(any source, int n, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         int size = view_as<Pointer>(source).strnlen(n);
         if (size != n)
-            memset(this + size, '\0', n - size);
+        {
+            if (updateMemAccess)
+                memset(this + size, '\0', n - size);
+            else
+                memsetf(this + size, '\0', n - size);
+        }
         return memcpy(this, source, size);
     }
 
     // Append source on the end of destination.
-    public Pointer strcat(any source)
+    // There will be overhead if updateMemAccess is toggled.
+    public Pointer strcat(any source, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        (this + this.strlen()).strcpy(source);
+        (this + this.strlen()).strcpy(source, updateMemAccess);
         return this;
     }
 
     // Append first n characters of source on the end of destination.
-    public Pointer strncat(any source, int n)
+    // There will be overhead if updateMemAccess is toggled.
+    public Pointer strncat(any source, int n, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         Pointer s1 = this + this.strlen();
         int ss = view_as<Pointer>(source).strnlen(n);
         s1.Write('\0', ss, NumberType_Int8);
-        memcpy(s1, source, ss);
+        if (updateMemAccess)
+            memcpy(s1, source, ss);
+        else   
+            memcpyf(s1, source, ss);
         return this;
     }
 
@@ -342,7 +361,7 @@ methodmap Pointer
         Pointer duplicate = malloc(len);
         if (duplicate == NULL)
             return NULL;
-        return memcpy(duplicate, this, len);
+        return memcpyf(duplicate, this, len);
     }
 
     // Returns a pointer to the first occurring char in string, otherwise NULL.
@@ -381,18 +400,26 @@ methodmap Pointer
     }
 
     // Set all characters of a string.
-    public void strset(int c)
+    // There will be overhead if updateMemAccess is toggled.
+    public void strset(int c, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        memset(this, c, this.strlen());
+        if (updateMemAccess)
+            memset(this, c, this.strlen());
+        else
+            memsetf(this, c, this.strlen());
     }
     
     // Set all characters of a string up to a given length.
-    public void strnset(int c, int n)
+    // There will be overhead if updateMemAccess is toggled.
+    public void strnset(int c, int n, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         int len = this.strlen();
         if (n > len)
             n = len;
-        memset(this, c, n);
+        if (updateMemAccess)
+            memset(this, c, n);
+        else
+            memsetf(this, c, n);
     }
 
     // Returns a pointer to the first occurring string in string, otherwise NULL.
@@ -422,24 +449,28 @@ methodmap Pointer
             maxlen = length;
         else if (length < maxlen)
             maxlen = length;
-        memcpy(AddressOfString(buffer), this, maxlen);
+        memcpyf(AddressOfString(buffer), this, maxlen);
     }
 
     // Store char buffer into a pointer. maxlen should include NUL.
-    public void CharBufferToPointer(char[] buffer, int maxlen = -1)
+    // There will be overhead if updateMemAccess is toggled.
+    public void CharBufferToPointer(char[] buffer, int maxlen = -1, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         int length = strlen(buffer) + 1;
         if (maxlen == -1)
             maxlen = length;
         else if (length < maxlen)
             maxlen = length;
-        memcpy(this, AddressOfString(buffer), maxlen);
+        if (updateMemAccess)
+            memcpy(this, AddressOfString(buffer), maxlen);
+        else
+            memcpyf(this, AddressOfString(buffer), maxlen);
     }
 
     // Store into a buffer. You must specify the size of the type used with this pointer using the typeSize parameter.
     public void ToBuffer(char[] buffer, int typeSize = 4)
     {
-        memcpy(AddressOfString(buffer), this, typeSize);
+        memcpyf(AddressOfString(buffer), this, typeSize);
     }
 
     // Return the address of a cell.
@@ -523,18 +554,18 @@ stock Pointer operator=(Address value)
 stock any recalloc(Pointer memory, int num, int size, int old)
 {
     Pointer buffer = calloc(num, size);
-    memcpy(buffer, memory, old * size);
+    memcpyf(buffer, memory, old * size);
     free(memory);
     return buffer;
 }
 
-// Swap between two blocks of memory. You must specify the size of the type used with this global using the typeSize parameter.
+// Swap fast between two blocks of memory. You must specify the size of the type used with this global using the typeSize parameter.
 stock void V_swap(Pointer x, Pointer y, int typeSize = 4)
 {
     Pointer temp = malloc(typeSize);
-    memcpy(temp, x, typeSize);
-    memcpy(x, y, typeSize);
-    memcpy(y, temp, typeSize);
+    memcpyf(temp, x, typeSize);
+    memcpyf(x, y, typeSize);
+    memcpyf(y, temp, typeSize);
     free(temp);
 }
 

@@ -64,7 +64,7 @@ static stock int SMTC_PlayerTakingMiniCrits = 0;
 public void SMTC_CTakeDamageInfoForward()
 {
     HookEvent("player_hurt", SMTC_ClientHurt, EventHookMode_Pre);
-    DHookEnableDetour(SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive, false, SMTC_CTFPlayer_OnTakeDamage_Alive);
+    SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive.Enable(Hook_Pre, SMTC_CTFPlayer_OnTakeDamage_Alive);
 }
 
 //////////////////////////////////////////////////////////////////////////////

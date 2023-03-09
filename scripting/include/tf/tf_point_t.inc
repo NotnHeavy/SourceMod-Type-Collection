@@ -137,3 +137,52 @@ methodmap TF_Point_t < Pointer
         return buffer;
     }
 }
+
+//////////////////////////////////////////////////////////////////////////////
+// HOOKS                                                                    //
+//////////////////////////////////////////////////////////////////////////////
+
+// Post-call CTFPointManager::AddPoint().
+// If a new point has been instantiated, call:
+// "void SMTC_AddPoint(const CBaseEntity manager, const TF_Point_t point)".
+MRESReturn CTFPointManager_AddPoint(int entity, DHookReturn returnValue, DHookParam parameters)
+{
+    CBaseEntity manager = CBaseEntity.FromIndex(entity);
+    if (manager == NULL)
+        return MRES_Ignored;
+
+    CBaseEntity owner = manager.GetEntPropHandle(Prop_Send, "m_hAttacker");
+    if (owner == NULL)
+        return MRES_Ignored;
+
+    CBaseEntity weapon = manager.GetEntPropHandle(Prop_Send, "m_hOwnerEntity");
+    if (weapon == NULL)
+        return MRES_Ignored;
+
+    CUtlVector vector = CUtlVector(manager.Address + CTFPointManager_m_Points);
+    int index = manager.GetEntProp(Prop_Send, "m_unNextPointIndex");
+    index = index == 0 ? 29 : index - 1;
+
+    for (int i = 0, size = vector.m_Size; i < size; ++i)
+    {
+        TF_Point_t pFlamePoint = vector.Get(i).Dereference();
+        if (pFlamePoint == NULL)
+            continue;
+
+        if (pFlamePoint.m_iIndex == index)
+        {
+            SMTC_HookData data;
+            SMTC_GetHookData(entity, FORWARDTYPE_ADDPOINT, data);
+            if (data.entity == INVALID_ENT_REFERENCE)
+                return MRES_Ignored;
+
+            Call_StartFunction(null, data.callback);
+            Call_PushCell(manager);
+            Call_PushCell(pFlamePoint);
+            Call_Finish();
+            break;
+        }
+    }
+
+    return MRES_Ignored;
+}

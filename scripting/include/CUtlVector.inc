@@ -166,73 +166,91 @@ methodmap CUtlVector < Pointer
     }
 
     // Shifts elements to the left. You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public void ShiftElementsLeft(int elem, int num = 1, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public void ShiftElementsLeft(int elem, int num = 1, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         if (!(this.IsValidIndex(num) || this.m_Size == 0 || num == 0))
             return;
 
         int numToMove = this.m_Size - elem - num;
         if (numToMove > 0 && num > 0)
-            memmove(this.Element(elem, typeSize), this.Element(elem + num, typeSize), numToMove * typeSize);
+        {
+            if (updateMemAccess)
+                memmove(this.Element(elem, typeSize), this.Element(elem + num, typeSize), numToMove * typeSize);
+            else
+                memmovef(this.Element(elem, typeSize), this.Element(elem + num, typeSize), numToMove * typeSize);
+        }
     }
 
     // Shifts elements to the right. You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public void ShiftElementsRight(int elem, int num = 1, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public void ShiftElementsRight(int elem, int num = 1, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         if (!(this.IsValidIndex(num) || this.m_Size == 0 || num == 0))
             return;
 
         int numToMove = this.m_Size - elem - num;
         if (numToMove > 0 && num > 0)
-            memmove(this.Element(elem + num, typeSize), this.Element(elem, typeSize), numToMove * typeSize);
+        {
+            if (updateMemAccess)
+                memmove(this.Element(elem + num, typeSize), this.Element(elem, typeSize), numToMove * typeSize);
+            else
+                memmovef(this.Element(elem + num, typeSize), this.Element(elem, typeSize), numToMove * typeSize);
+        }
     }
 
     // Adds an element. Returns this.InvalidIndex() (-1) on failure, returns index provided on success.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public int InsertBefore(int index, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public int InsertBefore(int index, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         // Can insert at the end.
         if (!(index == this.Count() || this.IsValidIndex(index)))
             return CUtlVector.InvalidIndex();
         
         this.GrowVector();
-        this.ShiftElementsRight(index, .typeSize = typeSize);
-        Construct(this.Element(index), typeSize);
+        this.ShiftElementsRight(index, .typeSize = typeSize, .updateMemAccess = updateMemAccess);
+        Construct(this.Element(index), typeSize, updateMemAccess);
         
         return index;
     }
 
     // Adds an element. Returns this.InvalidIndex() (-1) on failure, returns index provided on success.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public int InsertAfter(int index, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public int InsertAfter(int index, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        return this.InsertBefore(index + 1, typeSize);
+        return this.InsertBefore(index + 1, typeSize, updateMemAccess);
     }
 
     // Adds an element. Returns this.InvalidIndex() (-1) on failure, returns index provided on success.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public int AddToHead(int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public int AddToHead(int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        return this.InsertBefore(0, typeSize);
+        return this.InsertBefore(0, typeSize, updateMemAccess);
     }
 
     // Adds an element. Returns this.InvalidIndex() (-1) on failure, returns index provided on success.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public int AddToTail(int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public int AddToTail(int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        return this.InsertBefore(this.m_Size, typeSize);
+        return this.InsertBefore(this.m_Size, typeSize, updateMemAccess);
     }
 
     // Adds an element. Returns NULL on failure, returns pointer to new element on success.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public Pointer AddToTailGetPtr(int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public Pointer AddToTailGetPtr(int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        return this.Element(this.AddToTail(), typeSize);
+        return this.Element(this.AddToTail(typeSize, updateMemAccess), typeSize);
     }
 
     // Initializes elements before a specified index. Returns this.InvalidIndex(-1) on failure, returns index provided on success or if num == 0.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public int InsertMultipleBefore(int elem, int num, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public int InsertMultipleBefore(int elem, int num, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         if (num == 0)
             return elem;
@@ -242,11 +260,11 @@ methodmap CUtlVector < Pointer
             return CUtlVector.InvalidIndex();
 
         this.GrowVector(num);
-        this.ShiftElementsRight(elem, num, typeSize);
+        this.ShiftElementsRight(elem, num, typeSize, updateMemAccess);
 
         // Invoke default constructors.
         for (int i = 0; i < num; ++i)
-            Construct(this.Element(elem + i));
+            Construct(this.Element(elem + i), updateMemAccess);
 
         return elem;
     }
@@ -254,7 +272,8 @@ methodmap CUtlVector < Pointer
     // Copies from one source to the other, before a specified index. Returns this.InvalidIndex(-1) on failure, returns index provided on success or if num == 0.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
     // Meant to be a function overload of InsertMultipleBefore, but that's not possible in SourceMod.
-    public int CopyFromBefore(int elem, int num, const Pointer toInsert, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public int CopyFromBefore(int elem, int num, const Pointer toInsert, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         if (num == 0)
             return elem;
@@ -264,18 +283,18 @@ methodmap CUtlVector < Pointer
             return INVALID_INDEX;
 
         this.GrowVector(num);
-        this.ShiftElementsRight(elem, num, typeSize);
+        this.ShiftElementsRight(elem, num, typeSize,updateMemAccess);
 
         // Invoke default constructors.
         if (toInsert == NULL)
         {
             for (int i = 0; i < num; ++i)
-                Construct(this.Element(elem + i));
+                Construct(this.Element(elem + i), updateMemAccess);
         }
         else
         {
             for (int i = 0; i < num; ++i)
-                CopyConstruct(this.Element(elem + i, typeSize), toInsert.Get(i, typeSize), typeSize);
+                CopyConstruct(this.Element(elem + i, typeSize), toInsert.Get(i, typeSize), typeSize, updateMemAccess);
         }
 
         return elem;
@@ -283,32 +302,44 @@ methodmap CUtlVector < Pointer
 
     // Initializes elements before a specified index. Returns this.InvalidIndex(-1) on failure, returns index provided on success or if num == 0.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public int AddMultipleToHead(int num, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public int AddMultipleToHead(int num, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        return this.InsertMultipleBefore(0, num, typeSize);
+        return this.InsertMultipleBefore(0, num, typeSize, updateMemAccess);
     }
 
     // Initializes elements before a specified index. Returns this.InvalidIndex(-1) on failure, returns index provided on success or if num == 0.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public int AddMultipleToTail(int num, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public int AddMultipleToTail(int num, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        return this.InsertMultipleBefore(this.m_Size, num, typeSize);
+        return this.InsertMultipleBefore(this.m_Size, num, typeSize, updateMemAccess);
     }
 
     // Initializes elements before a specified index. Returns this.InvalidIndex(-1) on failure, returns index provided on success or if num == 0.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public int InsertMultipleAfter(int elem, int num, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public int InsertMultipleAfter(int elem, int num, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        return this.InsertMultipleBefore(elem + 1, num, typeSize);
+        return this.InsertMultipleBefore(elem + 1, num, typeSize, updateMemAccess);
     }
 
     // Finds an element. Returns the index if found. You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public int Find(const Pointer source, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public int Find(const Pointer source, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         for (int i = 0; i < this.Count(); ++i)
         {
-            if (memcmp(this.Element(i, typeSize), source, typeSize) == 0)
-                return i;
+            if (updateMemAccess)
+            {
+                if (memcmp(this.Element(i, typeSize), source, typeSize) == 0)
+                    return i;
+            }
+            else
+            {
+                if (memcmpf(this.Element(i, typeSize), source, typeSize) == 0)
+                    return i;
+            }
         }
         return CUtlVector.InvalidIndex();
     }
@@ -316,7 +347,8 @@ methodmap CUtlVector < Pointer
     // Element removal. Doesn't preserve order.
     // Internally this code would call the deconstructor on allocated memory, but that's not possible here.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public void FastRemove(int elem, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public void FastRemove(int elem, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         if (!this.IsValidIndex(elem))
             return;
@@ -324,28 +356,35 @@ methodmap CUtlVector < Pointer
         if (this.m_Size > 0)
         {
             if (elem != this.m_Size - 1)
-                memcpy(this.Element(elem), this.Element(this.m_Size - 1), typeSize);
+            {
+                if (updateMemAccess)
+                    memcpy(this.Element(elem), this.Element(this.m_Size - 1), typeSize);
+                else
+                    memcpyf(this.Element(elem), this.Element(this.m_Size - 1), typeSize);
+            }
             --this.m_Size;
         }
     }
 
     // Element removal. Preserves order, shifts elements. You must specify the size of the type used with this CUtlVector using the typeSize parameter.
     // Internally this code would call the deconstructor on allocated memory, but that's not possible here.
-    public void Remove(int elem, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public void Remove(int elem, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        this.ShiftElementsLeft(elem, .typeSize = typeSize);
+        this.ShiftElementsLeft(elem, .typeSize = typeSize, .updateMemAccess = updateMemAccess);
         --this.m_Size;
     }
 
     // Element removal. Removes first occurence of source, preserves order, shifts elements.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
     // Internally this code would call the deconstructor on allocated memory, but that's not possible here.
-    public bool FindAndRemove(const Pointer source, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public bool FindAndRemove(const Pointer source, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        int elem = this.Find(source, typeSize);
+        int elem = this.Find(source, typeSize, updateMemAccess);
         if (elem != -1)
         {
-            this.Remove(elem);
+            this.Remove(elem, updateMemAccess);
             return true;
         }
         return false;
@@ -354,12 +393,13 @@ methodmap CUtlVector < Pointer
     // Element removal. Removes first occurence of source, doesn't preserve order.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
     // Internally this code would call the deconstructor on allocated memory, but that's not possible here.
-    public bool FindAndFastRemove(const Pointer source, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public bool FindAndFastRemove(const Pointer source, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        int elem = this.Find(source, typeSize);
+        int elem = this.Find(source, typeSize, updateMemAccess);
         if (elem != -1)
         {
-            this.FastRemove(elem);
+            this.FastRemove(elem, updateMemAccess);
             return true;
         }
         return false;
@@ -367,23 +407,25 @@ methodmap CUtlVector < Pointer
 
     // Element removal. Preserves order, shifts elements. You must specify the size of the type used with this CUtlVector using the typeSize parameter.
     // Internally this code would call the deconstructor on allocated memory, but that's not possible here.
-    public void RemoveMultiple(int elem, int num, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public void RemoveMultiple(int elem, int num, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         if (!(elem >= 0 || elem + num <= this.Count()))
             return;
 
-        this.ShiftElementsLeft(elem, num, typeSize);
+        this.ShiftElementsLeft(elem, num, typeSize, updateMemAccess);
         this.m_Size -= num;
     }
 
     // Element removal. Removes num elements from head. You must specify the size of the type used with this CUtlVector using the typeSize parameter.
     // Internally this code would call the deconstructor on allocated memory, but that's not possible here.
-    public void RemoveMultipleFromHead(int num, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public void RemoveMultipleFromHead(int num, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         if (!(num <= this.Count()))
             return;
         
-        this.ShiftElementsLeft(0, num, typeSize);
+        this.ShiftElementsLeft(0, num, typeSize, updateMemAccess);
         this.m_Size -= num;
     }
 
@@ -415,18 +457,20 @@ methodmap CUtlVector < Pointer
     // SetCount deletes the previous contents of the container and sets the container to have this many elements.
 	// Use GetCount to retrieve the current count.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public void SetCount(int count, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public void SetCount(int count, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         this.RemoveAll();
-        this.AddMultipleToTail(count, typeSize);
+        this.AddMultipleToTail(count, typeSize, updateMemAccess);
     }
 
     // Sets count by adding or removing elements to tail. You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public void SetCountNonDestructively(int count, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public void SetCountNonDestructively(int count, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         int delta = count - this.m_Size;
         if (delta > 0)
-            this.AddMultipleToTail(delta, typeSize);
+            this.AddMultipleToTail(delta, typeSize, updateMemAccess);
         else if (delta < 0)
             this.RemoveMultipleFromTail(-delta);
     }
@@ -434,20 +478,25 @@ methodmap CUtlVector < Pointer
     // Calls RemoveAll() then AddMultipleToTail.
     // SetSize is a synonym for SetCount.
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public void SetSize(int size, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public void SetSize(int size, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        this.SetCount(size, typeSize);
+        this.SetCount(size, typeSize, updateMemAccess);
     }
 
     // Calls SetSize and copies each element. You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public void CopyArray(const Pointer array, int size, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public void CopyArray(const Pointer array, int size, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         // Can't insert something that's in the list... reallocation may hose us.
         if (!(this.Base() == NULL || array == NULL || this.Base() >= array + size || array >= this.Base() + this.Count()))
             return;
 
-        this.SetSize(size);
-        memcpy(this, array, size * typeSize);
+        this.SetSize(size, updateMemAccess);
+        if (updateMemAccess)
+            memcpy(this, array, size * typeSize);
+        else
+            memcpyf(this, array, size * typeSize);
     }
 
     // Fast swap.
@@ -469,15 +518,17 @@ methodmap CUtlVector < Pointer
 
     // Makes sure we have at least this many elements.
 	// Use GetCount to retrieve the current count.
-    public void EnsureCount(int num)
+    // There will be overhead if updateMemAccess is toggled.
+    public void EnsureCount(int num, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         if (this.Count() < num)
-            this.AddMultipleToTail(num - this.Count());
+            this.AddMultipleToTail(num - this.Count(), updateMemAccess);
     }
 
     // Add the specified array to the tail. You must specify the size of the type used with this CUtlVector using the typeSize parameter.
     // Returns previous count on success, returns -1 on failure.
-    public int AddVectorToTail(const CUtlVector vector, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public int AddVectorToTail(const CUtlVector vector, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         if (vector == this)
             return CUtlVector.InvalidIndex();
@@ -491,37 +542,51 @@ methodmap CUtlVector < Pointer
         // Copy the elements.
         this.m_Size += sourceCount;
         for (int i = 0; i < sourceCount; ++i)
-            CopyConstruct(this.Element(base + i, typeSize), vector.Element(base + i, typeSize), typeSize);
+            CopyConstruct(this.Element(base + i, typeSize), vector.Element(base + i, typeSize), typeSize, updateMemAccess);
         return base;
     }
 
     // Fill up this CUtlVector with a specific value. You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public void FillWithValue(const Pointer value, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public void FillWithValue(const Pointer value, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         for (int i = 0; i < this.Count(); ++i)
-            memcpy(this.Element(i, typeSize), value, typeSize);
+        {
+            if (updateMemAccess)
+                memcpy(this.Element(i, typeSize), value, typeSize);
+            else
+                memcpyf(this.Element(i, typeSize), value, typeSize);
+        }
     }
 
     // Does this CUtlVector have the following element? You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public bool HasElement(const Pointer source, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public bool HasElement(const Pointer source, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        return this.Find(source, typeSize) >= 0;
+        return this.Find(source, typeSize, updateMemAccess) >= 0;
     }
 
     // Memory deallocation.
-    public void Purge()
+    // There will be overhead if updateMemAccess is toggled.
+    public void Purge(bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         this.RemoveAll();
-        this.m_Memory.Purge();
+        this.m_Memory.Purge(updateMemAccess);
         this.ResetDbgInfo();
     }
 
     // Purges the list and calls delete on each element in it. You must specify the size of the type used with this CUtlVector using the typeSize parameter.
-    public void PurgeAndDeleteElements(int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public void PurgeAndDeleteElements(int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         for (int i = 0; i < this.m_Size; ++i)
-            free(this.Element(i, typeSize));
-        this.Purge();
+        {
+            if (updateMemAccess)
+                free(this.Element(i, typeSize));
+            else
+                freef(this.Element(i, typeSize));
+        }
+        this.Purge(updateMemAccess);
     }
 
     // Compacts the vector to the number of elements actually in use.
@@ -544,10 +609,14 @@ methodmap CUtlVector < Pointer
     }
 
     // Deconstructor.
-    public void Dispose()
+    // There will be overhead if updateMemAccess is toggled.
+    public void Dispose(bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        this.Purge();
-        free(this);
+        this.Purge(updateMemAccess);
+        if (updateMemAccess)
+            free(this);
+        else
+            freef(this);
     }
 }
 
@@ -557,14 +626,22 @@ methodmap CUtlVector < Pointer
 
 // Re-allocate within a specific location in memory. You must specify the size of the type used with this global using the typeSize parameter.
 // Normally this would call the the constructor of the allocated memory, but that's not possible here.
-static void Construct(Pointer memory, int typeSize = 4)
+// There will be overhead if updateMemAccess is toggled.
+static void Construct(Pointer memory, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
 {
-    memset(memory, 0, typeSize);
+    if (updateMemAccess)
+        memset(memory, 0, typeSize);
+    else
+        memsetf(memory, 0, typeSize);
 }
 
 // Re-allocate within a specific location in memory, from another source. You must specify the size of the type used with this global using the typeSize parameter.
 // Normally this would call the the constructor of the allocated memory, but that's not possible here.
-static void CopyConstruct(Pointer memory, Pointer source, int typeSize = 4)
+// There will be overhead if updateMemAccess is toggled.
+static void CopyConstruct(Pointer memory, Pointer source, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
 {
-    memcpy(memory, source, typeSize);
+    if (updateMemAccess)
+        memcpy(memory, source, typeSize);
+    else
+        memcpyf(memory, source, typeSize);
 }

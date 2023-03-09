@@ -11,6 +11,89 @@
 #pragma newdecls required
 
 //////////////////////////////////////////////////////////////////////////////
+// GLOBALS                                                                  //
+//////////////////////////////////////////////////////////////////////////////
+
+typeset SMTC_ForwardCallback
+{
+    // FORWARDTYPE_ADDPOINT (TF2 only): When a new tf_point_t object is instantiated 
+    // within a CTFPointManager (or derived) object // this will be invoked through 
+    // CTFPointManager::AddPoint().
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TF_POINT_T && defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CBASEENTITY
+    function void (const CBaseEntity manager, const TF_Point_t point);
+#endif
+};
+
+enum SMTC_ForwardType
+{
+    FORWARDTYPE_ADDPOINT
+}
+
+enum struct SMTC_HookData
+{
+    SMTC_ForwardType type;
+    SMTC_ForwardCallback callback;
+    int entity;
+}
+
+static ArrayList g_Hooks;
+
+//////////////////////////////////////////////////////////////////////////////
+// SMTC FORWARDS                                                            //
+//////////////////////////////////////////////////////////////////////////////
+
+static void SMTC_HookGC()
+{
+    for (int i = 0, size = g_Hooks.Length; i < size; ++i)
+    {
+        SMTC_HookData data;
+        g_Hooks.GetArray(i, data);
+        if (!IsValidEntity(data.entity))
+        {
+            g_Hooks.Erase(i--);
+            --size;
+        }
+    }
+}
+
+// Hook onto entities and invoke forwards whenever a specific event occurs.
+// Intended to work in similar fashion to SDKHooks, uses DHooks behind the scenes.
+// The garbage collector is called within this function.
+stock void SMTC_HookEntity(int entity, SMTC_ForwardType type, SMTC_ForwardCallback callback)
+{
+    SMTC_HookGC();
+
+    switch (type)
+    {
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TF_POINT_T
+    case FORWARDTYPE_ADDPOINT:
+        SMTC_DHooks_CTFPointManager_AddPoint.HookEntity(Hook_Post, entity, CTFPointManager_AddPoint);
+#endif
+    default:
+        ThrowError("Incorrect SMTC_ForwardType specified! %u", type);
+    }
+
+    SMTC_HookData data;
+    data.type = type;
+    data.callback = callback;
+    data.entity = EntIndexToEntRef(entity);
+    g_Hooks.PushArray(data);
+}
+
+// Get hook data for the specified entity.
+stock void SMTC_GetHookData(int entity, SMTC_ForwardType type, SMTC_HookData data)
+{
+    int ref = EntIndexToEntRef(entity);
+    for (int i = 0, size = g_Hooks.Length; i < size; ++i)
+    {
+        SMTC_HookData temp;
+        g_Hooks.GetArray(i, temp);
+        if (temp.entity == ref && temp.type == type)
+            data = temp;
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////////
 // INITIALIZER                                                              //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -25,14 +108,18 @@ stock void SMTC_Initialize()
     g_pTFPlayerClassDataMgr = config.GetAddress("g_pTFPlayerClassDataMgr");
     enginetrace = CEngineTrace(config.GetAddress("enginetrace"));
     g_pGameRules = CTFGameRules(config.GetAddress("g_pGameRules"));
-    
-    #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TF_POINT_T
+
+    CTFPointManager_m_Points = config.GetOffset("CTFPointManager::m_Points");
+
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TF_POINT_T
     SMTC_tf_point_t_vtable = config.GetAddress("tf_point_t_vtable");
-    #endif
+#endif
 
     CTraceFilterSimple_ShouldHitEntity = config.GetMemSig("CTraceFilterSimple::ShouldHitEntity()");
 
-    SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive = DHookCreateFromConf(config, "CTFPlayer::OnTakeDamage_Alive()");
+    SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive = DynamicDetour.FromConf(config, "CTFPlayer::OnTakeDamage_Alive()");
+    
+    SMTC_DHooks_CTFPointManager_AddPoint = DynamicHook.FromConf(config, "CTFPointManager::AddPoint()");
 
     StartPrepSDKCall(SDKCall_Raw);
     PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "IEngineTrace::ClipRayToEntity()");
@@ -73,6 +160,9 @@ stock void SMTC_Initialize()
 
     delete config;
 
+    // Instantiate g_Hooks.
+    g_Hooks = new ArrayList(sizeof(SMTC_HookData));
+
     // Generate the string function sdkcalls beforehand.
     STACK_ALLOC(str1, Pointer, 1);
     STACK_ALLOC(str2, Pointer, 1);
@@ -93,19 +183,19 @@ stock void SMTC_Initialize()
     m_RefEHandle_Offset = m_angRotation + 0x0C;
 
     // Call forwards.
-    #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_VECTOR
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_VECTOR
     SMTC_VectorForward();
-    #endif
-    #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTAKEDAMAGEINFO
+#endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTAKEDAMAGEINFO
     SMTC_CTakeDamageInfoForward();
-    #endif
-    #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_UTIL
+#endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_UTIL
     SMTC_UTILForward();
-    #endif
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////
-// GLOBALS                                                                  //
+// SMTC                                                                     //
 //////////////////////////////////////////////////////////////////////////////
 
 methodmap SMTC

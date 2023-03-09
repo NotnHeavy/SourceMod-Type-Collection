@@ -140,13 +140,17 @@ methodmap CUtlMemory < Pointer
     }
 
     // Memory deallocation.
-    public void Purge()
+    // There will be overhead if updateMemAccess is toggled.
+    public void Purge(bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         if (!this.IsExternallyAllocated())
         {
             if (this.m_pMemory != NULL)
             {
-                free(this.m_pMemory);
+                if (updateMemAccess)
+                    free(this.m_pMemory);
+                else
+                    freef(this.m_pMemory);
                 this.m_pMemory = NULL;
             }
             this.m_nAllocationCount = 0;
@@ -221,7 +225,8 @@ methodmap CUtlMemory < Pointer
     // Switches the buffer from an external memory buffer to a reallocatable buffer.
 	// Will copy the current contents of the external buffer to the reallocatable buffer.
     // You must specify the size of the type used with this CUtlMemory using the typeSize parameter.
-    public void ConvertToGrowableMemory(int growSize, int typeSize = 4)
+    // There will be overhead if updateMemAccess is toggled.
+    public void ConvertToGrowableMemory(int growSize, int typeSize = 4, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
         if (!this.IsExternallyAllocated())
             return;
@@ -231,7 +236,10 @@ methodmap CUtlMemory < Pointer
         {
             int numBytes = this.m_nAllocationCount * typeSize;
             Pointer pMemory = malloc(numBytes);
-            memcpy(pMemory, this.m_pMemory, numBytes);
+            if (updateMemAccess)
+                memcpy(pMemory, this.m_pMemory, numBytes);
+            else
+                memcpyf(pMemory, this.m_pMemory, numBytes);
             this.m_pMemory = pMemory;
         }
         else
@@ -290,10 +298,14 @@ methodmap CUtlMemory < Pointer
     }
 
     // Deconstructor.
-    public void Dispose()
+    // There will be overhead if updateMemAccess is toggled.
+    public void Dispose(bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
     {
-        this.Purge();
-        free(this);
+        this.Purge(updateMemAccess);
+        if (updateMemAccess)
+            free(this);
+        else
+            freef(this);
     }
 }
 

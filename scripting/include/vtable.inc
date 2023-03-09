@@ -110,7 +110,7 @@ methodmap VTable_Info < Pointer
     // Call constructor on existing type.
     public void ctor(char[] name, SIZE_T size)
     {
-        memcpy(this.Name, AddressOfString(name), 32);
+        memcpyf(this.Name, AddressOfString(name), 32);
         this.Name.Write('\0', 31, NumberType_Int8);
         this.Size = size;
 
@@ -166,7 +166,7 @@ methodmap VTable
 
         if (baseVTableInfo != NULL)
         {
-            memcpy(vtableInfo.VTable, baseVTableInfo.VTable, baseVTableInfo.Size * SIZEOF_Pointer);
+            memcpyf(vtableInfo.VTable, baseVTableInfo.VTable, baseVTableInfo.Size * SIZEOF_Pointer);
             for (int i = 0; i < baseVTableInfo.Size; ++i)
             {
                 if (vtableInfo.VTable.Dereference(i * SIZEOF_Pointer) != NULL)
@@ -193,7 +193,7 @@ methodmap VTable
         if (asmLength)
         {
             Pointer vpointer = malloc(asmLength);
-            memcpy(vpointer, asm, asmLength);
+            memcpyf(vpointer, asm, asmLength);
             info.VTable.Write(vpointer, index * SIZEOF_Pointer);
             info.Malloc.Write(vpointer, index * SIZEOF_Pointer);
             SetMemAccess(vpointer, asmLength, SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
@@ -277,7 +277,7 @@ methodmap VTable
             VTable_Info vtableInfo = view_as<VTable_Info>(vtables.Get(i, SIZEOF_VTable_Info));
             if (vtableInfo.VTable == vtable)
             {
-                memcpy(AddressOfString(name), vtableInfo.Name, sizeof(name));
+                memcpyf(AddressOfString(name), vtableInfo.Name, sizeof(name));
                 return true;
             }
         }

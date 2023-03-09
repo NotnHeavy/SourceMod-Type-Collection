@@ -12,6 +12,7 @@
 #include <dhooks> // Not actually needed, just used for tests.
 
 #define SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT false
+#define SMTC_TF_POINT_T_TOGGLE_FUNCTIONS true
 
 #include "SMTCHeader.inc"
 #include "include/Vector.inc"
@@ -45,11 +46,8 @@ static DHookSetup DHooks_CTFPlayer_OnTakeDamage;
 static Handle SDKCall_CTFGameRules_RadiusDamage;
 static DHookSetup DHooks_CTFPlayer_TraceAttack;
 static Handle SDKCall_CBaseCombatCharacter_Weapon_ShootPosition;
-static DynamicHook DHooks_CTFFlameManager_AddPoint;
 
 static int explosionModelIndex;
-
-static any CTFFlameManager_m_Points;
 
 public void OnPluginStart()
 {
@@ -58,8 +56,6 @@ public void OnPluginStart()
     //SMTC_Initialize();
 
     GameData config = LoadGameConfigFile("NotnHeavy - SourceMod Type Collection (tests)");
-
-    CTFFlameManager_m_Points = config.GetOffset("CTFFlameManager::m_Points");
 
     StartPrepSDKCall(SDKCall_Entity);
     PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CTFWearable::Equip");
@@ -87,8 +83,6 @@ public void OnPluginStart()
     PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CBaseCombatCharacter::Weapon_ShootPosition()");
     PrepSDKCall_SetReturnInfo(SDKType_Vector, SDKPass_ByValue); // Vector
     SDKCall_CBaseCombatCharacter_Weapon_ShootPosition = EndPrepSDKCall();
-
-    DHooks_CTFFlameManager_AddPoint = DynamicHook.FromConf(config, "CTFFlameManager::AddPoint()");
 
     delete config;
 
@@ -124,42 +118,20 @@ public void OnPluginEnd()
     VTable.ClearVTables();
 }
 
-// flame_point_t.inc, tf_point_t.inc
-MRESReturn CTFFlameManager_AddPoint(int entity, DHookReturn returnValue, DHookParam parameters)
+public void OnEntityCreated(int entity, const char[] classname)
 {
-    CBaseEntity flamemanager = CBaseEntity.FromIndex(entity);
-    if (flamemanager == NULL)
-        return MRES_Ignored;
-
-    CBaseEntity owner = flamemanager.GetEntPropHandle(Prop_Send, "m_hAttacker");
-    if (owner == NULL)
-        return MRES_Ignored;
-
-    CBaseEntity weapon = flamemanager.GetEntPropHandle(Prop_Send, "m_hOwnerEntity");
-    if (weapon == NULL)
-        return MRES_Ignored;
-
-    CUtlVector vector = CUtlVector(flamemanager.Address + CTFFlameManager_m_Points);
-
-    for (int i = 0, size = vector.m_Size; i < size; ++i)
-    {
-        Flame_Point_t pFlamePoint = vector.Get(i).Dereference();
-        if (pFlamePoint == NULL)
-            continue;
-        
-        // this is not client predicted!
-        pFlamePoint.m_flLifeTime = 1.00; // make flames last a second :D
-        pFlamePoint.m_vecVelocity *= 2.00; // make them twice as fast as well
-    }
-
-    return MRES_Ignored;
+    if (StrEqual(classname, "tf_flame_manager"))
+        SMTC_HookEntity(entity, FORWARDTYPE_ADDPOINT, SMTC_AddPoint);
 }
-public void OnEntityCreated(int index, const char[] classname)
+
+// tf_point_t.inc, flame_point_t.inc
+public void SMTC_AddPoint(const CBaseEntity manager, const TF_Point_t point)
 {
-	if (StrEqual(classname, "tf_flame_manager"))
-	{
-		DHooks_CTFFlameManager_AddPoint.HookEntity(Hook_Post, index, CTFFlameManager_AddPoint);
-	}
+    // this is not client predicted!
+    point.m_flLifeTime = 1.00; // make flames last a second :D
+    point.m_vecVelocity *= 2.00; // make them twice as fast as well
+
+    PrintToServer("point manager %u: flame index %i", manager, point.m_iIndex);
 }
 
 static void gamerulesOperation()
