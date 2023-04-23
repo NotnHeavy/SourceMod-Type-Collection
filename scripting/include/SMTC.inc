@@ -16,17 +16,30 @@
 
 typeset SMTC_ForwardCallback
 {
-    // FORWARDTYPE_ADDPOINT (TF2 only): When a new tf_point_t object is instantiated 
-    // within a CTFPointManager (or derived) object // this will be invoked through 
-    // CTFPointManager::AddPoint().
+    // FORWARDTYPE_ADDPOINT (TF2 only): 
+    // When a new tf_point_t object is instantiated  within a CTFPointManager (or derived) object,
+    // this will be invoked through CTFPointManager::AddPoint().
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TF_POINT_T && defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CBASEENTITY
     function void (const CBaseEntity manager, const TF_Point_t point);
+#endif
+
+    // FORWARDTYPE_ONTAKEDAMAGE,
+    // FORWARDTYPE_ONTAKEDAMAGE_POSTCALL,
+    // FORWARDTYPE_ONTAKEDAMAGE_ALIVE,
+    // FORWARDTYPE_ONTAKEDAMAGE_ALIVE_POSTCALL:
+    // These are all events after an entity is taking damage through CBaseEntity::TakeDamage().
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTAKEDAMAGEINFO && defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CBASEENTITY
+    function MRESReturn (const CBaseEntity entity, const CTakeDamageInfo info, bool& returnValue);
 #endif
 };
 
 enum SMTC_ForwardType
 {
-    FORWARDTYPE_ADDPOINT
+    FORWARDTYPE_ADDPOINT,
+    FORWARDTYPE_ONTAKEDAMAGE,
+    FORWARDTYPE_ONTAKEDAMAGE_POSTCALL,
+    FORWARDTYPE_ONTAKEDAMAGE_ALIVE,
+    FORWARDTYPE_ONTAKEDAMAGE_ALIVE_POSTCALL
 }
 
 enum struct SMTC_HookData
@@ -67,7 +80,17 @@ stock void SMTC_HookEntity(int entity, SMTC_ForwardType type, SMTC_ForwardCallba
     {
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TF_POINT_T
     case FORWARDTYPE_ADDPOINT:
-        SMTC_DHooks_CTFPointManager_AddPoint.HookEntity(Hook_Post, entity, CTFPointManager_AddPoint);
+        SMTC_DHooks_CTFPointManager_AddPoint.HookEntity(Hook_Post, entity, SMTC_CTFPointManager_AddPoint);
+#endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTAKEDAMAGEINFO
+    case FORWARDTYPE_ONTAKEDAMAGE:
+        SMTC_DHooks_Offset_CTFPlayer_OnTakeDamage.HookEntity(Hook_Pre, entity, SMTC_Offset_CTFPlayer_OnTakeDamage);
+    case FORWARDTYPE_ONTAKEDAMAGE_POSTCALL:
+        SMTC_DHooks_Offset_CTFPlayer_OnTakeDamage.HookEntity(Hook_Post, entity, SMTC_Offset_CTFPlayer_OnTakeDamage_Post);
+    case FORWARDTYPE_ONTAKEDAMAGE_ALIVE:
+        SMTC_DHooks_Offset_CTFPlayer_OnTakeDamage_Alive.HookEntity(Hook_Pre, entity, SMTC_Offset_CTFPlayer_OnTakeDamage_Alive);
+    case FORWARDTYPE_ONTAKEDAMAGE_ALIVE_POSTCALL:
+        SMTC_DHooks_Offset_CTFPlayer_OnTakeDamage_Alive.HookEntity(Hook_Post, entity, SMTC_Offset_CTFPlayer_OnTakeDamage_Alive_Post);
 #endif
     default:
         ThrowError("Incorrect SMTC_ForwardType specified! %u", type);
@@ -105,21 +128,28 @@ stock void SMTC_Initialize()
     
     OSTypeUsed = view_as<OSType>(config.GetOffset("OSTypeUsed"));
 
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TFPLAYERCLASSDATA_T
     g_pTFPlayerClassDataMgr = config.GetAddress("g_pTFPlayerClassDataMgr");
-    enginetrace = CEngineTrace(config.GetAddress("enginetrace"));
-    g_pGameRules = CTFGameRules(config.GetAddress("g_pGameRules"));
-
-    CTFPointManager_m_Points = config.GetOffset("CTFPointManager::m_Points");
-
+#endif
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TF_POINT_T
     SMTC_tf_point_t_vtable = config.GetAddress("tf_point_t_vtable");
 #endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CENGINETRACE
+    enginetrace = CEngineTrace(config.GetAddress("enginetrace"));
+#endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTFGAMERULES
+    g_pGameRules = CTFGameRules(config.GetAddress("g_pGameRules"));
+#endif
+
+    CTFPointManager_m_Points = config.GetOffset("CTFPointManager::m_Points");
 
     CTraceFilterSimple_ShouldHitEntity = config.GetMemSig("CTraceFilterSimple::ShouldHitEntity()");
 
-    SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive = DynamicDetour.FromConf(config, "CTFPlayer::OnTakeDamage_Alive()");
+    SMTC_DHooks_Signature_CTFPlayer_OnTakeDamage_Alive = DynamicDetour.FromConf(config, "Signature::CTFPlayer::OnTakeDamage_Alive()");
     
     SMTC_DHooks_CTFPointManager_AddPoint = DynamicHook.FromConf(config, "CTFPointManager::AddPoint()");
+    SMTC_DHooks_Offset_CTFPlayer_OnTakeDamage = DynamicHook.FromConf(config, "Offset::CTFPlayer::OnTakeDamage()");
+    SMTC_DHooks_Offset_CTFPlayer_OnTakeDamage_Alive = DynamicHook.FromConf(config, "Offset::CTFPlayer::OnTakeDamage_Alive()");
 
     StartPrepSDKCall(SDKCall_Raw);
     PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "IEngineTrace::ClipRayToEntity()");
@@ -136,6 +166,11 @@ stock void SMTC_Initialize()
     PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // ITraceFilter*
     PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // trace_t*
     SMTC_SDKCall_IEngineTrace_TraceRay = EndPrepSDKCall();
+
+    StartPrepSDKCall(SDKCall_Raw);
+    PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CTFPointManager::GetMaxPoints()");
+    PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+    SMTC_SDKCall_CTFPointManager_GetMaxPoints = EndPrepSDKCall();
 
     StartPrepSDKCall(SDKCall_Raw);
     PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CBaseEntity::TakeDamage()");

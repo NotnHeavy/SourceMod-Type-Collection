@@ -30,19 +30,21 @@
 #include "UTIL.inc"
 #include "CBaseEntity.inc"
 #include "CHandle.inc"
+#include "CEngineTrace.inc"
 
 #include "tf/CTakeDamageInfo.inc"
 #include "tf/CTFRadiusDamageInfo.inc"
 #include "tf/tf_shareddefs.inc"
 #include "tf/TFPlayerClassData_t.inc"
 #include "tf/tf_point_t.inc"
-#include "tf/flame_point_t"
+#include "tf/flame_point_t.inc"
+#include "tf/CTFGameRules.inc"
 
 #include "SMTC.inc"
 
 static Handle SDKCall_CTFWearable_Equip;
 stock static Handle SDKCall_CBaseEntity_TakeDamage;
-static DHookSetup DHooks_CTFPlayer_OnTakeDamage;
+stock static DHookSetup DHooks_CTFPlayer_OnTakeDamage;
 static Handle SDKCall_CTFGameRules_RadiusDamage;
 static DHookSetup DHooks_CTFPlayer_TraceAttack;
 static Handle SDKCall_CBaseCombatCharacter_Weapon_ShootPosition;
@@ -68,8 +70,8 @@ public void OnPluginStart()
     PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
     SDKCall_CBaseEntity_TakeDamage = EndPrepSDKCall();
 
-    DHooks_CTFPlayer_OnTakeDamage = DHookCreateFromConf(config, "CTFPlayer::OnTakeDamage");
-    DHookEnableDetour(DHooks_CTFPlayer_OnTakeDamage, false, CTFPlayer_OnTakeDamage);
+    //DHooks_CTFPlayer_OnTakeDamage = DHookCreateFromConf(config, "CTFPlayer::OnTakeDamage");
+    //DHookEnableDetour(DHooks_CTFPlayer_OnTakeDamage, false, CTFPlayer_OnTakeDamage);
 
     StartPrepSDKCall(SDKCall_GameRules);
     PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFGameRules::RadiusDamage");
@@ -111,6 +113,12 @@ public void OnMapStart()
 
     PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
     PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
+
+    for (int i = 1; i <= MaxClients; ++i)
+    {
+        if (IsValidEntity(i) && IsClientInGame(i))
+            OnClientPutInServer(i);
+    }
 }
 
 public void OnPluginEnd()
@@ -122,6 +130,11 @@ public void OnEntityCreated(int entity, const char[] classname)
 {
     if (StrEqual(classname, "tf_flame_manager"))
         SMTC_HookEntity(entity, FORWARDTYPE_ADDPOINT, SMTC_AddPoint);
+}
+
+public void OnClientPutInServer(int client)
+{
+    SMTC_HookEntity(client, FORWARDTYPE_ONTAKEDAMAGE, CTFPlayer_OnTakeDamage);
 }
 
 // tf_point_t.inc, flame_point_t.inc
@@ -206,7 +219,6 @@ static void utilOperation()
 
     // check global trace
     PrintToServer("global trace: %u\n", enginetrace);
-
 
     if (IsClientInGame(1))
     {
@@ -435,6 +447,14 @@ static void vtableOperation()
         char testvpointer[] = "THIS ISN'T ACTUAL CODE";
         VTable.CreateVTable("testing!", 1);
         VTable.RegisterVPointer("testing!", 0, AddressOfString(testvpointer), strlen(testvpointer));
+
+        // from existing
+        Pointer existingVTable = VTable.GetObjectVTable(AddressOfArray(variable));
+        VTable.FromExisting("testing2!", existingVTable, 2, 1);
+        VTable.RegisterVPointer("testing!", 1, AddressOfString(testvpointer), strlen(testvpointer));
+        
+        value = SDKCall(SDKCall_variable_test, AddressOfArray(variable));
+        PrintToServer("on creating vtable from existing vtable, sdkcall 0 return: %i", value);
     }
     else
         PrintToServer("Not using Windows; skipping vtableOperation()...");
@@ -573,10 +593,17 @@ static void ctakedamageinfoOperation()
     free(info);
 }
 
-// CTFPlayer::OnTakeDamage
-MRESReturn CTFPlayer_OnTakeDamage(int entity, DHookReturn returnValue, DHookParam parameters)
+// CTFPlayer::OnTakeDamage()
+/*
+MRESReturn image.png(int entity, DHookReturn returnValue, DHookParam parameters)
 {
     CTakeDamageInfo info = parameters.Get(1);
+    info.SetCritType(CRIT_MINI, entity); // :^)
+    return MRES_Ignored;
+}
+*/
+public MRESReturn CTFPlayer_OnTakeDamage(const CBaseEntity entity, const CTakeDamageInfo info, bool& returnValue)
+{
     info.SetCritType(CRIT_MINI, entity); // :^)
     return MRES_Ignored;
 }

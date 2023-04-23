@@ -90,6 +90,7 @@ enum
 
     SIZEOF_TFPlayerClassData_t = TFPLAYERCLASSDATA_T_OFFSET_M_SZDEATHSOUND + view_as<int>(DEATH_SOUND_TOTAL) * MAX_PLAYERCLASS_SOUND_LENGTH // sizeof(TFPlayerClassData_t);
 };
+stock Pointer g_pTFPlayerClassDataMgr;
 
 //////////////////////////////////////////////////////////////////////////////
 // TFPLAYERCLASSDATA_T METHODMAP                                            //

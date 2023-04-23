@@ -112,29 +112,28 @@ enum OSType
 
 stock OSType OSTypeUsed;
 
-stock Pointer g_pTFPlayerClassDataMgr;
-stock CEngineTrace enginetrace;
-stock CTFGameRules g_pGameRules;
-
 stock any CTFPointManager_m_Points;
 
 stock Pointer SMTC_tf_point_t_vtable;
 
 stock Pointer CTraceFilterSimple_ShouldHitEntity;
 
-stock DynamicDetour SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive;
+stock DynamicDetour SMTC_DHooks_Signature_CTFPlayer_OnTakeDamage_Alive;
 
 stock DynamicHook SMTC_DHooks_CTFPointManager_AddPoint;
+stock DynamicHook SMTC_DHooks_Offset_CTFPlayer_OnTakeDamage;
+stock DynamicHook SMTC_DHooks_Offset_CTFPlayer_OnTakeDamage_Alive;
 
 stock Handle SMTC_SDKCall_IEngineTrace_ClipRayToEntity;
 stock Handle SMTC_SDKCall_IEngineTrace_TraceRay;
+stock Handle SMTC_SDKCall_CTFPointManager_GetMaxPoints;
 
 stock Handle SMTC_SDKCall_CBaseEntity_TakeDamage;
 stock Handle SMTC_SDKCall_CTFRadiusDamageInfo_CalculateFalloff;
 stock Handle SMTC_SDKCall_CTFRadiusDamageInfo_ApplyToEntity;
 stock Handle SMTC_SDKCall_CTFGameRules_RadiusDamage;
 
-// generated with msvc
+// compiled with msvc
 static char func_strlen[] = "\x55\x8B\xEC\x8B\x4D\x08\x8B\xC1\xF6\xC1\x03\x74\x0D\x0F\x1F\x00\x80\x38\x00\x74\x4D\x40\xA8\x03\x75\xF6\x53\x56\x0F\x1F\x40\x00\x8B\x18\x8B\xF0\x8B\xCB\x83\xC0\x04\xF7\xD1\x8D\x93\xFF\xFE\xFE\xFE\x23\xD1\xF7\xC2\x80\x80\x80\x80\x74\xE5\x84\xDB\x74\x3B\x8B\xCB\xC1\xE9\x08\x84\xC9\x74\x28\x8B\xCB\xC1\xE9\x10\x84\xC9\x74\x15\xC1\xEB\x18\x84\xDB\x75\xC8\x2B\x75\x08\x8D\x46\x03\x5E\x5B\x5D\xC3\x2B\xC1\x5D\xC3\x2B\x75\x08\x8D\x46\x02\x5E\x5B\x5D\xC3\x2B\x75\x08\x8D\x46\x01\x5E\x5B\x5D\xC3\x2B\x75\x08\x8B\xC6\x5E\x5B\x5D\xC3";
 static char func_strnlen[] = "\x55\x8B\xEC\x8B\x45\x0C\x8B\x4D\x08\x56\x8D\x34\x01\x85\xC0\x75\x03\x5E\x5D\xC3\x83\xC8\xFF\x3B\xF1\x0F\x42\xF0\x8B\xC1\xF6\xC1\x03\x74\x0A\x80\x38\x00\x74\x60\x40\xA8\x03\x75\xF6\x3B\xC6\x73\x59\x8D\x50\xFE\x53\x66\x66\x66\x0F\x1F\x84\x00\x00\x00\x00\x00\x8B\x5A\x02\x83\xC2\x04\x8D\x83\xFF\xFE\xFE\xFE\xA9\x80\x80\x80\x80\x74\x28\x8D\x42\xFE\x84\xDB\x74\x2A\x8B\xCB\x8D\x42\xFF\xC1\xE9\x08\x84\xC9\x74\x1E\x8B\xCB\x8B\xC2\xC1\xE9\x10\x84\xC9\x74\x13\xC1\xEB\x18\x8D\x42\x01\x84\xDB\x74\x09\x8D\x4A\x02\x8B\xC6\x3B\xCE\x72\xBC\x8B\x4D\x08\x5B\x3B\xC6\x0F\x46\xF0\x2B\xF1\x8B\xC6\x5E\x5D\xC3";
 static char func_strcmp[] = "\x55\x8B\xEC\x8B\x4D\x0C\x56\x8B\x75\x08\x8A\x16\x84\xD2\x74\x15\x8A\xC2\x2B\xF1\x8A\xD0\x3A\x01\x75\x0B\x8A\x44\x0E\x01\x41\x8A\xD0\x84\xC0\x75\xEF\x0F\xB6\x09\x0F\xB6\xC2\x2B\xC1\x5E\x5D\xC3";
@@ -143,52 +142,6 @@ static char func_strchr[] = "\x55\x8B\xEC\x8A\x45\x0C\x53\x8B\x5D\x08\x56\xF6\xC
 static char func_strstr[] = "\x55\x8B\xEC\x53\x56\x8B\x75\x08\x57\x8A\x0E\x84\xC9\x74\x33\x8B\x7D\x0C\x8B\xD6\x2B\xD7\x8A\x1F\x3A\xCB\x75\x1D\x8B\xC7\x84\xC9\x74\x12\x8A\x08\x84\xC9\x74\x21\x38\x0C\x02\x75\x0C\x40\x80\x3C\x02\x00\x75\xEE\x80\x38\x00\x74\x10\x8A\x4E\x01\x46\x42\x84\xC9\x75\xD6\x5F\x5E\x33\xC0\x5B\x5D\xC3\x5F\x8B\xC6\x5E\x5B\x5D\xC3";
 
 stock any m_RefEHandle_Offset;
-
-//////////////////////////////////////////////////////////////////////////////
-// CTFGAMERULES METHODMAP                                                   //
-//////////////////////////////////////////////////////////////////////////////
-
-// TF2 game rules. This is just used for organising a few function calls and does not re-construct CGameTrace.
-methodmap CTFGameRules
-{
-    // Constructor - wrap around an existing address to make way for a CTFGameRules object.
-    public CTFGameRules(Address address)
-    {
-        return view_as<CTFGameRules>(address);
-    }
-
-    // Apply damage within a specific radius using a CTFRadiusDamageInfo object.
-    public void RadiusDamage(any& info)
-    {
-        SDKCall(SMTC_SDKCall_CTFGameRules_RadiusDamage, this, info);
-    }
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// ENGINETRACE METHODMAP                                                    //
-//////////////////////////////////////////////////////////////////////////////
-
-// The engine trace object. This is just used for organising a few function calls.
-methodmap CEngineTrace
-{
-    // Constructor - wrap around an existing address to make way for a CEngineTrace object.
-    public CEngineTrace(Address address)
-    {
-        return view_as<CEngineTrace>(address);
-    }
-
-    // Traces a ray against a particular edict.
-    public void ClipRayToEntity(const any ray, int fMask, any pEntity, any pTrace)
-    {
-        SDKCall(SMTC_SDKCall_IEngineTrace_ClipRayToEntity, this, ray, fMask, pEntity, pTrace);
-    }
-
-    // A version that simply accepts a ray (can work as a traceline or tracehull).
-    public void TraceRay(const any ray, int fMask, any pTraceFilter, any pTrace)
-    {
-        SDKCall(SMTC_SDKCall_IEngineTrace_TraceRay, this, ray, fMask, pTraceFilter, pTrace);
-    }
-}
 
 //////////////////////////////////////////////////////////////////////////////
 // POINTER METHODMAP                                                        //
@@ -578,5 +531,5 @@ stock any abs(any x)
 // Valve fabs() implementation. You should use FloatAbs().
 stock float FloatMakePositive(float f)
 {
-    return view_as<float>(view_as<int>(f) & 0x77777777); // evil floating point bit level hacking
+    return view_as<float>(view_as<int>(f) & 0x7FFFFFFF); // evil floating point bit level hacking
 }

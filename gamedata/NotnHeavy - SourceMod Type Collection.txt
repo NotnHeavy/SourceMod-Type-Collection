@@ -1,28 +1,12 @@
-// PLEASE READ BEFORE MODIFYING!
-// I'd imagine this gamedata would be used across many plugins of different release dates.
-// When updating, do NOT remove anything that is currently unused within this version of SMTC.
-// Some versions of SMTC may still rely on gamedata that may be unused in modern versions.
-// Of course, update signatures/offsets whenever necessary (I.E. updates).
-
+// This is adjusted for TF2 only. 
+// If you are using SMTC for other games, you must modify the gamedata.
 "Games"
 {
     "tf"
     {
 		"Addresses"
 		{
-			"g_pTFPlayerClassDataMgr"
-			{
-				"windows"
-				{
-					"signature" "GetPlayerClassData()"
-					"read"      "11"
-				}
-				"linux"
-				{
-					"signature" "g_pTFPlayerClassDataMgr"
-				}
-				"read" "0"
-			}
+			// /CEngineTrace.inc
 			"enginetrace"
 			{
 				"windows"
@@ -36,6 +20,8 @@
 				}
 				"read" "0"
 			}
+
+			// /tf/CTFGameRules.inc
 			"g_pGameRules"
 			{
 				"windows"
@@ -49,6 +35,23 @@
 				}
 				"read" "0"
 			}
+
+			// /tf/TFPlayerClassData_t.inc
+			"g_pTFPlayerClassDataMgr"
+			{
+				"windows"
+				{
+					"signature" "GetPlayerClassData()"
+					"read"      "11"
+				}
+				"linux"
+				{
+					"signature" "g_pTFPlayerClassDataMgr"
+				}
+				"read" "0"
+			}
+			
+			// /tf/tf_point_t.inc
 			"tf_point_t_vtable"
 			{
 				"windows"
@@ -66,13 +69,7 @@
 		}
 		"Offsets"
 		{
-			"OSTypeUsed"
-			{
-				"windows" "0"
-				"linux"   "1"
-				"mac"     "2"
-			}
-
+			// CEngineTrace.inc
 			"IEngineTrace::ClipRayToEntity()"
 			{
 				"windows" "2"
@@ -84,101 +81,169 @@
 				"linux"   "4"
 			}
 
+			// /tf/tf_point_t.inc
 			"CTFPointManager::AddPoint()"
 			{
 				"windows" "198"
 				"linux"   "199"
+			}
+			"CTFPointManager::GetMaxPoints()"
+			{
+				"windows" "215"
+				"linux"   "216"
 			}
 			"CTFPointManager::m_Points"
 			{
 				"windows" "1180"
 				"linux"   "1204"
 			}
+
+			// /tf/CTakeDamageInfo.inc
+			"Offset::CTFPlayer::OnTakeDamage()"
+			{
+				"windows" "64"
+				"linux"   "65"
+			}
+			"Offset::CTFPlayer::OnTakeDamage_Alive()"
+			{
+				"windows" "282"
+				"linux"   "283"
+			}
+
+			// /SMTC.inc
+			"OSTypeUsed"
+			{
+				"windows" "0"
+				"linux"   "1"
+				"mac"     "2"
+			}
 		}
         "Signatures"
         {
+			// /CEngineTrace.inc
+			"enginetrace"
+			{
+				"library" "server"
+				"linux"   "@enginetrace"
+			}
+			"CBaseEntity::HandleShotImpactingWater()"
+			{
+				"library" "server"
+				"windows" "\x53\x8B\xDC\x83\xEC\x08\x83\xE4\xF0\x83\xC4\x04\x55\x8B\x6B\x04\x89\x6C\x24\x04\x8B\xEC\x8B\x43\x08\x81\xEC\x08\x01\x00\x00\x83\xC0\x04"  // xrefs to "gunshotsplash"
+			}
+
+			// /CBaseEntity.inc
+			"CBaseEntity::TakeDamage()"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x81\xEC\x98\x00\x00\x00\x53\x8B\xD9" // offset aCbaseentityTak ; "CBaseEntity::TakeDamage:  with inputInf"...
+				"linux"   "@_ZN11CBaseEntity10TakeDamageERK15CTakeDamageInfo"
+			}
+
+			// /UTIL.inc
+			"CTraceFilterSimple::ShouldHitEntity()"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x53\x8B\x5D\x0C\x56\x8B\x75\x08\x57\x53" // search vtable for CTraceFilterSimple, vfunc 0
+				"linux"	  "@_ZN18CTraceFilterSimple15ShouldHitEntityEP13IHandleEntityi"
+			}
+
+			// /tf/TFPlayerClassData_t.inc
 			"GetPlayerClassData()" // offset aMultPlayerAimi ; "mult_player_aiming_movespeed", called twice at the top
 			{
 				"library" "server"
 				"windows" "\x55\x8B\xEC\x69\x4D\x08\xF0\x08\x00\x00"
-			}
-			"cc_ShowRespawnTimes()" // offset aShowTheMinResp ; "Show the min respawn times for the team", call below
-			{
-				"library" "server"
-				"windows" "\x55\x8B\xEC\x81\xEC\x18\x01\x00\x00\x56\x57\x8B\x3D\x2A\x2A\x2A\x2A"
 			}
 			"g_pTFPlayerClassDataMgr"
 			{
 				"library" "server"
 				"linux"   "@g_pTFPlayerClassDataMgr"
 			}
-			"enginetrace"
+
+			// /tf/tf_point_t.inc
+			"tf_point_t::~tf_point_t()"
 			{
 				"library" "server"
-				"linux"   "@enginetrace"
+				"windows" "\x55\x8B\xEC\xF6\x45\x08\x01\x56\x8B\xF1\xC7\x06\x2A\x2A\x2A\x2A\x74\x2A\x6A\x38" // walk through tf_point_t vtable, go to first function
+				"linux"   "@_ZN10tf_point_tD2Ev"
 			}
+
+			// /tf/CTakeDamageInfo.inc
+            "CTFPlayer::OnTakeDamage_Alive()"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x83\xEC\x7C\x56\x57" // offset aBleedingDurati ; "bleeding_duration"
+				"linux"   "@_ZN9CTFPlayer18OnTakeDamage_AliveERK15CTakeDamageInfo"
+			}
+
+			// /tf/CTFRadiusDamageInfo.inc
+			"CTFRadiusDamageInfo::CalculateFalloff()"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x51\x56\x8B\xF1\x8B\x0E" // offset aMultDmgFalloff ; "mult_dmg_falloff"
+				"linux"	  "@_ZN19CTFRadiusDamageInfo16CalculateFalloffEv"
+			}
+			"CTFRadiusDamageInfo::ApplyToEntity()"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x81\xEC\x3C\x01\x00\x00\x8B\xD1" // offset aAddHealthOnRad ; "add_health_on_radius_damage", 2nd call above (call above GetTFWpnData)
+				"linux"   "@_ZN19CTFRadiusDamageInfo13ApplyToEntityEP11CBaseEntity"
+			}
+			"CTFGameRules::RadiusDamage()" 
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x81\xEC\x24\x08\x00\x00\x53" // offset aAddHealthOnRad ; "add_health_on_radius_damage"
+				"linux"	  "@_ZN12CTFGameRules12RadiusDamageER19CTFRadiusDamageInfo"
+			}
+
+			// /tf/CTFGameRules.inc
 			"g_pGameRules"
 			{
 				"library" "server"
 				"linux"   "@g_pGameRules"
 			}
-
-			// walk through tf_point_t vtable, go to first function
-			"tf_point_t::~tf_point_t()"
+			"cc_ShowRespawnTimes()" // offset aShowTheMinResp ; "Show the min respawn times for the team", call below
 			{
 				"library" "server"
-				"windows" "\x55\x8B\xEC\xF6\x45\x08\x01\x56\x8B\xF1\xC7\x06\x2A\x2A\x2A\x2A\x74\x2A\x6A\x38"
-				"linux"   "@_ZN10tf_point_tD2Ev"
-			}
-
-			"CTraceFilterSimple::ShouldHitEntity()" // search vtable for CTraceFilterSimple, vfunc 0
-			{
-				"library" "server"
-				"windows" "\x55\x8B\xEC\x53\x8B\x5D\x0C\x56\x8B\x75\x08\x57\x53"
-				"linux"	  "@_ZN18CTraceFilterSimple15ShouldHitEntityEP13IHandleEntityi"
-			}
-
-			"CBaseEntity::HandleShotImpactingWater()"  // xrefs to "gunshotsplash"
-			{
-				"library" "server"
-				"windows" "\x53\x8B\xDC\x83\xEC\x08\x83\xE4\xF0\x83\xC4\x04\x55\x8B\x6B\x04\x89\x6C\x24\x04\x8B\xEC\x8B\x43\x08\x81\xEC\x08\x01\x00\x00\x83\xC0\x04"
-			}
-
-            "CTFPlayer::OnTakeDamage_Alive()" // offset aBleedingDurati ; "bleeding_duration"
-			{
-				"library" "server"
-				"windows" "\x55\x8B\xEC\x83\xEC\x7C\x56\x57"
-				"linux"   "@_ZN9CTFPlayer18OnTakeDamage_AliveERK15CTakeDamageInfo"
-			}
-
-			"CBaseEntity::TakeDamage()" // offset aCbaseentityTak ; "CBaseEntity::TakeDamage:  with inputInf"...
-			{
-				"library" "server"
-				"windows" "\x55\x8B\xEC\x81\xEC\x98\x00\x00\x00\x53\x8B\xD9"
-				"linux"   "@_ZN11CBaseEntity10TakeDamageERK15CTakeDamageInfo"
-			}
-			"CTFRadiusDamageInfo::CalculateFalloff()" // offset aMultDmgFalloff ; "mult_dmg_falloff"
-			{
-				"library" "server"
-				"windows" "\x55\x8B\xEC\x51\x56\x8B\xF1\x8B\x0E"
-				"linux"	  "@_ZN19CTFRadiusDamageInfo16CalculateFalloffEv"
-			}
-			"CTFRadiusDamageInfo::ApplyToEntity()" // offset aAddHealthOnRad ; "add_health_on_radius_damage", 2nd call above (call above GetTFWpnData)
-			{
-				"library" "server"
-				"windows" "\x55\x8B\xEC\x81\xEC\x3C\x01\x00\x00\x8B\xD1"
-				"linux"   "@_ZN19CTFRadiusDamageInfo13ApplyToEntityEP11CBaseEntity"
-			}
-			"CTFGameRules::RadiusDamage()" // offset aAddHealthOnRad ; "add_health_on_radius_damage"
-			{
-				"library" "server"
-				"windows" "\x55\x8B\xEC\x81\xEC\x24\x08\x00\x00\x53"
-				"linux"	  "@_ZN12CTFGameRules12RadiusDamageER19CTFRadiusDamageInfo"
+				"windows" "\x55\x8B\xEC\x81\xEC\x18\x01\x00\x00\x56\x57\x8B\x3D\x2A\x2A\x2A\x2A"
 			}
         }
         "Functions"
         {
-            "CTFPlayer::OnTakeDamage_Alive()"
+			// CBaseEntity.inc
+			"Offset::CTFPlayer::OnTakeDamage_Alive()"
+			{
+				"offset"   "CTFPlayer::OnTakeDamage_Alive()"
+				"hooktype" "entity"
+				"this"	   "entity"
+				"return"   "bool"
+				"arguments"
+				{
+					"info"
+					{
+						"type" "int"
+					}
+				}
+			}
+
+			// /tf/tf_point_t.inc
+			"CTFPointManager::AddPoint()"
+			{
+				"offset"   "CTFPointManager::AddPoint()"
+				"hooktype" "entity"
+				"this"	   "entity"
+				"return"   "bool"
+				"arguments"
+				{
+					"nSpawnTime"
+					{
+						"type"	"int"
+					}
+				}	
+			}
+			
+			// /tf/CTakeDamageInfo.inc
+            "Signature::CTFPlayer::OnTakeDamage_Alive()"
 			{
 				"signature"	"CTFPlayer::OnTakeDamage_Alive()"
 				"callconv"	"thiscall"
@@ -192,18 +257,31 @@
 					}
 				}
 			}
-
-			"CTFPointManager::AddPoint()"
+			"Offset::CTFPlayer::OnTakeDamage()"
 			{
-				"offset"   "CTFPointManager::AddPoint()"
+				"offset"   "Offset::CTFPlayer::OnTakeDamage()"
 				"hooktype" "entity"
 				"this"	   "entity"
 				"return"   "bool"
 				"arguments"
 				{
-					"nSpawnTime"
+					"info"
 					{
-						"type"	"int"
+						"type" "int"
+					}
+				}	
+			}
+			"Offset::CTFPlayer::OnTakeDamage_Alive()"
+			{
+				"offset"   "Offset::CTFPlayer::OnTakeDamage_Alive()"
+				"hooktype" "entity"
+				"this"	   "entity"
+				"return"   "bool"
+				"arguments"
+				{
+					"info"
+					{
+						"type" "int"
 					}
 				}	
 			}

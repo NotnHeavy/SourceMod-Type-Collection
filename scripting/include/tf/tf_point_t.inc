@@ -145,7 +145,7 @@ methodmap TF_Point_t < Pointer
 // Post-call CTFPointManager::AddPoint().
 // If a new point has been instantiated, call:
 // "void SMTC_AddPoint(const CBaseEntity manager, const TF_Point_t point)".
-MRESReturn CTFPointManager_AddPoint(int entity, DHookReturn returnValue, DHookParam parameters)
+MRESReturn SMTC_CTFPointManager_AddPoint(int entity, DHookReturn returnValue, DHookParam parameters)
 {
     CBaseEntity manager = CBaseEntity.FromIndex(entity);
     if (manager == NULL)
@@ -161,15 +161,15 @@ MRESReturn CTFPointManager_AddPoint(int entity, DHookReturn returnValue, DHookPa
 
     CUtlVector vector = CUtlVector(manager.Address + CTFPointManager_m_Points);
     int index = manager.GetEntProp(Prop_Send, "m_unNextPointIndex");
-    index = index == 0 ? 29 : index - 1;
+    index = ((index == 0) ? (SDKCall(SMTC_SDKCall_CTFPointManager_GetMaxPoints, manager) - 1) : (index - 1));
 
     for (int i = 0, size = vector.m_Size; i < size; ++i)
     {
-        TF_Point_t pFlamePoint = vector.Get(i).Dereference();
-        if (pFlamePoint == NULL)
+        TF_Point_t point = vector.Get(i).Dereference();
+        if (point == NULL)
             continue;
 
-        if (pFlamePoint.m_iIndex == index)
+        if (point.m_iIndex == index)
         {
             SMTC_HookData data;
             SMTC_GetHookData(entity, FORWARDTYPE_ADDPOINT, data);
@@ -178,7 +178,7 @@ MRESReturn CTFPointManager_AddPoint(int entity, DHookReturn returnValue, DHookPa
 
             Call_StartFunction(null, data.callback);
             Call_PushCell(manager);
-            Call_PushCell(pFlamePoint);
+            Call_PushCell(point);
             Call_Finish();
             break;
         }

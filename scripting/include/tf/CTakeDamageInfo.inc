@@ -17,6 +17,17 @@
 #define BASEDAMAGE_NOT_SPECIFIED FLT_MAX
 
 //////////////////////////////////////////////////////////////////////////////
+// TOGGLES                                                                  //
+//////////////////////////////////////////////////////////////////////////////
+
+// If true, a detour for CTFPlayer::OnTakeDamage_Alive() and hook for player_hurt
+// will be made, to listen to when the player is damaged, in order to switch the
+// crit banner to mini-crit whenever mini-crits are toggled through ::OnTakeDamage().
+#if !defined SMTC_FIX_MINICRIT_TOGGLE
+#define SMTC_FIX_MINICRIT_TOGGLE true
+#endif
+
+//////////////////////////////////////////////////////////////////////////////
 // CTAKEDAMAGEINFO DATA                                                     //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -55,7 +66,7 @@ enum ECritType
     CRIT_FULL,
 };
 
-static stock int SMTC_PlayerTakingMiniCrits = 0;
+static CBaseEntity SMTC_PlayerTakingMiniCrits = NULL;
 
 //////////////////////////////////////////////////////////////////////////////
 // SMTC_CTakeDamageInfoForward()                                            //
@@ -63,8 +74,10 @@ static stock int SMTC_PlayerTakingMiniCrits = 0;
 
 public void SMTC_CTakeDamageInfoForward()
 {
+#if SMTC_FIX_MINICRIT_TOGGLE == true
     HookEvent("player_hurt", SMTC_ClientHurt, EventHookMode_Pre);
-    SMTC_DHooks_CTFPlayer_OnTakeDamage_Alive.Enable(Hook_Pre, SMTC_CTFPlayer_OnTakeDamage_Alive);
+    SMTC_DHooks_Signature_CTFPlayer_OnTakeDamage_Alive.Enable(Hook_Pre, SMTC_CTFPlayer_OnTakeDamage_Alive);
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -277,7 +290,7 @@ methodmap CTakeDamageInfo < Pointer
     }
 
     // Set the crit type. The victim parameter will not be utilised if SMTC.inc is not included.
-    public void SetCritType(ECritType type, int victim = 0)
+    public void SetCritType(ECritType type, CBaseEntity victim = NULL)
     {
         if (type == CRIT_NONE) // always let CRIT_NONE override the current setting
             this.m_eCritType = type;
@@ -291,18 +304,23 @@ methodmap CTakeDamageInfo < Pointer
 }
 
 //////////////////////////////////////////////////////////////////////////////
-// MISCELLANEOUS                                                            //
+// MINI-CRIT FIX                                                            //
 //////////////////////////////////////////////////////////////////////////////
 
-// This fixes the bug where mini-crits toggled manually show the full crit effect instead. 
-// This is due to DMG_CRIT being toggled when using either mini-crits or crits, and DMG_CRIT
+#if SMTC_FIX_MINICRIT_TOGGLE == true
+// This fixes a bug where mini-crits toggled manually show the full crit effect. This is
+// due to DMG_CRIT being toggled when using either mini-crits or crits, and DMG_CRIT
 // defaulting to the full crit effect.
 static Action SMTC_ClientHurt(Event event, const char[] name, bool dontBroadcast)
 {
-    int client = GetClientOfUserId(event.GetInt("userid"));
+    int index = GetClientOfUserId(event.GetInt("userid"));
+    CBaseEntity client = CBaseEntity.FromIndex(index);
+    if (client == NULL)
+        return Plugin_Continue;
+    
     if (SMTC_PlayerTakingMiniCrits == client) 
         event.SetInt("bonuseffect", 1); // CRIT_MINI
-    SMTC_PlayerTakingMiniCrits = 0;
+    SMTC_PlayerTakingMiniCrits = NULL;
     return Plugin_Changed;
 }
 
@@ -312,6 +330,58 @@ static MRESReturn SMTC_CTFPlayer_OnTakeDamage_Alive(int entity, DHookReturn retu
 {
     CTakeDamageInfo info = parameters.Get(1);
     if (info.m_eCritType != CRIT_MINI)
-        SMTC_PlayerTakingMiniCrits = 0;
+        SMTC_PlayerTakingMiniCrits = NULL;
     return MRES_Ignored;
 }
+#endif
+
+//////////////////////////////////////////////////////////////////////////////
+// HOOKS                                                                    //
+//////////////////////////////////////////////////////////////////////////////
+
+MRESReturn SMTC_Offset_CTFPlayer_OnTakeDamage(int index, DHookReturn returnValue, DHookParam parameters)
+{
+    return callback(index, returnValue, parameters, FORWARDTYPE_ONTAKEDAMAGE);
+}
+MRESReturn SMTC_Offset_CTFPlayer_OnTakeDamage_Post(int index, DHookReturn returnValue, DHookParam parameters)
+{
+    return callback(index, returnValue, parameters, FORWARDTYPE_ONTAKEDAMAGE_POSTCALL);
+}
+MRESReturn SMTC_Offset_CTFPlayer_OnTakeDamage_Alive(int index, DHookReturn returnValue, DHookParam parameters)
+{
+    return callback(index, returnValue, parameters, FORWARDTYPE_ONTAKEDAMAGE_ALIVE);
+}
+MRESReturn SMTC_Offset_CTFPlayer_OnTakeDamage_Alive_Post(int index, DHookReturn returnValue, DHookParam parameters)
+{
+    return callback(index, returnValue, parameters, FORWARDTYPE_ONTAKEDAMAGE_ALIVE_POSTCALL);
+}
+
+// FORWARDTYPE_ONTAKEDAMAGE
+// FORWARDTYPE_ONTAKEDAMAGE_POSTCALL
+// FORWARDTYPE_ONTAKEDAMAGE_ALIVE
+// FORWARDTYPE_ONTAKEDAMAGE_ALIVE_POSTCALL
+static MRESReturn callback(int& index, DHookReturn& returnValue, DHookParam& parameters, SMTC_ForwardType type)
+{
+    CBaseEntity entity = CBaseEntity.FromIndex(index);
+    if (entity == NULL)
+        return MRES_Ignored;
+    
+    CTakeDamageInfo info = parameters.Get(1);
+    MRESReturn hookResult = MRES_Ignored;
+    bool value = returnValue.Value;
+    
+    SMTC_HookData data;
+    SMTC_GetHookData(index, type, data);
+    if (data.entity == INVALID_ENT_REFERENCE)
+        return MRES_Ignored;
+
+    Call_StartFunction(null, data.callback);
+    Call_PushCell(entity);
+    Call_PushCell(info);
+    Call_PushCellRef(value);
+    Call_Finish(hookResult);
+
+    returnValue.Value = value;
+    return hookResult;
+}
+

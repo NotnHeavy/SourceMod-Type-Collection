@@ -168,12 +168,48 @@ methodmap VTable
         {
             memcpyf(vtableInfo.VTable, baseVTableInfo.VTable, baseVTableInfo.Size * SIZEOF_Pointer);
             for (int i = 0; i < baseVTableInfo.Size; ++i)
-            {
-                if (vtableInfo.VTable.Dereference(i * SIZEOF_Pointer) != NULL)
-                    vtableInfo.Malloc.Write(NULL, i * SIZEOF_Pointer);
-            }
+                vtableInfo.Malloc.Write(NULL, i * SIZEOF_Pointer);
         }
         return vtableInfo.VTable;
+    }
+
+    // The name must be up to 32 characters, including the NUL character. The length is the number of vpointers to be used.
+    // The length must be at least as long as the pre-existing vtable. existingLength will default to length if not specified.
+    public static Pointer FromExisting(char[] name, Pointer existing, SIZE_T length, SIZE_T existingLength = 0)
+    {
+        if (existingLength == 0)
+            existingLength = length;
+        
+        if (StrEqual(name, ""))
+            return NULL;
+
+        if (existing == NULL)
+            return NULL;
+
+        if (length < existingLength)
+            return NULL;
+        
+        VTable_Info baseVTableInfo = GetVTableInfo(name);
+        if (baseVTableInfo != NULL)
+            return NULL;
+
+        if (vtables == NULL)
+        {
+            vtables = calloc(1, SIZEOF_VTable_Info);
+            vtablesLength = SIZEOF_VTable_Info;
+        }
+        else
+        {
+            vtablesLength += SIZEOF_VTable_Info;
+            vtables = recalloc(vtables, vtablesLength, SIZEOF_VTable_Info, vtablesLength - SIZEOF_VTable_Info);
+        }
+
+        VTable_Info vtableInfo = view_as<VTable_Info>(vtables.Get(vtablesLength - SIZEOF_VTable_Info, 1));
+        vtableInfo.ctor(name, length);
+
+        memcpyf(vtableInfo.VTable, existing, existingLength * SIZEOF_Pointer);
+        for (int i = 0; i < existingLength; ++i)
+            vtableInfo.Malloc.Write(NULL, i * SIZEOF_Pointer);
     }
 
     // Get the vtable from the registered name.

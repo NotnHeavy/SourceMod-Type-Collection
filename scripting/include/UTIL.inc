@@ -2,7 +2,7 @@
 // MADE BY NOTNHEAVY. USES GPL-3, AS PER REQUEST OF SOURCEMOD               //
 //////////////////////////////////////////////////////////////////////////////
 
-// Requires "Ray_t.inc", "Vector.inc", "CGameTrace.inc" and "vtable.inc".
+// Requires "Ray_t.inc", "Vector.inc", "CGameTrace.inc", "CEngineTrace.inc" and "vtable.inc".
 
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_UTIL
 #endinput
@@ -12,6 +12,7 @@
 #include "Ray_t.inc"
 #include "Vector.inc"
 #include "CGameTrace.inc"
+#include "CEngineTrace.inc"
 #include "vtable.inc"
 
 #pragma semicolon true 
@@ -517,7 +518,6 @@ methodmap CTraceFilterSimple < CTraceFilter
         this.m_pPassEnt = passentity;
         this.m_collisionGroup = collisionGroup;
         this.m_pExtraShouldHitCheckFunction = pExtraShouldHitCheckFn;
-        
     }
 
     // Constructor - allocate a new CTraceFilterSimple onto the heap. Deallocation will be required when you are finished using this using free().
