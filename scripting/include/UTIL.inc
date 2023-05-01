@@ -226,6 +226,18 @@ public void SMTC_UTILForward()
     that's basically NotnHeavy's code in a nutshell every time
     */
 
+    SetMemAccess(AddressOfString(CTraceFilter_GetTraceType), sizeof(CTraceFilter_GetTraceType), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+    SetMemAccess(AddressOfString(CTraceFilterEntitiesOnly_GetTraceType), sizeof(CTraceFilterEntitiesOnly_GetTraceType), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+    SetMemAccess(AddressOfString(CTraceFilterWorldOnly_ShouldHitEntity), sizeof(CTraceFilterWorldOnly_ShouldHitEntity), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+    SetMemAccess(AddressOfString(CTraceFilterWorldOnly_GetTraceType), sizeof(CTraceFilterWorldOnly_GetTraceType), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+    SetMemAccess(AddressOfString(CTraceFilterWorldAndPropsOnly_ShouldHitEntity), sizeof(CTraceFilterWorldAndPropsOnly_ShouldHitEntity), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+    SetMemAccess(AddressOfString(CTraceFilterWorldAndPropsOnly_GetTraceType), sizeof(CTraceFilterWorldAndPropsOnly_GetTraceType), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+    SetMemAccess(AddressOfString(CTraceFilterHitAll_ShouldHitEntity), sizeof(CTraceFilterHitAll_ShouldHitEntity), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+    SetMemAccess(AddressOfString(CTraceFilterSimple_SetPassEntity_Windows), sizeof(CTraceFilterSimple_SetPassEntity_Windows), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+    SetMemAccess(AddressOfString(CTraceFilterSimple_SetPassEntity_Linux), sizeof(CTraceFilterSimple_SetPassEntity_Linux), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+    SetMemAccess(AddressOfString(CTraceFilterSimple_SetCollisionGroup_Windows), sizeof(CTraceFilterSimple_SetCollisionGroup_Windows), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+    SetMemAccess(AddressOfString(CTraceFilterSimple_SetCollisionGroup_Linux), sizeof(CTraceFilterSimple_SetCollisionGroup_Linux), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+
     // abstract_class ITraceFilter
     VTable.CreateVTable("ITraceFilter", 2);
     VTable.RegisterVPointer("ITraceFilter", 0, NULL); // virtual bool ShouldHitEntity(IHandleEntity* pEntity, int contentsMask) = 0;

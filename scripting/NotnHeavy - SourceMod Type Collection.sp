@@ -31,6 +31,9 @@
 #include "CBaseEntity.inc"
 #include "CHandle.inc"
 #include "CEngineTrace.inc"
+#include "string_t.inc"
+#include "CGlobalVarsBase.inc"
+#include "CGlobalVars.inc"
 
 #include "tf/CTakeDamageInfo.inc"
 #include "tf/CTFRadiusDamageInfo.inc"
@@ -95,6 +98,7 @@ public void OnMapStart()
 {
     explosionModelIndex = PrecacheModel("sprites/sprite_fire01.vmt");
     PrintToServer("------------------------------------------------------------------");
+
     SMTC_Initialize();
     pointerOperation();
     vectorOperation();
@@ -110,6 +114,8 @@ public void OnMapStart()
     utilOperation();
     entityOperation(); // CBaseEntity.inc, CHandle.inc
     gamerulesOperation();
+    string_tOperation();
+    cglobalvarsOperation(); // CGlobalVars.inc, CGlobalVarsBase.inc
 
     PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
     PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
@@ -135,6 +141,29 @@ public void OnEntityCreated(int entity, const char[] classname)
 public void OnClientPutInServer(int client)
 {
     SMTC_HookEntity(client, FORWARDTYPE_ONTAKEDAMAGE, CTFPlayer_OnTakeDamage);
+}
+
+public void cglobalvarsOperation()
+{
+    PrintToServer("gpGlobals: %u", gpGlobals);
+    PrintToServer("gpGlobals->curtime: %f", gpGlobals.curtime);
+    PrintToServer("GetGameTime(): %f", GetGameTime());
+    PrintToServer("gpGlobals->maxEntities: %i", gpGlobals.maxEntities);
+    gpGlobals.maxEntities = 100419;
+
+    PrintToServer("");
+}
+
+// string_t.inc
+public void string_tOperation()
+{
+    String_t string = String_t.Malloc(AddressOfString("Hello world!"));
+    char buffer[64];
+    string.ToSourcePawnStr(buffer, sizeof(buffer));
+    PrintToServer(buffer);
+
+    free(string);
+    PrintToServer("");
 }
 
 // tf_point_t.inc, flame_point_t.inc
@@ -308,6 +337,7 @@ static void vtableOperation()
         0xC3               ret
         */
         char testString[] = "\x55\x8B\xEC\xB8\x08\x00\x00\x00\x5D\xC3";
+        SetMemAccess(AddressOfString(testString), sizeof(testString), SH_MEM_EXEC | SH_MEM_READ | SH_MEM_WRITE);
         
         StartPrepSDKCall(SDKCall_Static);
         PrepSDKCall_SetAddress(AddressOfString(testString));

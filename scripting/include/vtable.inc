@@ -110,7 +110,7 @@ methodmap VTable_Info < Pointer
     // Call constructor on existing type.
     public void ctor(char[] name, SIZE_T size)
     {
-        memcpyf(this.Name, AddressOfString(name), 32);
+        memcpy(this.Name, AddressOfString(name), 32);
         this.Name.Write('\0', 31, NumberType_Int8);
         this.Size = size;
 
@@ -166,7 +166,7 @@ methodmap VTable
 
         if (baseVTableInfo != NULL)
         {
-            memcpyf(vtableInfo.VTable, baseVTableInfo.VTable, baseVTableInfo.Size * SIZEOF_Pointer);
+            memcpy(vtableInfo.VTable, baseVTableInfo.VTable, baseVTableInfo.Size * SIZEOF_Pointer);
             for (int i = 0; i < baseVTableInfo.Size; ++i)
                 vtableInfo.Malloc.Write(NULL, i * SIZEOF_Pointer);
         }
@@ -207,7 +207,7 @@ methodmap VTable
         VTable_Info vtableInfo = view_as<VTable_Info>(vtables.Get(vtablesLength - SIZEOF_VTable_Info, 1));
         vtableInfo.ctor(name, length);
 
-        memcpyf(vtableInfo.VTable, existing, existingLength * SIZEOF_Pointer);
+        memcpy(vtableInfo.VTable, existing, existingLength * SIZEOF_Pointer);
         for (int i = 0; i < existingLength; ++i)
             vtableInfo.Malloc.Write(NULL, i * SIZEOF_Pointer);
     }
@@ -229,7 +229,7 @@ methodmap VTable
         if (asmLength)
         {
             Pointer vpointer = malloc(asmLength);
-            memcpyf(vpointer, asm, asmLength);
+            memcpy(vpointer, asm, asmLength);
             info.VTable.Write(vpointer, index * SIZEOF_Pointer);
             info.Malloc.Write(vpointer, index * SIZEOF_Pointer);
             SetMemAccess(vpointer, asmLength, SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
@@ -261,13 +261,12 @@ methodmap VTable
     }
 
     // Hook a registered vtable onto an existing object.
-    // There will be overhead if updateMemAccess is toggled.
-    public static void HookOntoObject(char[] name, Pointer obj, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
+    public static void HookOntoObject(char[] name, Pointer obj)
     {
         Pointer vtable = VTable.GetVTable(name);
         if (vtable == NULL)
             return;
-        obj.Write(vtable, .updateMemAccess = updateMemAccess);
+        obj.Write(vtable);
     }
 
     // Grab the pointer to an object's vtable.
@@ -283,19 +282,17 @@ methodmap VTable
     }
 
     // Override an object's vtable.
-    // There will be overhead if updateMemAccess is toggled.
-    public static void ReplaceObjectVTable(Pointer obj, Pointer vtable, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
+    public static void ReplaceObjectVTable(Pointer obj, Pointer vtable)
     {
-        obj.Write(vtable, .updateMemAccess = updateMemAccess);
+        obj.Write(vtable);
     }
 
     // Override a vpointer on an existing object with another vpointer.
-    // There will be overhead if updateMemAccess is toggled.
-    public static void OverrideVPointer(Pointer vtable, Pointer vpointer, int index, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
+    public static void OverrideVPointer(Pointer vtable, Pointer vpointer, int index)
     {
         if (vtable == NULL || vpointer == NULL)
             return;
-        vtable.Write(vpointer, index * SIZEOF_Pointer, .updateMemAccess = updateMemAccess);
+        vtable.Write(vpointer, index * SIZEOF_Pointer);
     }
 
     // Check to see if an object is using a vtable that is registered here.
@@ -313,7 +310,7 @@ methodmap VTable
             VTable_Info vtableInfo = view_as<VTable_Info>(vtables.Get(i, SIZEOF_VTable_Info));
             if (vtableInfo.VTable == vtable)
             {
-                memcpyf(AddressOfString(name), vtableInfo.Name, sizeof(name));
+                memcpy(AddressOfString(name), vtableInfo.Name, sizeof(name));
                 return true;
             }
         }

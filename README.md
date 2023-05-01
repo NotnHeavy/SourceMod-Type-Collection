@@ -7,10 +7,10 @@ Note that this is only tested with TF2. For other games, you'll have to tweak th
 ## How to use & dependencies
 You can just drag over your desired header files from here (located in ./scripting/include/) and add them to your own project. 
 
-At the very least, you'll need [Scags' SM-Memory Extension](https://github.com/Scags/SM-Memory).
+The only third-party depenency currently is [Scags' SM-Memory Extension](https://github.com/Scags/SM-Memory). SMTC contains a modified include of SM-Memory, which replaces some of the C-named natives for their faster variants, whilst retaining the PascalCase natives which set the memory access, and only utilises the bare minimum required to have SMTC to work.
 
 ## SMTCHeader.inc and SMTC.inc
-These includes have high significance and are required for the vast majority of these includes. Unless specified as not required, you will have to put "SMTCHeader.inc" before all of SMTC's includes, then "SMTC.inc" at the end of the SMTC includes. `SMTC_Initialize()` must then be called in `OnMapStart()`. SMTCHeader.inc also provides a few methodmaps: `CTFGameRules`, `CEngineTrace` and `Pointer` and a bunch of globals, while SMTC.inc provides an API for hooking onto entities via `SMTC_HookEntity()`. A few includes will provide forwards that can be used with this.
+These includes have high significance and are required for the vast majority of these includes. Unless specified as not required, you will have to put "SMTCHeader.inc" before all of SMTC's includes, then "SMTC.inc" at the end of the SMTC includes. `SMTC_Initialize()` must then be called in `OnMapStart()`.
 
 ## Includes present:
 - Vector.inc: A 3D vector. No more of "float buffer[3]" all over the place. There are multiple ways of instantiating vector objects. `Vector.Malloc()` will dynamically allocate the vector and you are responsible for freeing it afterwards - only use this for long-lasting vectors. `Vector.StackAlloc()` must be used with `STACK_GETRETURN()` and allocates a vector onto the stack frame, using arrays behind the scenes. Use this similarly to how you declare any typical variables, however the code for this will be slightly more ugly. `Vector.Accumulator()` should only be used in functions which return a temporary vector object. `Vector.Cache()` should be used for working with multiple temporary vector objects at once, such as with arithmetic operations.
@@ -29,6 +29,9 @@ These includes have high significance and are required for the vast majority of 
 - CBaseEntity.inc: A small methodmap that contains a few wrapper functions and properties, intended to mimick the internal class. Further things may be added to this to the future, so far it only contains a property for `m_RefEHandle` and wrapper functions for netprops.
 - CHandle.inc: Handles are IDs unique to every entity in the game, with 11 bits reserved for the entity, and the last 21 reserved for a serial number that is unique to the specific entity.
 - CEngineTrace.inc: A single object that is meant to be the enginetrace object, providing a few methods for entity tracing.
+- string_t.inc: A string object that contains a string pointer. There isn't really much else going on here.
+- CGlobalVarsBase.inc: These are some of the baseline game's global variables used across shared code.
+- CGlobalVars.inc: This expands upon CGlobalVarsBase, providing more global variables. This also provides the `gpGlobals` object which allows you to access the server's variables. This requires "CGlobalVarsBase.inc".
 
 ## TF2 includes present:
 - tf/tf_shareddefs.inc (w/o): Similar to shareddefs.inc, however this is TF2 specific. This include is not complete either, however it is slowly expanding.

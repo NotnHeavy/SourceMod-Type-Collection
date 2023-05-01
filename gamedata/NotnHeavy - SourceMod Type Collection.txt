@@ -21,6 +21,21 @@
 				"read" "0"
 			}
 
+			// /CGlobalVars.inc
+			"gpGlobals"
+			{
+				"windows"
+				{
+					"signature" "CTFPlayer::RuneRegenThink()"
+					"read"      "28"
+				}
+				"linux"
+				{
+					"signature" "gpGlobals"
+				}
+				"read" "0"
+			}
+
 			// /tf/CTFGameRules.inc
 			"g_pGameRules"
 			{
@@ -130,6 +145,18 @@
 			{
 				"library" "server"
 				"windows" "\x53\x8B\xDC\x83\xEC\x08\x83\xE4\xF0\x83\xC4\x04\x55\x8B\x6B\x04\x89\x6C\x24\x04\x8B\xEC\x8B\x43\x08\x81\xEC\x08\x01\x00\x00\x83\xC0\x04"  // xrefs to "gunshotsplash"
+			}
+
+			// /CGlobalVars.inc
+			"gpGlobals"
+			{
+				"library" "server"
+				"linux"   "@gpGlobals"
+			}
+			"CTFPlayer::RuneRegenThink()" // xref to string "RuneRegenThink", one with smaller offset
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x83\xEC\x70\x57\x8B\xF9\x8B\x07"
 			}
 
 			// /CBaseEntity.inc

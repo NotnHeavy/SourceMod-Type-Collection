@@ -50,6 +50,7 @@ enum struct SMTC_HookData
 }
 
 static ArrayList g_Hooks;
+static bool g_Initialized = false;
 
 //////////////////////////////////////////////////////////////////////////////
 // SMTC FORWARDS                                                            //
@@ -123,6 +124,9 @@ stock void SMTC_GetHookData(int entity, SMTC_ForwardType type, SMTC_HookData dat
 // Call this in OnPluginStart() to initialize some SMTC features, such as mini-crit effect handling with CTakeDamageInfo.
 stock void SMTC_Initialize()
 {
+    if (!g_Initialized)
+        return;
+
     // Set up hooks from the config file.
     GameData config = LoadGameConfigFile("NotnHeavy - SourceMod Type Collection");
     
@@ -139,6 +143,9 @@ stock void SMTC_Initialize()
 #endif
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTFGAMERULES
     g_pGameRules = CTFGameRules(config.GetAddress("g_pGameRules"));
+#endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CGLOBALVARS
+    gpGlobals = CGlobalVars(config.GetAddress("gpGlobals"));
 #endif
 
     CTFPointManager_m_Points = config.GetOffset("CTFPointManager::m_Points");
@@ -199,14 +206,7 @@ stock void SMTC_Initialize()
     g_Hooks = new ArrayList(sizeof(SMTC_HookData));
 
     // Generate the string function sdkcalls beforehand.
-    STACK_ALLOC(str1, Pointer, 1);
-    STACK_ALLOC(str2, Pointer, 1);
-    str1.strlen();
-    str1.strnlen(1);
-    str1.strcmp(str2);
-    str1.strncmp(str2, 1);
-    str1.strchr('S');
-    str1.strstr(str2);
+    SMTC_GenerateStringInfo();
 
     // For generating an offset on plugin start, getting datamap props from the world entity will not work 
     // because the world entity has not yet been initialised. Instead, I decided to go with getting the props
@@ -227,6 +227,8 @@ stock void SMTC_Initialize()
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_UTIL
     SMTC_UTILForward();
 #endif
+
+    g_Initialized = true;
 }
 
 //////////////////////////////////////////////////////////////////////////////

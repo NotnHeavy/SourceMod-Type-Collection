@@ -1,5 +1,4 @@
 ﻿dev/
 plugins/
 .vscode/
-scripting/include/smmem.inc
 scripting/include/TESTS/

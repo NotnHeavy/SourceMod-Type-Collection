@@ -100,6 +100,12 @@
 #define SIZEOF_Pointer 4
 
 //////////////////////////////////////////////////////////////////////////////
+// MISCELLANEOUS MACROS                                                     //
+//////////////////////////////////////////////////////////////////////////////
+
+#define SH_MEM_ALL (SH_MEM_EXEC | SH_MEM_READ | SH_MEM_WRITE)
+
+//////////////////////////////////////////////////////////////////////////////
 // GLOBALS                                                                  //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -140,6 +146,15 @@ static char func_strcmp[] = "\x55\x8B\xEC\x8B\x4D\x0C\x56\x8B\x75\x08\x8A\x16\x8
 static char func_strncmp[] = "\x55\x8B\xEC\x8B\x4D\x10\x53\x56\x85\xC9\x74\x1B\x8B\x75\x0C\x8B\x45\x08\x8A\x1E\x8D\x76\x01\x8A\x10\x3A\xD3\x75\x10\x40\x84\xD2\x74\x05\x83\xE9\x01\x75\xEB\x5E\x33\xC0\x5B\x5D\xC3\x0F\xB6\xCB\x0F\xB6\xC2\x5E\x2B\xC1\x5B\x5D\xC3";
 static char func_strchr[] = "\x55\x8B\xEC\x8A\x45\x0C\x53\x8B\x5D\x08\x56\xF6\xC3\x03\x74\x14\x8A\x0B\x3A\xC8\x0F\x84\x86\x00\x00\x00\x84\xC9\x74\x7C\x43\xF6\xC3\x03\x75\xEC\x0F\xB6\xC0\x8B\xF0\xC1\xE6\x08\x0B\xF0\x8B\xC6\xC1\xE0\x10\x0B\xF0\x8B\x0B\x8B\xC3\x89\x4D\x08\x83\xC3\x04\x8D\x91\xFF\xFE\xFE\x7E\xF7\xD1\x33\xD1\xF7\xC2\x00\x01\x01\x81\x75\x17\x8B\x55\x08\x33\xD6\x8D\x8A\xFF\xFE\xFE\x7E\xF7\xD2\x33\xCA\xF7\xC1\x00\x01\x01\x81\x74\xCD\x8A\x4D\x0C\x8B\x55\x08\x3A\xD1\x74\x2A\x84\xD2\x74\x24\x8A\x50\x01\x40\x3A\xD1\x74\x1E\x84\xD2\x74\x18\x8A\x50\x01\x40\x3A\xD1\x74\x12\x84\xD2\x74\x0C\x8A\x50\x01\x40\x3A\xD1\x74\x06\x84\xD2\x75\x9B\x33\xC0\x5E\x5B\x5D\xC3\x5E\x8B\xC3\x5B\x5D\xC3";
 static char func_strstr[] = "\x55\x8B\xEC\x53\x56\x8B\x75\x08\x57\x8A\x0E\x84\xC9\x74\x33\x8B\x7D\x0C\x8B\xD6\x2B\xD7\x8A\x1F\x3A\xCB\x75\x1D\x8B\xC7\x84\xC9\x74\x12\x8A\x08\x84\xC9\x74\x21\x38\x0C\x02\x75\x0C\x40\x80\x3C\x02\x00\x75\xEE\x80\x38\x00\x74\x10\x8A\x4E\x01\x46\x42\x84\xC9\x75\xD6\x5F\x5E\x33\xC0\x5B\x5D\xC3\x5F\x8B\xC6\x5E\x5B\x5D\xC3";
+static Handle SMTC_SDKCall_strlen;
+static Handle SMTC_SDKCall_strnlen;
+static Handle SMTC_SDKCall_strcmp;
+static Handle SMTC_SDKCall_strncmp;
+static Handle SMTC_SDKCall_strchr;
+static Handle SMTC_SDKCall_strstr;
+
+char empty_string[] = "";
+stock Pointer aEmptyString;
 
 stock any m_RefEHandle_Offset;
 
@@ -183,7 +198,6 @@ methodmap Pointer
     // Get the string length.
     public int strlen()
     {
-        static Handle SMTC_SDKCall_strlen;
         if (SMTC_SDKCall_strlen == null)
         {
             // If we don't set execution perms, the function will just crash. This will have massive overhead initially, but will be fine later on.
@@ -208,7 +222,6 @@ methodmap Pointer
     // Return maxlen if no NUL is found.
     public int strnlen(int maxlen)
     {
-        static Handle SMTC_SDKCall_strnlen;
         if (SMTC_SDKCall_strnlen == null)
         {
             SetMemAccess(AddressOfString(func_strnlen), sizeof(func_strnlen), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
@@ -226,7 +239,6 @@ methodmap Pointer
     // Compares two strings lexographically.
     public int strcmp(any string)
     {
-        static Handle SMTC_SDKCall_strcmp;
         if (SMTC_SDKCall_strcmp == null)
         {
             SetMemAccess(AddressOfString(func_strcmp), sizeof(func_strcmp), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
@@ -244,7 +256,6 @@ methodmap Pointer
     // Compares two strings parts lexographically.
     public int strncmp(any string, int length)
     {
-        static Handle SMTC_SDKCall_strncmp;
         if (SMTC_SDKCall_strncmp == null)
         {
             SetMemAccess(AddressOfString(func_strncmp), sizeof(func_strncmp), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
@@ -261,49 +272,36 @@ methodmap Pointer
     }
 
     // Copies one string to another string.
-    // There will be overhead if updateMemAccess is toggled.
-    public Pointer strcpy(any source, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
+    public Pointer strcpy(any source)
     {
-        if (updateMemAccess)
-            return memcpy(this, source, view_as<Pointer>(source).strlen() + 1);
-        else
-            return memcpyf(this, source, view_as<Pointer>(source).strlen() + 1);
+        return memcpy(this, source, view_as<Pointer>(source).strlen() + 1);
     }
 
     // Copies first n characters of source to destination.
-    // There will be overhead if updateMemAccess is toggled.
-    public Pointer strncpy(any source, int n, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
+    public Pointer strncpy(any source, int n)
     {
         int size = view_as<Pointer>(source).strnlen(n);
         if (size != n)
         {
-            if (updateMemAccess)
-                memset(this + size, '\0', n - size);
-            else
-                memsetf(this + size, '\0', n - size);
+            memset(this + size, '\0', n - size);
         }
         return memcpy(this, source, size);
     }
 
     // Append source on the end of destination.
-    // There will be overhead if updateMemAccess is toggled.
-    public Pointer strcat(any source, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
+    public Pointer strcat(any source)
     {
-        (this + this.strlen()).strcpy(source, updateMemAccess);
+        (this + this.strlen()).strcpy(source);
         return this;
     }
 
     // Append first n characters of source on the end of destination.
-    // There will be overhead if updateMemAccess is toggled.
-    public Pointer strncat(any source, int n, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
+    public Pointer strncat(any source, int n)
     {
         Pointer s1 = this + this.strlen();
         int ss = view_as<Pointer>(source).strnlen(n);
         s1.Write('\0', ss, NumberType_Int8);
-        if (updateMemAccess)
-            memcpy(s1, source, ss);
-        else   
-            memcpyf(s1, source, ss);
+        memcpy(s1, source, ss);
         return this;
     }
 
@@ -314,13 +312,12 @@ methodmap Pointer
         Pointer duplicate = malloc(len);
         if (duplicate == NULL)
             return NULL;
-        return memcpyf(duplicate, this, len);
+        return memcpy(duplicate, this, len);
     }
 
     // Returns a pointer to the first occurring char in string, otherwise NULL.
     public Pointer strchr(int c)
     {
-        static Handle SMTC_SDKCall_strchr;
         if (SMTC_SDKCall_strchr == null)
         {
             SetMemAccess(AddressOfString(func_strchr), sizeof(func_strchr), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
@@ -353,33 +350,24 @@ methodmap Pointer
     }
 
     // Set all characters of a string.
-    // There will be overhead if updateMemAccess is toggled.
-    public void strset(int c, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
+    public void strset(int c)
     {
-        if (updateMemAccess)
-            memset(this, c, this.strlen());
-        else
-            memsetf(this, c, this.strlen());
+        memset(this, c, this.strlen());
     }
     
     // Set all characters of a string up to a given length.
-    // There will be overhead if updateMemAccess is toggled.
-    public void strnset(int c, int n, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
+    public void strnset(int c, int n)
     {
         int len = this.strlen();
         if (n > len)
             n = len;
-        if (updateMemAccess)
-            memset(this, c, n);
-        else
-            memsetf(this, c, n);
+        memset(this, c, n);
     }
 
     // Returns a pointer to the first occurring string in string, otherwise NULL.
     // Not an optimised function.
     public Pointer strstr(any str)
     {
-        static Handle SMTC_SDKCall_strstr;
         if (SMTC_SDKCall_strstr == null)
         {
             SetMemAccess(AddressOfString(func_strstr), sizeof(func_strstr), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
@@ -402,28 +390,24 @@ methodmap Pointer
             maxlen = length;
         else if (length < maxlen)
             maxlen = length;
-        memcpyf(AddressOfString(buffer), this, maxlen);
+        memcpy(AddressOfString(buffer), this, maxlen);
     }
 
     // Store char buffer into a pointer. maxlen should include NUL.
-    // There will be overhead if updateMemAccess is toggled.
-    public void CharBufferToPointer(char[] buffer, int maxlen = -1, bool updateMemAccess = SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
+    public void CharBufferToPointer(char[] buffer, int maxlen = -1)
     {
         int length = strlen(buffer) + 1;
         if (maxlen == -1)
             maxlen = length;
         else if (length < maxlen)
             maxlen = length;
-        if (updateMemAccess)
-            memcpy(this, AddressOfString(buffer), maxlen);
-        else
-            memcpyf(this, AddressOfString(buffer), maxlen);
+        memcpy(this, AddressOfString(buffer), maxlen);
     }
 
     // Store into a buffer. You must specify the size of the type used with this pointer using the typeSize parameter.
     public void ToBuffer(char[] buffer, int typeSize = 4)
     {
-        memcpyf(AddressOfString(buffer), this, typeSize);
+        memcpy(AddressOfString(buffer), this, typeSize);
     }
 
     // Return the address of a cell.
@@ -507,7 +491,7 @@ stock Pointer operator=(Address value)
 stock any recalloc(Pointer memory, int num, int size, int old)
 {
     Pointer buffer = calloc(num, size);
-    memcpyf(buffer, memory, old * size);
+    memcpy(buffer, memory, old * size);
     free(memory);
     return buffer;
 }
@@ -516,9 +500,9 @@ stock any recalloc(Pointer memory, int num, int size, int old)
 stock void V_swap(Pointer x, Pointer y, int typeSize = 4)
 {
     Pointer temp = malloc(typeSize);
-    memcpyf(temp, x, typeSize);
-    memcpyf(x, y, typeSize);
-    memcpyf(y, temp, typeSize);
+    memcpy(temp, x, typeSize);
+    memcpy(x, y, typeSize);
+    memcpy(y, temp, typeSize);
     free(temp);
 }
 
@@ -532,4 +516,26 @@ stock any abs(any x)
 stock float FloatMakePositive(float f)
 {
     return view_as<float>(view_as<int>(f) & 0x7FFFFFFF); // evil floating point bit level hacking
+}
+
+// Generate the string function sdkcalls beforehand.
+stock void SMTC_GenerateStringInfo()
+{
+    SMTC_SDKCall_strlen = null;
+    SMTC_SDKCall_strnlen = null;
+    SMTC_SDKCall_strcmp = null;
+    SMTC_SDKCall_strncmp = null;
+    SMTC_SDKCall_strchr = null;
+    SMTC_SDKCall_strstr = null;
+
+    STACK_ALLOC(str1, Pointer, 1);
+    STACK_ALLOC(str2, Pointer, 1);
+    str1.strlen();
+    str1.strnlen(1);
+    str1.strcmp(str2);
+    str1.strncmp(str2, 1);
+    str1.strchr('S');
+    str1.strstr(str2);
+
+    aEmptyString = AddressOfString(empty_string);
 }
