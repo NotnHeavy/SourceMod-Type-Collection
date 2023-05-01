@@ -124,7 +124,7 @@ stock void SMTC_GetHookData(int entity, SMTC_ForwardType type, SMTC_HookData dat
 // Call this in OnPluginStart() to initialize some SMTC features, such as mini-crit effect handling with CTakeDamageInfo.
 stock void SMTC_Initialize()
 {
-    if (!g_Initialized)
+    if (g_Initialized)
         return;
 
     // Set up hooks from the config file.
@@ -216,6 +216,8 @@ stock void SMTC_Initialize()
     if (m_angRotation + 0x0C != m_vecViewOffset - 0x04)
         ThrowError("Could not calculate offset for CBaseEntity::m_RefEHandle.");
     m_RefEHandle_Offset = m_angRotation + 0x0C;
+
+    PrintToServer("big brother");
 
     // Call forwards.
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_VECTOR
