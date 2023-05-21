@@ -32,15 +32,19 @@ These includes have high significance and are required for the vast majority of 
 - string_t.inc: A string object that contains a string pointer. There isn't really much else going on here.
 - CGlobalVarsBase.inc: These are some of the baseline game's global variables used across shared code.
 - CGlobalVars.inc: This expands upon CGlobalVarsBase, providing more global variables. This also provides the `gpGlobals` object which allows you to access the server's variables. This requires "CGlobalVarsBase.inc".
+- FileWeaponInfo_t.inc: Parsed weapon script file data which is cached, relative to Source SDK 2013. At the moment, only the structure itself is defined; no methods are currently available.
 
 ## TF2 includes present:
 - tf/tf_shareddefs.inc (w/o): Similar to shareddefs.inc, however this is TF2 specific. This include is not complete either, however it is slowly expanding.
+- tf/tf_item_constants.inc (w/o): Constants used for econ item data.
 - tf/CTakeDamageInfo.inc: An object that contains all information for damaging players. Note that you will have to create your own DHooks (in particular, the OnTakeDamage ones) in order to utilise this methodmap fully. Note that there is a bug where if you toggle mini crits manually before `CTFGameRules::ApplyOnDamageModifyRules()` is called, due to mini crits and crits both toggling the DMG_CRIT damage type, the effect will default to the full crit one. This can be fixed by including SMTC.inc and calling `CTakeDamageInfo::SetCritType()` instead of modifying `CTakeDamageInfo::m_eCritType()` directly. This requires "Vector.inc".
 - tf/CTFRadiusDamageInfo.inc: An object that allows for damaging players within a specific radius. This requires "CTakeDamageInfo.inc" and "Vector.inc".
 - tf/TFPlayerClassData_t.inc: An object that holds data for each class in TF2. This can be used to interact with the game's `g_pTFPlayerClassDataMgr`, which holds data about all of TF2's classes. This requires "tf_shareddefs.inc" and "Vector.inc".
 - tf/tf_point_t.inc: An object that represents a point within a CTFPointManager entity. The hook `FORWARDTYPE_ADDPOINT` can be used with `SMTC_HookEntity()` on entites deriving from CTFPointManager. When hooking onto an entity with this forward type, the callback provided will be invoked whenever a new point has been added to this entity's `m_Points`. This requires "Vector.inc".
 - tf/flame_point_t.inc: An object that represents a flame point within a CTFFlameManager entity. This derives from tf_point_t and can be worked with to modify flames spewed from flamethrowers. This requires "tf_point_t.inc".
 - tf/CTFGameRules.inc: A single object that is meant to be the TF2 game rules object. It only has one method currently: CTFGameRules::RadiusDamage(CTFRadiusDamageInfo& info).
+- tf/WeaponData_t.inc: TF2 weapon info for primary/secondary attacks for each parsed weapon script file. This requires "tf_shareddefs.inc".
+- tf/CTFWeaponInfo.inc: This expands upon FileWeaponInfo_t, providing TF2-specific data, with two WeaponData_t records for both primary and secondary attack information. This requires "FileWeaponInfo_t.inc", "WeaponData_t.inc" and "tf_item_constants.inc".
 
 ## Removed since previous versions (additions here will be cleared in the update after deprecation):
 - Nothing!

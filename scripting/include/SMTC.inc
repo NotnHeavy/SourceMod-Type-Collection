@@ -50,7 +50,7 @@ enum struct SMTC_HookData
 }
 
 static ArrayList g_Hooks;
-static bool g_Initialized = false;
+bool g_SMTCInitialized = false;
 
 //////////////////////////////////////////////////////////////////////////////
 // SMTC FORWARDS                                                            //
@@ -124,7 +124,7 @@ stock void SMTC_GetHookData(int entity, SMTC_ForwardType type, SMTC_HookData dat
 // Call this in OnPluginStart() to initialize some SMTC features, such as mini-crit effect handling with CTakeDamageInfo.
 stock void SMTC_Initialize()
 {
-    if (g_Initialized)
+    if (g_SMTCInitialized)
         return;
 
     // Set up hooks from the config file.
@@ -180,6 +180,12 @@ stock void SMTC_Initialize()
     SMTC_SDKCall_CTFPointManager_GetMaxPoints = EndPrepSDKCall();
 
     StartPrepSDKCall(SDKCall_Raw);
+    PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "FileWeaponInfo_t::Parse()");
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // KeyValues* pKeyValuesData;
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const char* szWeaponName;
+    SMTC_SDKCall_FileWeaponInfo_t_Parse = EndPrepSDKCall();
+
+    StartPrepSDKCall(SDKCall_Raw);
     PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CBaseEntity::TakeDamage()");
     PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const CTakeDamageInfo&
     PrepSDKCall_SetReturnInfo(SDKType_Float, SDKPass_Plain); // float
@@ -215,9 +221,12 @@ stock void SMTC_Initialize()
     int m_angRotation = FindSendPropInfo("CBasePlayer", "m_angRotation"), m_vecViewOffset = FindSendPropInfo("CBasePlayer", "m_vecViewOffset[0]");
     if (m_angRotation + 0x0C != m_vecViewOffset - 0x04)
         ThrowError("Could not calculate offset for CBaseEntity::m_RefEHandle.");
-    m_RefEHandle_Offset = m_angRotation + 0x0C;
+    SMTC_CBaseEntity_m_RefEHandle = m_angRotation + 0x0C;
 
-    PrintToServer("big brother");
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTFWEAPONINFO
+    SMTC_CTFWeaponBase_m_iWeaponMode = FindSendPropInfo("CTFWeaponBase", "m_iReloadMode") - SIZEOF_int; 
+    SMTC_CTFWeaponBase_m_pWeaponInfo = FindSendPropInfo("CTFWeaponBase", "m_flReloadPriorNextFire") + SIZEOF_float;
+#endif
 
     // Call forwards.
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_VECTOR
@@ -230,7 +239,7 @@ stock void SMTC_Initialize()
     SMTC_UTILForward();
 #endif
 
-    g_Initialized = true;
+    g_SMTCInitialized = true;
 }
 
 //////////////////////////////////////////////////////////////////////////////

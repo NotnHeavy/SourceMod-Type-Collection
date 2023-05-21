@@ -96,7 +96,6 @@ methodmap Ray_t < Pointer
         return buffer;
     }
 
-
     // Initialize this ray with just the start and end.
     public void Init(const Vector start, const Vector end)
     {

@@ -12,6 +12,9 @@
 
 #include "CHandle.inc"
 
+// For projects where you'd like to provide custom entity data, you can also make an enum struct
+// and make a bunch of properties that index the enum struct members using the entity's entindex().
+
 //////////////////////////////////////////////////////////////////////////////
 // CBASEENTITY METHODMAP                                                    //
 //////////////////////////////////////////////////////////////////////////////
@@ -35,8 +38,8 @@ methodmap CBaseEntity < Pointer
     // This entity's EHANDLE.
     property CHandle m_RefEHandle
     {
-        public get() { return view_as<CHandle>(this.Address + m_RefEHandle_Offset); }
-        public set(CHandle value) { memcpy(this.Address + m_RefEHandle_Offset, value, SIZEOF_CHandle); } 
+        public get() { return view_as<CHandle>(this.Address + SMTC_CBaseEntity_m_RefEHandle); }
+        public set(CHandle value) { memcpy(this.Address + SMTC_CBaseEntity_m_RefEHandle, value, SIZEOF_CHandle); } 
     }
      
     // Get the entity index.

@@ -13,6 +13,7 @@
 
 #define SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT false
 #define SMTC_TF_POINT_T_TOGGLE_FUNCTIONS true
+#define SMTC_CBASEENTITY_CUSTOM_DATA true
 
 #include "SMTCHeader.inc"
 #include "include/Vector.inc"
@@ -34,6 +35,7 @@
 #include "string_t.inc"
 #include "CGlobalVarsBase.inc"
 #include "CGlobalVars.inc"
+#include "FileWeaponInfo_t.inc"
 
 #include "tf/CTakeDamageInfo.inc"
 #include "tf/CTFRadiusDamageInfo.inc"
@@ -42,6 +44,9 @@
 #include "tf/tf_point_t.inc"
 #include "tf/flame_point_t.inc"
 #include "tf/CTFGameRules.inc"
+#include "tf/WeaponData_t.inc"
+#include "tf/CTFWeaponInfo.inc"
+#include "tf/tf_item_constants.inc"
 
 #include "SMTC.inc"
 
@@ -116,6 +121,7 @@ public void OnMapStart()
     gamerulesOperation();
     string_tOperation();
     cglobalvarsOperation(); // CGlobalVars.inc, CGlobalVarsBase.inc
+    ctfweaponinfoOperation(); // FileWeaponInfo_t.inc, WeaponData_t.inc, CTFWeaponInfo.inc
 
     PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
     PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
@@ -134,13 +140,84 @@ public void OnPluginEnd()
 
 public void OnEntityCreated(int entity, const char[] classname)
 {
+    if (entity <= MaxClients)
+        return;
+    
+    // tf_point_t.inc, flame_point_t.inc
     if (StrEqual(classname, "tf_flame_manager"))
         SMTC_HookEntity(entity, FORWARDTYPE_ADDPOINT, SMTC_AddPoint);
+    
+    // FileWeaponInfo_t.inc, WeaponData_t.inc, CTFWeaponInfo.inc
+    else if (StrEqual(classname, "tf_weapon_shotgun_primary"))
+    {
+        if (entity > MaxClients && entity <= 2048 && IsValidEntity(entity))
+            RequestFrame(weaponData, CBaseEntity.FromIndex(entity));
+    }
+}
+
+void weaponData(CBaseEntity weapon)
+{
+    if (weapon == NULL || weapon.entindex() == -1 || !IsValidEntity(weapon.GetEntPropEntIndex(Prop_Send, "m_hOwnerEntity")) || !IsClientInGame(weapon.GetEntPropEntIndex(Prop_Send, "m_hOwnerEntity")))
+        return;
+
+    CTFWeaponInfo m_pWeaponInfo = weapon.Dereference(SMTC_CTFWeaponBase_m_pWeaponInfo);
+    if (m_pWeaponInfo == NULL)
+        return;
+    PrintToServer("Engineer shotgun m_pWeaponInfo object: %u", m_pWeaponInfo);
+
+    WeaponData_t data = m_pWeaponInfo.GetWeaponData(weapon.Dereference(SMTC_CTFWeaponBase_m_iWeaponMode));
+    PrintToServer("Engineer shotgun WeaponData_t object: %u", data);
+    PrintToServer("Engineer shotgun m_flSpread: %f", data.m_flSpread);
+
+    data.m_nBulletsPerShot = 1;
+    data.m_flTimeFireDelay = 0.15;
+    data.m_flTimeReloadStart = 0.00;
+    m_pWeaponInfo.iMaxClip1 = 12;
+
+    PrintToServer("Engineer shotgun slot: %i", m_pWeaponInfo.iSlot);
+    PrintToServer("Engineer shotgun position: %i", m_pWeaponInfo.iPosition);
+
+    m_pWeaponInfo.iPosition = 1;
 }
 
 public void OnClientPutInServer(int client)
 {
     SMTC_HookEntity(client, FORWARDTYPE_ONTAKEDAMAGE, CTFPlayer_OnTakeDamage);
+}
+
+public void ctfweaponinfoOperation()
+{
+    PrintToServer("&FileWeaponInfo_t::bAutoSwitchFrom: %u", FILEWEAPONINFO_T_OFFSET_BAUTOSWITCHFROM);
+    PrintToServer("&FileWeaponInfo_t::iFlags: %u", FILEWEAPONINFO_T_OFFSET_IFLAGS);
+    PrintToServer("&FileWeaponInfo_t::iAmmoType: %u", FILEWEAPONINFO_T_OFFSET_IAMMOTYPE);
+    PrintToServer("&FileWeaponInfo_t::iSpriteCount: %u", FILEWEAPONINFO_T_OFFSET_ISPRITECOUNT);
+    PrintToServer("sizeof(FileWeaponInfo_t): %u\n", SIZEOF(FileWeaponInfo_t));
+
+    // as of 21.05.2023
+    // CTFWeaponBaseGun::GetWeaponSpread();
+    // float fSpread = m_pWeaponInfo->GetWeaponData( m_iWeaponMode ).m_flSpread;
+    // v2 = *(float *)(*((_DWORD *)this + 441) + (*((_DWORD *)this + 438) << 6) + 1796);
+
+    // *((_DWORD *)this + 441): CTFWeaponBase->m_pWeaponInfo
+    // *((_DWORD *)this + 438): CTFWeaponBase->m_iWeaponMode
+    // (*((_DWORD *)this + 438) << 6): offset for CTFWeaponInfo::m_WeaponData
+
+    // on windows:
+    // v2 = this[438];
+    // v3 = this[435] << 6;
+    // v4 = *(float *)(v3 + v2 + 1796);
+
+    PrintToServer("sizeof(WeaponData_t): %u\n", SIZEOF(WeaponData_t));
+
+    PrintToServer("&CTFWeaponInfo::m_WeaponData: %u", CTFWEAPONINFO_OFFSET_M_WEAPONDATA);
+    PrintToServer("&CTFWeaponInfo::m_iWeaponType: %u", CTFWEAPONINFO_OFFSET_M_IWEAPONTYPE);
+    PrintToServer("&CTFWeaponInfo::m_szMuzzleFlashModel: %u", CTFWEAPONINFO_OFFSET_M_SZMUZZLEFLASHMODEL);
+    PrintToServer("&CTFWeaponInfo::m_szBrassModel: %u", CTFWEAPONINFO_OFFSET_M_SZBRASSMODEL);
+    PrintToServer("sizeof(CTFWeaponInfo): %u\n", SIZEOF(CTFWeaponInfo));
+
+    PrintToServer("m_pWeaponInfo offset: %u", SMTC_CTFWeaponBase_m_pWeaponInfo); // as of 21.05.2023, should be 1752 on windows
+
+    PrintToServer("");
 }
 
 public void cglobalvarsOperation()
@@ -149,8 +226,7 @@ public void cglobalvarsOperation()
     PrintToServer("gpGlobals->curtime: %f", gpGlobals.curtime);
     PrintToServer("GetGameTime(): %f", GetGameTime());
     PrintToServer("gpGlobals->maxEntities: %i", gpGlobals.maxEntities);
-    gpGlobals.maxEntities = 100419;
-
+    
     PrintToServer("");
 }
 
@@ -805,8 +881,13 @@ static void vectorOperation()
     PrintToServer("");
 }
 
+bool done = false;
 static void pointerOperation()
 {
+    if (done)
+        return;
+    done = true;
+
     strlen("test");
 
     Pointer a = malloc(4);

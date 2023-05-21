@@ -90,21 +90,21 @@ methodmap VTable_Info < Pointer
     property Pointer VTable
     {
         public get() { return this.Dereference(VTABLE_INFO_OFFSET_VTABLE); }
-        public set(Pointer value) { this.Write(value, VTABLE_INFO_OFFSET_VTABLE); }
+        public set(Pointer value) { this.Write(value, VTABLE_INFO_OFFSET_VTABLE, .updateMemAccess = false); }
     }
 
     // An array depicting containing each vpointer that is malloc()'d.
     property Pointer Malloc
     {
         public get() { return this.Dereference(VTABLE_INFO_OFFSET_MALLOC); }
-        public set(Pointer value) { this.Write(value, VTABLE_INFO_OFFSET_MALLOC); }
+        public set(Pointer value) { this.Write(value, VTABLE_INFO_OFFSET_MALLOC, .updateMemAccess = false); }
     }
 
     // The length of the vtable.
     property SIZE_T Size
     {
         public get() { return this.Dereference(VTABLE_INFO_OFFSET_SIZE); }
-        public set(SIZE_T value) { this.Write(value, VTABLE_INFO_OFFSET_SIZE); }
+        public set(SIZE_T value) { this.Write(value, VTABLE_INFO_OFFSET_SIZE, .updateMemAccess = false); }
     }
 
     // Call constructor on existing type.

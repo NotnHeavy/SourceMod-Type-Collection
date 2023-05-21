@@ -133,6 +133,7 @@ stock DynamicHook SMTC_DHooks_Offset_CTFPlayer_OnTakeDamage_Alive;
 stock Handle SMTC_SDKCall_IEngineTrace_ClipRayToEntity;
 stock Handle SMTC_SDKCall_IEngineTrace_TraceRay;
 stock Handle SMTC_SDKCall_CTFPointManager_GetMaxPoints;
+stock Handle SMTC_SDKCall_FileWeaponInfo_t_Parse;
 
 stock Handle SMTC_SDKCall_CBaseEntity_TakeDamage;
 stock Handle SMTC_SDKCall_CTFRadiusDamageInfo_CalculateFalloff;
@@ -156,7 +157,9 @@ static Handle SMTC_SDKCall_strstr;
 char empty_string[] = "";
 stock Pointer aEmptyString;
 
-stock any m_RefEHandle_Offset;
+stock any SMTC_CBaseEntity_m_RefEHandle;
+stock any SMTC_CTFWeaponBase_m_iWeaponMode;
+stock any SMTC_CTFWeaponBase_m_pWeaponInfo;
 
 //////////////////////////////////////////////////////////////////////////////
 // POINTER METHODMAP                                                        //
@@ -189,12 +192,21 @@ methodmap Pointer
         StoreToAddress(this.Address + offset, value, bits, updateMemAccess);
     }
 
-    // Get the array offset from the pointer's current address. You must specify the size of the type used with this pointer using the typeSize parameter.
+    // Get the array offset from the pointer's current address. 
+    // You must specify the size of the type used with this pointer using the typeSize parameter.
     public Pointer Get(int index, int typeSize = 4)
     {
         return Pointer(this.Address + view_as<Address>(index * typeSize));
     }
-    
+
+    // Get the array offset from the pointer's current address within a two-dimensional array.
+    // You must specify the size of the type used with this pointer using the typeSize parameter.
+    // You must specify the size of each sub-array using the arraySize parameter.
+    public Pointer Get2D(int a, int b, int typeSize = 4, int arraySize = 1)
+    {
+        return Pointer(this.Address + view_as<Address>((b * typeSize) + (a * arraySize)));
+    }
+
     // Get the string length.
     public int strlen()
     {

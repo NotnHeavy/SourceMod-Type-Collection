@@ -125,6 +125,13 @@
 				"linux"   "283"
 			}
 
+			// /tf/FileWeaponInfo_t.inc
+			"FileWeaponInfo_t::Parse()"
+			{
+				"windows" "0"
+				"linux"   "0"
+			}
+
 			// /SMTC.inc
 			"OSTypeUsed"
 			{

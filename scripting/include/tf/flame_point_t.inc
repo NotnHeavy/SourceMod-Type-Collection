@@ -8,7 +8,6 @@
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_FLAME_POINT_T
 
 // Requires "tf_point_t.inc".
-
 #include "tf_point_t.inc"
 
 #pragma semicolon true 
