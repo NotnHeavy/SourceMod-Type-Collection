@@ -2,6 +2,8 @@
 // MADE BY NOTNHEAVY. USES GPL-3, AS PER REQUEST OF SOURCEMOD               //
 //////////////////////////////////////////////////////////////////////////////
 
+// weapon_parse.h
+
 // For the time being, none of the methods will be re-created.
 // CHudTexture will also not be re-created; it is only relevant to the client.
 

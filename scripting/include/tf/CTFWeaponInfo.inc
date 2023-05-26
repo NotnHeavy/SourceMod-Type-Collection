@@ -2,12 +2,14 @@
 // MADE BY NOTNHEAVY. USES GPL-3, AS PER REQUEST OF SOURCEMOD               //
 //////////////////////////////////////////////////////////////////////////////
 
+// tf_weapon_parse.h
+
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTFWEAPONINFO
 #endinput
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTFWEAPONINFO
 
-// Requires "FileWeaponInfo_t.inc", "WeaponData_t.inc" and "tf_item_constants.h".
+// Requires "FileWeaponInfo_t.inc", "WeaponData_t.inc" and "tf_item_constants.inc".
 #include "FileWeaponInfo_t.inc"
 #include "WeaponData_t.inc"
 #include "tf_item_constants.inc"

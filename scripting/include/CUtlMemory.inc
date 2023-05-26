@@ -80,6 +80,12 @@ methodmap CUtlMemory < Pointer
         else
             this.m_pMemory = NULL;
     }
+    
+    // Call deconstructor on existing type.
+    public void dtor()
+    {
+        this.Purge();
+    }
 
     // Constructor - allocate a new CUtlMemory onto the heap. Deallocation will be required when you are finished using CUtlMemory.Dispose().
     // You must specify the size of the type used with this CUtlMemory using the typeSize parameter.
@@ -289,10 +295,10 @@ methodmap CUtlMemory < Pointer
         this.m_nGrowSize = size;
     }
 
-    // Deconstructor.
+    // Dispose this object.
     public void Dispose()
     {
-        this.Purge();
+        this.dtor();
         free(this);
     }
 }

@@ -104,6 +104,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #define SH_MEM_ALL (SH_MEM_EXEC | SH_MEM_READ | SH_MEM_WRITE)
+#define VALID_MINIMUM_MEMORY_ADDRESS 0x10000 // smn_core.cpp
 
 //////////////////////////////////////////////////////////////////////////////
 // GLOBALS                                                                  //
@@ -550,4 +551,33 @@ stock void SMTC_GenerateStringInfo()
     str1.strstr(str2);
 
     aEmptyString = AddressOfString(empty_string);
+}
+
+enum struct SMTCFunction_t
+{
+    Function func;
+}
+static int GetFirstIndex(any[] array)
+{
+    return array[0];
+}
+
+// Get the index of a function as a numeric value.
+// The internal idea of this is that it works as
+stock int SMTC_GetFunctionValue(Function func)
+{
+    /*
+    kelsey — Today at 18:36
+    WHAT ARE YOU DOING
+    */
+    SMTCFunction_t obj;
+    obj.func = func;
+    return GetFirstIndex(obj);
+}
+
+// Check whether the value of a function pointer matches as a potential
+// SourceMod function, or if it points to a compiled subroutine.
+stock bool SMTC_IsSMFunction(any value)
+{
+    return value < VALID_MINIMUM_MEMORY_ADDRESS;
 }

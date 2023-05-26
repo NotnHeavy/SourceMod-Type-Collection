@@ -122,6 +122,7 @@ public void OnMapStart()
     string_tOperation();
     cglobalvarsOperation(); // CGlobalVars.inc, CGlobalVarsBase.inc
     ctfweaponinfoOperation(); // FileWeaponInfo_t.inc, WeaponData_t.inc, CTFWeaponInfo.inc
+    cutlmapOperation(); // add includes?
 
     PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
     PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
@@ -183,6 +184,27 @@ void weaponData(CBaseEntity weapon)
 public void OnClientPutInServer(int client)
 {
     SMTC_HookEntity(client, FORWARDTYPE_ONTAKEDAMAGE, CTFPlayer_OnTakeDamage);
+}
+
+// CUtlMap operation
+enum struct SMFunc
+{
+    Function func;
+}
+any test2348189(any test)
+{
+    return 1;
+}
+public void cutlmapOperation()
+{
+    /*
+    SMFunc func;
+    func.func = test2348189;
+    PrintToServer("smfunc_t func: %i", func);
+    */
+    PrintToServer("smfunc_t func: %i", SMTC_GetFunctionValue(test2348189));
+
+    PrintToServer("");
 }
 
 public void ctfweaponinfoOperation()

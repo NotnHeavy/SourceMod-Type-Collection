@@ -85,6 +85,12 @@ methodmap CUtlVector < Pointer
         this.ResetDbgInfo();
     }
 
+    // Call deconstructor on existing type.
+    public void dtor()
+    {
+        this.Purge();
+    }
+
     // Constructor - allocate a new CUtlVector onto the heap. Deallocation will be required when you are finished using CUtlVector.Dispose().
     // You must specify the size of the type used with this CUtlVector using the typeSize parameter.
     public static CUtlVector Malloc(int growSize = 0, int initialCapacity = 0, int typeSize = 4)
@@ -553,10 +559,10 @@ methodmap CUtlVector < Pointer
             V_swap(this.m_Memory.Get(i, typeSize), this.m_Memory.Get(this.m_Size - 1 - i, typeSize), typeSize);
     }
 
-    // Deconstructor.
+    // Dispose this object.
     public void Dispose()
     {
-        this.Purge();
+        this.dtor();
         free(this);
     }
 }
