@@ -1,6 +1,8 @@
 // For testing purposes only. Please refer to ./scripting/include/ for all of the includes available.
 // This is the most hackiest shit I've done in SourceMod so far.
 
+// Did you know that SourceMod has the malware Trojan.Generic@AI.94 (RDML:voIizpWWcV+?
+
 #pragma semicolon true 
 #pragma newdecls required
 
@@ -36,6 +38,8 @@
 #include "CGlobalVarsBase.inc"
 #include "CGlobalVars.inc"
 #include "FileWeaponInfo_t.inc"
+#include "CUtlMap.inc"
+#include "CUtlRBTree.inc"
 
 #include "tf/CTakeDamageInfo.inc"
 #include "tf/CTFRadiusDamageInfo.inc"
@@ -122,7 +126,7 @@ public void OnMapStart()
     string_tOperation();
     cglobalvarsOperation(); // CGlobalVars.inc, CGlobalVarsBase.inc
     ctfweaponinfoOperation(); // FileWeaponInfo_t.inc, WeaponData_t.inc, CTFWeaponInfo.inc
-    cutlmapOperation(); // add includes?
+    cutlmapOperation(); // base_utlmap_t.inc, CUtlMap.inc
 
     PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
     PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
@@ -195,6 +199,15 @@ any test2348189(any test)
 {
     return 1;
 }
+bool lessfunc1(Pointer a, Pointer b)
+{
+    PrintToServer("global::lessfunc1() being called!");
+    int trueA = a.Dereference();
+    int trueB = b.Dereference();
+    PrintToServer("lhs: %i, rhs: %i, lhs < rhs: %i", trueA, trueB, trueA < trueB);
+    
+    return trueA < trueB;
+}
 public void cutlmapOperation()
 {
     /*
@@ -203,7 +216,112 @@ public void cutlmapOperation()
     PrintToServer("smfunc_t func: %i", func);
     */
     PrintToServer("smfunc_t func: %i", SMTC_GetFunctionValue(test2348189));
+    PrintToServer("");
 
+    // lessfunc_t test
+    // typename LessFunc_t = bool (*)( const T &, const T & )
+    CKeyLess func = STACK_GETRETURN(CKeyLess.StackAlloc(SMTC_GetFunctionValue(lessfunc1)));
+    int a = 1;
+    int b = 3;
+    PrintToServer("func.Call(1, 3): %i", func.Call(AddressOf(a), AddressOf(b)));
+
+    char func_ptr[] = "\xB8\x01\x00\x00\x00\x83\xF8\x03\x72\x06\xB8\x00\x00\x00\x00\xC3\xB8\x01\x00\x00\x00\xC3";
+    SetMemAccess(AddressOfString(func_ptr), sizeof(func_ptr), SH_MEM_ALL);
+
+    func.m_LessFunc = AddressOfString(func_ptr);
+    PrintToServer("using func ptr, func.Call(1, 3): %i\n", SMTC_CallCKeyLess(func, AddressOf(a), AddressOf(b)));
+
+    // make our own cutlmap using default lessfunc
+    // K(ey) = int
+    // T (value) = int
+    // I = unsigned short
+
+    /*
+    #undef SMTC_CUTLRBTREE_SIZEOF_T
+    #define SMTC_CUTLRBTREE_SIZEOF_T SIZEOF_Node_t
+    */
+    // ^ this does not work because the macro will still retain its original value 
+    // in the header file - your only option, unfortuantely, is to redefine the
+    // methodmap
+    
+    PrintToServer("sizeof(CUtlRBTree): %i", SIZEOF_CUtlRBTree);
+    PrintToServer("sizeof(CUtlMap): %i", SIZEOF_CUtlMap);
+    PrintToServer("sizeof(UtlRBTreeNode_t): %i\n", SIZEOF_UtlRBTreeNode_t);
+    CUtlMap map = CUtlMap.Malloc(SMTC_pDefaultLessFunc);
+
+    int key1 = 5;
+    any index1 = map.Insert(Pointer.Reference(key1));
+    PrintToServer("index for key 5: %i", index1);
+
+    int key2 = 2;
+    any index2 = map.Insert(Pointer.Reference(key2));
+    PrintToServer("index for key 2: %i", index2);
+
+    int key3 = 3;
+    any index3 = map.Insert(Pointer.Reference(key3));
+    PrintToServer("index for key 3: %i", index3);
+
+    int key4 = 15;
+    any index4 = map.Insert(Pointer.Reference(key4));
+    PrintToServer("index for key 15: %i", index4);
+
+    int key5 = 23;
+    any index5 = map.Insert(Pointer.Reference(key5));
+    PrintToServer("index for key 23: %i\n", index5);
+
+    PrintToServer("looping now...");
+    for (int i = 50; i < 53; ++i)
+    {
+        any index = map.Insert(Pointer.Reference(i));
+        PrintToServer("index for key %i: %i", i, index);
+    }
+    PrintToServer("");
+
+    // let's actually do some writing now
+    map.Get(index1).Write(50);
+    map.Get(index2).Write(7746); // nothing went wrong with 7746
+    PrintToServer("after writing, key 5 value: %i", map.Get(index1).Dereference());
+    PrintToServer("after writing, key 2 value: %i\n", map.Get(index2).Dereference());
+
+    // now let's search
+    any keytofind = 5;
+    any foundindex = map.Find(Pointer.Reference(keytofind));
+    if (foundindex == CUtlRBTree.InvalidIndex())
+        PrintToServer("key 5 is invalid index - this is wrong");
+    else
+        PrintToServer("after finding, key 5 value: %i", map.Get(foundindex).Dereference());
+
+    keytofind = 2;
+    foundindex = map.Find(Pointer.Reference(keytofind));
+    if (foundindex == CUtlRBTree.InvalidIndex())
+        PrintToServer("key 2 is invalid index - this is wrong");
+    else
+        PrintToServer("after finding, key 2 value: %i", map.Get(foundindex).Dereference());
+
+    // in-game example: CTFPlayer::m_PlayersExtinguished
+    if (IsClientInGame(1))
+    {
+        PrintToServer("");
+        any CTFPlayer_m_PlayersExtinguished = FindSendPropInfo("CTFPlayer", "m_iPlayerSkinOverride") + 4;
+        CUtlMap cutlmap = CUtlMap(GetEntityAddress(1) + CTFPlayer_m_PlayersExtinguished);
+        PrintToServer("size of CTFPlayer(1)::m_PlayersExtinguished: %i", cutlmap.Count());
+        for (int i = 1; i < MaxClients; ++i)
+        {
+            any index = cutlmap.Find(AddressOf(i));
+            if (index != CUtlMap.InvalidIndex())
+            {
+                float extinguished = cutlmap.Get(index).Dereference();
+                PrintToServer("time since extinguished for player %i: %f", i, GetGameTime() - extinguished);
+            }
+        }
+
+        int key = 1;
+        float value = GetGameTime();
+        cutlmap.Insert(AddressOf(key), AddressOf(value));
+    }
+    
+    map.Purge();
+    free(map);
     PrintToServer("");
 }
 
@@ -636,6 +754,9 @@ static void tfplayerclassdata_tOperation()
 
     TFPlayerClassData_t heavyData = GetPlayerClassData(TF_CLASS_HEAVYWEAPONS);
     heavyData.m_nMaxHealth = 1; // heavy has recently went on a diet!
+                                // 2023.05.31: correction:
+                                // Moth boy — Today at 14:21
+                                // That's not a "diet" he's starving to death
     char buffer[TF_NAME_LENGTH];
 
     TFPlayerClassData_t civilianData = GetPlayerClassData(TF_CLASS_CIVILIAN);

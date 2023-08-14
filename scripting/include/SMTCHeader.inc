@@ -531,8 +531,8 @@ stock float FloatMakePositive(float f)
     return view_as<float>(view_as<int>(f) & 0x7FFFFFFF); // evil floating point bit level hacking
 }
 
-// Generate the string function sdkcalls beforehand.
-stock void SMTC_GenerateStringInfo()
+// Generate the string function and CKeyLess SDKCalls beforehand.
+stock void SMTC_GenerateSDKCallInfo()
 {
     SMTC_SDKCall_strlen = null;
     SMTC_SDKCall_strnlen = null;
@@ -551,20 +551,23 @@ stock void SMTC_GenerateStringInfo()
     str1.strstr(str2);
 
     aEmptyString = AddressOfString(empty_string);
+
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CUTLRBTREE
+    SMTC_CallCKeyLess(NULL, NULL, NULL);
+#endif
 }
 
 enum struct SMTCFunction_t
 {
     Function func;
 }
-static int GetFirstIndex(any[] array)
+static any GetFirstIndex(any[] array)
 {
     return array[0];
 }
 
 // Get the index of a function as a numeric value.
-// The internal idea of this is that it works as
-stock int SMTC_GetFunctionValue(Function func)
+stock any SMTC_GetFunctionValue(Function func)
 {
     /*
     kelsey — Today at 18:36
@@ -575,9 +578,83 @@ stock int SMTC_GetFunctionValue(Function func)
     return GetFirstIndex(obj);
 }
 
+enum struct SMTCValue_t
+{
+    any index;
+}
+static Function GetFirstIndexFunction(any[] array)
+{
+    return array[0];
+}
+
+// Convert a numeric value to a function.
+stock Function SMTC_GetValueAsFunction(any index)
+{
+    SMTCValue_t obj;
+    obj.index = index;
+    return GetFirstIndexFunction(obj);
+}
+
 // Check whether the value of a function pointer matches as a potential
 // SourceMod function, or if it points to a compiled subroutine.
 stock bool SMTC_IsSMFunction(any value)
 {
     return value < VALID_MINIMUM_MEMORY_ADDRESS;
+}
+
+// Convert bit count to NumberType.
+stock NumberType BitToNumberType(any bits)
+{
+    switch (bits)
+    {
+    case 1:
+        return NumberType_Int8;
+    case 2:
+        return NumberType_Int16;
+    case 4:
+        return NumberType_Int32;
+    default:
+        return view_as<NumberType>(-1);
+    }
+}
+
+// Destruct an object. This is meant to call the destructor of the object
+// used; if possible call your own destructor method.
+stock void Destruct(any pMemory, int typeSize = 4)
+{
+    memset(pMemory, 0xDD, typeSize);
+}
+
+// Re-allocate within a specific location in memory. You must specify the size of the type used with this global using the typeSize parameter.
+// Normally this would call the the constructor of the allocated memory, but that's not possible here.
+stock void Construct(Pointer memory, int typeSize = 4)
+{
+    memset(memory, 0, typeSize);
+}
+
+// Re-allocate within a specific location in memory, from another source. You must specify the size of the type used with this global using the typeSize parameter.
+// Normally this would call the the constructor of the allocated memory, but that's not possible here.
+stock void CopyConstruct(Pointer memory, Pointer source, int typeSize = 4)
+{
+    memcpy(memory, source, typeSize);
+}
+
+stock any max(any a, any b)
+{
+    return a < b ? a : b;
+}
+
+stock any min(any a, any b)
+{
+    return a < b ? b : a;
+}
+
+stock float fmax(float a, float b)
+{
+    return a < b ? a : b;
+}
+
+stock float fmin(float a, float b)
+{
+    return a < b ? b : a;
 }

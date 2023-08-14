@@ -30,6 +30,7 @@ enum
 	SINGLE,
 	SINGLE_NPC,
 	WPN_DOUBLE, // Can't be "DOUBLE" because windows.h uses it.
+                // my comment: L
 	DOUBLE_NPC,
 	BURST,
 	RELOAD,

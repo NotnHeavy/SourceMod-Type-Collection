@@ -52,6 +52,9 @@ enum struct SMTC_HookData
 static ArrayList g_Hooks;
 bool g_SMTCInitialized = false;
 
+// taken from server_srv.so for CDefOps<int>::LessFunc
+static char s_aDefaultLessFunc[] = "\x55\x89\xE5\x8B\x45\x0C\x8B\x55\x08\x5D\x8B\x00\x39\x02\x0F\x9C\xC0\xC3";
+
 //////////////////////////////////////////////////////////////////////////////
 // SMTC FORWARDS                                                            //
 //////////////////////////////////////////////////////////////////////////////
@@ -147,6 +150,10 @@ stock void SMTC_Initialize()
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CGLOBALVARS
     gpGlobals = CGlobalVars(config.GetAddress("gpGlobals"));
 #endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CUTLRBTREE
+    SMTC_pDefaultLessFunc = AddressOfString(s_aDefaultLessFunc);
+    SetMemAccess(AddressOfString(s_aDefaultLessFunc), sizeof(s_aDefaultLessFunc), SH_MEM_EXEC | SH_MEM_READ | SH_MEM_WRITE);
+#endif
 
     CTFPointManager_m_Points = config.GetOffset("CTFPointManager::m_Points");
 
@@ -211,8 +218,8 @@ stock void SMTC_Initialize()
     // Instantiate g_Hooks.
     g_Hooks = new ArrayList(sizeof(SMTC_HookData));
 
-    // Generate the string function sdkcalls beforehand.
-    SMTC_GenerateStringInfo();
+    // Generate SDKCalls used around the code: see function definition.
+    SMTC_GenerateSDKCallInfo();
 
     // For generating an offset on plugin start, getting datamap props from the world entity will not work 
     // because the world entity has not yet been initialised. Instead, I decided to go with getting the props

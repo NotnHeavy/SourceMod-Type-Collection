@@ -213,10 +213,10 @@ methodmap CTakeDamageInfo < Pointer
     }
 
     // Deal damage to own teammates. Would be a damage type but there's a limited amount possible.
-    property int m_bForceFriendlyFire
+    property bool m_bForceFriendlyFire
     {
-        public get() { return this.Dereference(CTAKEDAMAGEINFO_OFFSET_M_BFORCEFRIENDLYFIRE); }
-        public set(int value) { this.Write(value, CTAKEDAMAGEINFO_OFFSET_M_BFORCEFRIENDLYFIRE, NumberType_Int8); }
+        public get() { return this.Dereference(CTAKEDAMAGEINFO_OFFSET_M_BFORCEFRIENDLYFIRE, NumberType_Int8); }
+        public set(bool value) { this.Write(value, CTAKEDAMAGEINFO_OFFSET_M_BFORCEFRIENDLYFIRE, NumberType_Int8); }
     }
 
     // Damage for knockback force.

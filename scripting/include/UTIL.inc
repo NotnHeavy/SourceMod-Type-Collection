@@ -168,6 +168,7 @@ enum // Collision_Group_t
 // UITL.INC DATA                                                            //
 //////////////////////////////////////////////////////////////////////////////
 
+// TODO: check this out
 // The standard trace filter... NOTE: Most normal traces inherit from CTraceFilter!!!
 enum TraceType_t
 {

@@ -4,6 +4,17 @@
 
 // this is suicide
 
+// Internally, CUtlMemory requires templated arguments. However, because they aren't
+// used to a large extent, I have managed to write all three necessary methodmaps
+// for CUtlMemory::Iterator_t. You will only need to specify two parameters
+// (depending on how the functions) work for the respective templated
+// arguments:
+//
+// template< class T, class I = int >
+// class CUtlMemory
+//
+// Where T is the type used, and I is the index (must be 1, 2 or 4 bytes).
+
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CUTLMEMORY
 #endinput
 #endif
@@ -13,8 +24,154 @@
 #pragma newdecls required
 
 //////////////////////////////////////////////////////////////////////////////
+// ITERATOR_T BASE TYPES                                                    //
+//////////////////////////////////////////////////////////////////////////////
+
+methodmap SMTC_CUtlMemory_Iterator_t < Pointer { }
+
+//////////////////////////////////////////////////////////////////////////////
+// ITERATOR_T DATA                                                          //
+//////////////////////////////////////////////////////////////////////////////
+
+// NOTE: this methodmap may be renamed in the future!
+#define SIZEOF_Iterator8_t 1
+#define SIZEOF_Iterator16_t 2
+#define SIZEOF_Iterator_t 4
+
+//////////////////////////////////////////////////////////////////////////////
+// ITERATOR_T METHOEDMAPS                                                   //
+//////////////////////////////////////////////////////////////////////////////
+
+// An iterator object used for enumerating over a CUtlMemory instance.
+// This iterator uses 8-bit indexing.
+methodmap Iterator8_t < SMTC_CUtlMemory_Iterator_t
+{
+    // Constructor - wrap around an existing address to make way for a Iterator8_t object.
+    public Iterator8_t(Address address)
+    {
+        return view_as<Iterator8_t>(address);
+    }
+
+    // The index.
+    property any index
+    {
+        public get() { return this.Dereference(0, NumberType_Int8); }
+        public set(any value) { this.Write(value, 0, NumberType_Int8); }
+    }
+
+    // Constructor - allocate a new Iterator8_t onto the heap. Deallocation will be required when you are finished using this using free().
+    public static Iterator8_t Malloc()
+    {
+        return malloc(SIZEOF_Iterator8_t);
+    }
+
+    // Constructor - allocate a new Iterator8_t onto the stack. When using the return value, you must use STACK_GETRETURN().
+    public static STACK StackAlloc()
+    {
+        char buffer[SIZEOF_Iterator8_t] = { 0 };
+        return buffer;
+    }
+}
+
+// An iterator object used for enumerating over a CUtlMemory instance.
+// This iterator uses 16-bit indexing.
+methodmap Iterator16_t < SMTC_CUtlMemory_Iterator_t
+{
+    // Constructor - wrap around an existing address to make way for a Iterator16_t object.
+    public Iterator16_t(Address address)
+    {
+        return view_as<Iterator16_t>(address);
+    }
+
+    // The index.
+    property any index
+    {
+        public get() { return this.Dereference(0, NumberType_Int16); }
+        public set(any value) { this.Write(value, 0, NumberType_Int16); }
+    }
+
+    // Constructor - allocate a new Iterator16_t onto the heap. Deallocation will be required when you are finished using this using free().
+    public static Iterator16_t Malloc()
+    {
+        return malloc(SIZEOF_Iterator16_t);
+    }
+
+    // Constructor - allocate a new Iterator16_t onto the stack. When using the return value, you must use STACK_GETRETURN().
+    public static STACK StackAlloc()
+    {
+        char buffer[SIZEOF_Iterator16_t] = { 0 };
+        return buffer;
+    }
+}
+
+// An iterator object used for enumerating over a CUtlMemory instance.
+// This iterator uses 32-bit indexing.
+methodmap Iterator_t < SMTC_CUtlMemory_Iterator_t
+{
+    // Constructor - wrap around an existing address to make way for a Iterator_t object.
+    public Iterator_t(Address address)
+    {
+        return view_as<Iterator_t>(address);
+    }
+
+    // The index.
+    property any index
+    {
+        public get() { return this.Dereference(); }
+        public set(any value) { this.Write(value); }
+    }
+
+    // Constructor - allocate a new Iterator_t onto the heap. Deallocation will be required when you are finished using this using free().
+    public static Iterator_t Malloc()
+    {
+        return malloc(SIZEOF_Iterator_t);
+    }
+
+    // Constructor - allocate a new Iterator_t onto the stack. When using the return value, you must use STACK_GETRETURN().
+    public static STACK StackAlloc()
+    {
+        char buffer[SIZEOF_Iterator_t] = { 0 };
+        return buffer;
+    }
+}
+
+stock bool operator==(const Iterator8_t left, const Iterator8_t right)
+{
+    return left.index == right.index;
+}
+
+stock bool operator!=(const Iterator8_t left, const Iterator8_t right)
+{
+    return left.index != right.index;
+}
+
+stock bool operator==(const Iterator16_t left, const Iterator16_t right)
+{
+    return left.index == right.index;
+}
+
+stock bool operator!=(const Iterator16_t left, const Iterator16_t right)
+{
+    return left.index != right.index;
+}
+
+stock bool operator==(const Iterator_t left, const Iterator_t right)
+{
+    return left.index == right.index;
+}
+
+stock bool operator!=(const Iterator_t left, const Iterator_t right)
+{
+    return left.index != right.index;
+}
+
+//////////////////////////////////////////////////////////////////////////////
 // CUTLMEMORY DATA                                                          //
 //////////////////////////////////////////////////////////////////////////////
+
+#define SMTC_CUTLMEMORY8_SIZEOF_I 1
+#define SMTC_CUTLMEMORY16_SIZEOF_I 2
+#define SMTC_CUTLMEMORY_SIZEOF_I 4
 
 enum
 {
@@ -105,16 +262,64 @@ methodmap CUtlMemory < Pointer
         return buffer;
     }
 
-    // Specify the invalid ('null') index that we'll only return on failure
-    public static int InvalidIndex()
+    // Specify the invalid ('null') index that we'll only return on failure.
+    // You must specify the type size of the index used with this CUtlMemory using the indexSize parameter.
+    public static int InvalidIndex(int indexSize = 4)
     {
-        return INVALID_INDEX;
+        // BECAUSE BIT SHIFTS OVERFLOW FOR SOME REASON???????????????????????????
+        // WHY IS 1 << 32 EQUAL TO 1?
+        if (indexSize == 4)
+            return -1;
+        return (1 << (indexSize * 8)) - 1;
     }
 
     // Is element index valid?
     public bool IsIdxValid(int index)
     {
         return index < this.m_nAllocationCount;
+    }
+
+    // Get the first index as an iterator. When using the return value, you must use STACK_GETRETURN().
+    // You must specify the type size of the index used with this CUtlMemory using the indexSize parameter.
+    public STACK First(int indexSize = 4)
+    {
+        return GetIterator_t(this.IsIdxValid(0) ? 0 : CUtlMemory.InvalidIndex(indexSize), indexSize);
+    }
+
+    // Get the next index as an iterator. When using the return value, you must use STACK_GETRETURN().
+    // You must specify the type size of the index used with this CUtlMemory using the indexSize parameter.
+    public STACK Next(const SMTC_CUtlMemory_Iterator_t it, int indexSize = 4)
+    {
+        int index = GetIterator_tValue(it, indexSize) + 1;
+        return GetIterator_t(this.IsIdxValid(index) ? index : CUtlMemory.InvalidIndex(indexSize), indexSize);
+    }
+
+    // Get the index of an iterator.
+    // You must specify the type size of the index used with this CUtlMemory using the indexSize parameter.
+    public any GetIndex(const SMTC_CUtlMemory_Iterator_t it, int indexSize = 4)
+    {
+        return GetIterator_tValue(it, indexSize);
+    }
+
+    // Check if the index is after the iterator's index.
+    // You must specify the type size of the index used with this CUtlMemory using the indexSize parameter.
+    public bool IsIdxAfter(any i, const SMTC_CUtlMemory_Iterator_t it, int indexSize = 4)
+    {
+        return i > GetIterator_tValue(it, indexSize);
+    }
+
+    // Check if the iterator has a valid index.
+    // You must specify the type size of the index used with this CUtlMemory using the indexSize parameter.
+    public bool IsValidIterator(const SMTC_CUtlMemory_Iterator_t it, int indexSize = 4)
+    {
+        return this.IsIdxValid(GetIterator_tValue(it, indexSize));
+    }
+
+    // Invalid iterator. When using the return value, you must use STACK_GETRETURN().
+    // You must specify the type size of the index used with this CUtlMemory using the indexSize parameter.
+    public STACK InvalidIterator(int indexSize = 4)
+    {
+        return GetIterator_t(CUtlMemory.InvalidIndex(indexSize), indexSize);
     }
 
     // Element access - get from specified index. Returns a pointer on success, returns NULL on failure.
@@ -256,8 +461,10 @@ methodmap CUtlMemory < Pointer
         return this.m_nAllocationCount;
     }
 
-    // Grows the memory, so that at least allocated + num elements are allocated. You must specify the size of the type used with this CUtlMemory using the typeSize parameter.
-    public void Grow(int num = 1, int typeSize = 4)
+    // Grows the memory, so that at least allocated + num elements are allocated. 
+    // You must specify the size of the type used with this CUtlMemory using the typeSize parameter.
+    // You must specify the type size of the index used with this CUtlMemory using the indexSize parameter.
+    public void Grow(int num = 1, int typeSize = 4, int indexSize = 4)
     {
         if (num < 1 || this.IsExternallyAllocated())
             return;
@@ -266,6 +473,25 @@ methodmap CUtlMemory < Pointer
         // Use the grow rules specified for this memory (in m_nGrowSize).
         int allocationRequested = this.m_nAllocationCount + num;
         int newAllocationCount = UtlMemory_CalcNewAllocationCount(this.m_nAllocationCount, this.m_nGrowSize, allocationRequested, typeSize);
+
+        // if m_nAllocationRequested wraps index type I, recalculate
+        int bitmask = CUtlMemory.InvalidIndex(indexSize);
+        int bitmaskedCount = newAllocationCount & bitmask;
+        if (bitmaskedCount < allocationRequested)
+        {
+            if (bitmaskedCount == 0 && ((newAllocationCount - 1) & bitmask) >= allocationRequested)
+                --newAllocationCount; // deal w/ the common case of m_nAllocationCount == MAX_USHORT + 1
+            else
+            {
+                if ((allocationRequested & bitmaskedCount) != allocationRequested)
+                {
+                    // we've been asked to grow memory to a size s.t. the index type can't address the requested amount of memory
+                    return;
+                }
+                while ((newAllocationCount & bitmask) < allocationRequested)
+                    newAllocationCount = (newAllocationCount / allocationRequested) / 2;
+            }
+        }
 
         if (this.m_pMemory)
             this.m_pMemory = recalloc(this.m_pMemory, newAllocationCount, typeSize, this.m_nAllocationCount);
@@ -313,7 +539,7 @@ stock int UtlMemory_CalcNewAllocationCount(int allocationCount, int growSize, in
         allocationCount = (1 + ((newSize - 1) / growSize)) * growSize;
     else
     {
-         // Compute an allocation which is at least as big as a cache line...
+        // Compute an allocation which is at least as big as a cache line...
         if (!allocationCount)
             allocationCount = (31 + bytesItem) / bytesItem;
 
@@ -321,4 +547,33 @@ stock int UtlMemory_CalcNewAllocationCount(int allocationCount, int growSize, in
             allocationCount *= 2;
     }
     return allocationCount;
+}
+
+// Allocated on the stack.
+static STACK GetIterator_t(int index, int indexSize)
+{
+    STACK_ALLOC(iterator, Iterator_t, SIZEOF_Iterator_t);
+    switch (indexSize)
+    {
+    case 1:
+        view_as<Iterator8_t>(iterator).index = index;
+    case 2:
+        view_as<Iterator16_t>(iterator).index = index;
+    default:
+        iterator.index = index;    
+    }
+    STACK_RETURNREF(iterator);
+}
+
+static any GetIterator_tValue(const SMTC_CUtlMemory_Iterator_t it, int indexSize)
+{
+    switch (indexSize)
+    {
+    case 1:
+        return view_as<Iterator8_t>(it).index;
+    case 2:
+        return view_as<Iterator16_t>(it).index;
+    default:
+        return view_as<Iterator_t>(it).index;
+    }
 }
