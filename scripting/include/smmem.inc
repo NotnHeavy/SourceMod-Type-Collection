@@ -97,6 +97,13 @@ native any memcpy(any dest, any src, int size) = MemCopyF;
 native int memcmp(any p1, any p2, int size) = MemCmpF;
 native void memset(any p, int val, int size) = MemSetF;
 
+native any reallocs(any p, int size) = Realloc;
+native void frees(any p) = Free;
+native void memmoves(any dest, any src, int size) = MemMove;
+native any memcpys(any dest, any src, int size) = MemCopy;
+native int memcmps(any p1, any p2, int size) = MemCmp;
+native void memsets(any p, int val, int size) = MemSet;
+
 public Extension __ext_smmem =
 {
 	name = "SM-Mem",
