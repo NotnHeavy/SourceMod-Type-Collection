@@ -53,7 +53,7 @@ static ArrayList g_Hooks;
 bool g_SMTCInitialized = false;
 
 // taken from server_srv.so for CDefOps<int>::LessFunc
-static char s_aDefaultLessFunc[] = "\x55\x89\xE5\x8B\x45\x0C\x8B\x55\x08\x5D\x8B\x00\x39\x02\x0F\x9C\xC0\xC3";
+stock static char s_aDefaultLessFunc[] = "\x55\x89\xE5\x8B\x45\x0C\x8B\x55\x08\x5D\x8B\x00\x39\x02\x0F\x9C\xC0\xC3";
 
 //////////////////////////////////////////////////////////////////////////////
 // SMTC FORWARDS                                                            //
@@ -155,8 +155,6 @@ stock void SMTC_Initialize()
     SetMemAccess(AddressOfString(s_aDefaultLessFunc), sizeof(s_aDefaultLessFunc), SH_MEM_EXEC | SH_MEM_READ | SH_MEM_WRITE);
 #endif
 
-    CTFPointManager_m_Points = config.GetOffset("CTFPointManager::m_Points");
-
     CTraceFilterSimple_ShouldHitEntity = config.GetMemSig("CTraceFilterSimple::ShouldHitEntity()");
 
     SMTC_DHooks_Signature_CTFPlayer_OnTakeDamage_Alive = DynamicDetour.FromConf(config, "Signature::CTFPlayer::OnTakeDamage_Alive()");
@@ -233,6 +231,10 @@ stock void SMTC_Initialize()
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTFWEAPONINFO
     SMTC_CTFWeaponBase_m_iWeaponMode = FindSendPropInfo("CTFWeaponBase", "m_iReloadMode") - SIZEOF_int; 
     SMTC_CTFWeaponBase_m_pWeaponInfo = FindSendPropInfo("CTFWeaponBase", "m_flReloadPriorNextFire") + SIZEOF_float;
+#endif
+
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TF_POINT_T
+    SMTC_CTFPointManager_m_Points = FindSendPropInfo("CTFFlameManager", "m_unNextPointIndex") + 8;
 #endif
 
     // Call forwards.

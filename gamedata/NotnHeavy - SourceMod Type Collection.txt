@@ -107,11 +107,6 @@
 				"windows" "215"
 				"linux"   "216"
 			}
-			"CTFPointManager::m_Points"
-			{
-				"windows" "1180"
-				"linux"   "1204"
-			}
 
 			// /tf/CTakeDamageInfo.inc
 			"Offset::CTFPlayer::OnTakeDamage()"
@@ -278,6 +273,20 @@
 			
 			// /tf/CTakeDamageInfo.inc
             "Signature::CTFPlayer::OnTakeDamage_Alive()"
+			{
+				"signature"	"CTFPlayer::OnTakeDamage_Alive()"
+				"callconv"	"thiscall"
+				"return"	"int" 
+				"this"		"entity"
+				"arguments"
+				{
+					"info"
+					{
+						"type" "int"
+					}
+				}
+			}
+			"CTFPlayer::OnTakeDamage_Alive()" // ADDED FOR BACKWARDS COMPATIBILITY!
 			{
 				"signature"	"CTFPlayer::OnTakeDamage_Alive()"
 				"callconv"	"thiscall"

@@ -8,7 +8,6 @@
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TF_POINT_T
 
 // Requires "Vector.inc".
-
 #include "Vector.inc"
 
 #pragma semicolon true 
@@ -159,7 +158,7 @@ MRESReturn SMTC_CTFPointManager_AddPoint(int entity, DHookReturn returnValue, DH
     if (weapon == NULL)
         return MRES_Ignored;
 
-    CUtlVector vector = CUtlVector(manager.Address + CTFPointManager_m_Points);
+    CUtlVector vector = CUtlVector(manager.Address + SMTC_CTFPointManager_m_Points);
     int index = manager.GetEntProp(Prop_Send, "m_unNextPointIndex");
     index = ((index == 0) ? (SDKCall(SMTC_SDKCall_CTFPointManager_GetMaxPoints, manager) - 1) : (index - 1));
 

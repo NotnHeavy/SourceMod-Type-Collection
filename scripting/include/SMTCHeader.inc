@@ -119,8 +119,6 @@ enum OSType
 
 stock OSType OSTypeUsed;
 
-stock any CTFPointManager_m_Points;
-
 stock Pointer SMTC_tf_point_t_vtable;
 
 stock Pointer CTraceFilterSimple_ShouldHitEntity;
@@ -161,6 +159,7 @@ stock Pointer aEmptyString;
 stock any SMTC_CBaseEntity_m_RefEHandle;
 stock any SMTC_CTFWeaponBase_m_iWeaponMode;
 stock any SMTC_CTFWeaponBase_m_pWeaponInfo;
+stock any SMTC_CTFPointManager_m_Points;
 
 //////////////////////////////////////////////////////////////////////////////
 // POINTER METHODMAP                                                        //

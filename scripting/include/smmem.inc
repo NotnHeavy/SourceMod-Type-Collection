@@ -1,6 +1,6 @@
 // I'm insane enough to modify someone else's header.
 // This is slight tweaks based upon Scag's SM-Memory header, 
-// including only what this project requires.
+// specialised for SMTC.
 
 #if defined _smmem_included_
   #endinput
@@ -10,6 +10,8 @@
 #define SH_MEM_READ		(1 << 0)
 #define SH_MEM_WRITE	(1 << 1)
 #define SH_MEM_EXEC 	(1 << 2)
+
+#define SMTC_SMMEM_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT true
 
 native any Calloc(int num, int size);
 native any Malloc(int size);
@@ -27,21 +29,22 @@ native void MemSet(any p, int val, int size);
 native void MemSetF(any p, int val, int size);
 
 /**
- *	Emit a sequence of asm.
- *	Note: You're better off creating a static SDKCall with the address being your own pointer
- *	to assembly code. 
+ *  Emit a sequence of asm.
+ *  Note: You're better off creating a static SDKCall with the address being your own pointer
+ *  to assembly code. 
  *
- *	@param bytes 			Array of assembly to emit.
- *	@param len 				Size of the array.
- *	@param customcleanup	If true, you are responsible for cleaning up the function call.
- *							Otherwise, the native will do it for you. If you're passing params,
- *							you must clean them up yourself (Set this to true).
- *	@param ... 				Optional parameters to add in case this is a function call.
- *							Note that you're most likely better off creating your own SDKCall.
- *							This exists solely for the pedantic and crazy.
+ *  @param bytes            Array of assembly to emit.
+ *  @param len              Size of the array.
+ *  @param customcleanup    If true, you are responsible for cleaning up the function call.
+ *                          Otherwise, the native will do it for you. If you're passing params,
+ *                          you must clean them up yourself (Set this to true).
+ *  @param ...              Optional parameters to add in case this is a function call.
+ *                          Note that you're most likely better off creating your own SDKCall.
+ *                          This exists solely for the pedantic and crazy.
  *
- *	@return 				Whatever you tell it to return.
+ *  @return                 Whatever you tell it to return.
 */
+#pragma deprecated Use a static SDKCall with a pointer to your assembly instead
 native any Emit(any[] bytes, int len, bool customcleanup = false, any ...);
 
 /**
@@ -60,14 +63,15 @@ stock any AddressOfArray(any[] array)
 native any AddressOfString(const char[] str);
 
 /**
- *	Store memory to an address
- *	NOTE: This does not set memory access. You must use SetMemAccess first.
- *	This is same as StoreToAddress but exists purely for optimization purposes.
+ *  Store memory to an address
+ *  NOTE: This does not set memory access. You must use SetMemAccess first.
+ *  This is same as StoreToAddress but exists purely for optimization purposes.
  *
- *	@param p 				Address to store to.
- *	@param val 				Value to store.
- *	@param numt 			Size to store.
+ *  @param p                Address to store to.
+ *  @param val              Value to store.
+ *  @param numt             Size to store.
 */
+#pragma deprecated Use StoreToAddress with updateMemAccess (param 4) set to false
 native void StoreToAddressFast(any p, any val, NumberType numt = NumberType_Int32);
 
 // Set the memory access of allocated memory using the SH_MEM_* flags.
@@ -89,20 +93,50 @@ native bool SetMemAccess(any p, int size, int flags);
 native int VAFormat(char[] buffer, int size, char[] format, any valist);
 
 native any calloc(int num, int size) = Calloc;
-native any malloc(int size) = Malloc;
-native any realloc(any p, int size) = ReallocF;
-native void free(any p) = FreeF;
-native void memmove(any dest, any src, int size) = MemMoveF;
-native any memcpy(any dest, any src, int size) = MemCopyF;
-native int memcmp(any p1, any p2, int size) = MemCmpF;
-native void memset(any p, int val, int size) = MemSetF;
+native any malloc(int size) = Malloc
+native any reallocf(any p, int size) = ReallocF;
+native void freef(any p) = FreeF;
+native void memmovef(any dest, any src, int size) = MemMoveF;
+native any memcpyf(any dest, any src, int size) = MemCopyF;
+native int memcmpf(any p1, any p2, int size) = MemCmpF;
+native void memsetf(any p, int val, int size) = MemSetF;
 
-native any reallocs(any p, int size) = Realloc;
-native void frees(any p) = Free;
-native void memmoves(any dest, any src, int size) = MemMove;
-native any memcpys(any dest, any src, int size) = MemCopy;
-native int memcmps(any p1, any p2, int size) = MemCmp;
-native void memsets(any p, int val, int size) = MemSet;
+stock any realloc(any p, int size, bool write = SMTC_SMMEM_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
+{
+	if (write)
+		return Realloc(p, size);
+	return ReallocF(p, size);
+}
+stock void free(any p, bool write = SMTC_SMMEM_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
+{
+	if (write)
+		Free(p);
+	FreeF(p);
+}
+stock void memmove(any dest, any src, int size, bool write = SMTC_SMMEM_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
+{
+	if (write)
+		MemMove(dest, src, size);
+	MemMoveF(dest, src, size);
+}
+stock any memcpy(any dest, any src, int size, bool write = SMTC_SMMEM_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
+{
+	if (write)
+		return MemCopy(dest, src, size);
+	return MemCopyF(dest, src, size);
+}
+stock int memcmp(any p1, any p2, int size, bool write = SMTC_SMMEM_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
+{
+	if (write)
+		return MemCmp(p1, p2, size);
+	return MemCmpF(p1, p2, size);
+}
+stock void memset(any p, int val, int size, bool write = SMTC_SMMEM_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
+{
+	if (write)
+		MemSet(p, val, size);
+	MemSetF(p, val, size);
+}
 
 public Extension __ext_smmem =
 {
