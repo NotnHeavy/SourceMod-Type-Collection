@@ -110,13 +110,19 @@ stock any realloc(any p, int size, bool write = SMTC_SMMEM_UPDATEMEMACCESS_WHILE
 stock void free(any p, bool write = SMTC_SMMEM_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
 {
 	if (write)
+	{
 		Free(p);
+		return;
+	}
 	FreeF(p);
 }
 stock void memmove(any dest, any src, int size, bool write = SMTC_SMMEM_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
 {
 	if (write)
+	{
 		MemMove(dest, src, size);
+		return;
+	}
 	MemMoveF(dest, src, size);
 }
 stock any memcpy(any dest, any src, int size, bool write = SMTC_SMMEM_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
@@ -134,7 +140,10 @@ stock int memcmp(any p1, any p2, int size, bool write = SMTC_SMMEM_UPDATEMEMACCE
 stock void memset(any p, int val, int size, bool write = SMTC_SMMEM_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT)
 {
 	if (write)
+	{
 		MemSet(p, val, size);
+		return;
+	}
 	MemSetF(p, val, size);
 }
 
