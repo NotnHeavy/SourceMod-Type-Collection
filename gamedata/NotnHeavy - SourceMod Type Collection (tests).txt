@@ -24,6 +24,11 @@
 				"windows" "198"
 				"linux"   "199"
 			}
+			"CBaseEntity::BodyTarget()"
+			{
+				"windows" "140"
+				"linux"   "141"
+			}
         }
         "Signatures"
         {
@@ -31,6 +36,12 @@
 			{
 				"library" "server"
 				"windows" "\x4D\x5A"
+			}
+			"CanScatterGunKnockback"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x6A\x01\x6A\x00\xFF\x75\x08" // offset aSetScattergunH ; "set_scattergun_has_knockback"
+				"linux"   "_Z22CanScatterGunKnockBackP13CTFWeaponBaseff"
 			}
             "CBaseEntity::TakeDamage" // offset aCbaseentityTak ; "CBaseEntity::TakeDamage:  with inputInf"...
 			{

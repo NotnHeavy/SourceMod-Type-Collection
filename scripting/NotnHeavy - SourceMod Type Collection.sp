@@ -40,6 +40,7 @@
 #include "FileWeaponInfo_t.inc"
 #include "CUtlMap.inc"
 #include "CUtlRBTree.inc"
+#include "NewCall.inc"
 
 #include "tf/CTakeDamageInfo.inc"
 #include "tf/CTFRadiusDamageInfo.inc"
@@ -62,6 +63,10 @@ static DHookSetup DHooks_CTFPlayer_TraceAttack;
 static Handle SDKCall_CBaseCombatCharacter_Weapon_ShootPosition;
 
 static int explosionModelIndex;
+
+static any NewCall_CanScatterGunKnockback;
+static any NewCall_CBaseEntity_TakeDamage;
+static any NewCall_CBaseEntity_BodyTarget;
 
 public void OnPluginStart()
 {
@@ -98,6 +103,10 @@ public void OnPluginStart()
     PrepSDKCall_SetReturnInfo(SDKType_Vector, SDKPass_ByValue); // Vector
     SDKCall_CBaseCombatCharacter_Weapon_ShootPosition = EndPrepSDKCall();
 
+    NewCall_CanScatterGunKnockback = config.GetMemSig("CanScatterGunKnockback");
+    NewCall_CBaseEntity_TakeDamage = config.GetMemSig("CBaseEntity::TakeDamage");
+    NewCall_CBaseEntity_BodyTarget = config.GetOffset("CBaseEntity::BodyTarget()");
+
     delete config;
 
     //commitTests(); // TESTS/tests.inc
@@ -127,6 +136,7 @@ public void OnMapStart()
     cglobalvarsOperation(); // CGlobalVars.inc, CGlobalVarsBase.inc
     ctfweaponinfoOperation(); // FileWeaponInfo_t.inc, WeaponData_t.inc, CTFWeaponInfo.inc
     cutlmapOperation(); // base_utlmap_t.inc, CUtlMap.inc
+    newcallOperation();
 
     PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
     PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
@@ -188,6 +198,220 @@ void weaponData(CBaseEntity weapon)
 public void OnClientPutInServer(int client)
 {
     SMTC_HookEntity(client, FORWARDTYPE_ONTAKEDAMAGE, CTFPlayer_OnTakeDamage);
+}
+
+public void newcallOperation()
+{
+    // construct a newcall-like object ourselves
+    char returnTrue[] = "\xB0\x01\xC3"; // mov al, 1; ret
+    //char callReturnTrue[] = "\xB8\x00\x00\x00\x00\xFF\xD0\xC3"; // mov eax $address; call eax; ret
+    char callReturnTrue[] = "\xFF\x15\x00\x00\x00\x00\xC3"; // call [$address]; ret
+    any address_returnTrue = AddressOfString(returnTrue);
+    any address_callReturnTrue = AddressOfString(callReturnTrue);
+    any address_address_returnTrue = AddressOf(address_returnTrue);
+    SetMemAccess(address_returnTrue, sizeof(returnTrue), SH_MEM_ALL);
+    SetMemAccess(address_callReturnTrue, sizeof(callReturnTrue), SH_MEM_ALL);
+    PrintToServer("returnTrue() address: %X", address_returnTrue);
+    
+    memcpy(address_callReturnTrue + 2, AddressOf(address_address_returnTrue), SIZEOF_Pointer);
+
+    PrintToServer("callReturnTrue():");
+    for (int i = 0; i < sizeof(callReturnTrue) - 1; ++i)
+    {
+        int value = callReturnTrue[i];
+        PrintToServer("\\x%X", value);
+    }
+    PrintToServer("");
+
+    StartPrepSDKCall(SDKCall_Static);
+    PrepSDKCall_SetAddress(address_callReturnTrue);
+    PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
+    Handle handle = EndPrepSDKCall();
+    
+    PrintToServer("callReturnTrue(): %i\n", SDKCall(handle));
+
+    char array[4];
+    int value = INT_MAX;
+    memcpy(AddressOfString(array), AddressOf(value), sizeof(array));
+
+    int index = array[3];
+    PrintToServer("array[3]: %i\n", index);
+    
+    // construct an interrupt
+    char cwd[PLATFORM_MAX_PATH];
+    SetMemAccess(AddressOfString(cwd), sizeof(cwd), SH_MEM_ALL);
+
+    NewCall interrupt = NewCall(0x80);
+    interrupt.MoveToRegister(183, EAX); // sys_getcwd; see https://faculty.nps.edu/cseagle/assembly/sys_call.html
+    interrupt.MoveToRegister(AddressOfString(cwd), EBX);
+    interrupt.MoveToRegister(sizeof(cwd), ECX);
+    
+    char buffer[256];
+    int length;
+    interrupt.DumpStringBuilder(buffer, sizeof(buffer), length);
+    PrintToServer("interrupt dump:");
+    for (int i = 0; i < length; ++i)
+    {
+        int byte = buffer[i];
+        PrintToServer("\\x%X", byte);
+    }
+
+    // call if on linux
+    if (SMTC.GetOperatingSystem() == OSTYPE_LINUX)
+    {
+        interrupt.Call();
+        PrintToServer("sys_getcwd(): %s", cwd);
+    }
+    else
+        interrupt.Reset();
+    PrintToServer("\n");
+
+    // test constructing a function for the following definition:
+    /*
+    struct obj_t
+    {
+        long long a;
+        char b;
+    };
+
+    void func(int a, int b, obj_t obj);
+
+    where a = 4, b = 3, obj.a = 513 and obj.b = 1
+    */
+    int objBuffer[4]; // because long long changes padding to 8 bytes, the size of this is technically 16 bytes
+    objBuffer[0] = 513;
+    objBuffer[1] = 0;
+    objBuffer[2] = 1;
+
+    NewCall debugCall = NewCall(NEWCALL_DEBUG_ADDRESS);
+    debugCall.PushObject(AddressOfArray(objBuffer), 16);
+    debugCall.Push(3);
+    debugCall.Push(4);
+    debugCall.Call();
+    debugCall.DumpStringBuilder(buffer, sizeof(buffer), length);
+    PrintToServer("debugCall dump:");
+    char dumpBuffer[2048];
+    for (int i = 0; i < length; ++i)
+    {
+        int byte = buffer[i];
+        char opcode[5];
+        Format(opcode, sizeof(opcode), "\\x%s%X", (((byte & 0xF) == byte) ? "0" : ""), byte);
+        StrCat(dumpBuffer, sizeof(dumpBuffer), opcode);
+    }
+    PrintToServer(dumpBuffer);
+    PrintToServer("");    
+    debugCall.Reset();
+
+    /*
+    struct obj_t
+    {
+        int a;
+        int b;
+    };
+
+    int func(obj_t obj, int c)
+    {
+        return (obj.b - obj.a) * c;
+    }
+
+    obj_t obj;
+    obj.a = 4;
+    obj.b = 5;
+    int result = func(obj, 2); // should return 2
+    */
+    char func[] = "\x55\x8B\xEC\x8B\x45\x0C\x2B\x45\x08\x0F\xAF\x45\x10\x5D\xC3";
+    SetMemAccess(AddressOfString(func), sizeof(func), SH_MEM_ALL);
+
+    int func_obj_t[2];
+    func_obj_t[0] = 4;
+    func_obj_t[1] = 5;
+
+    NewCall funcCall = NewCall(AddressOfString(func));
+    funcCall.Push(2);
+    funcCall.PushObject(AddressOfArray(func_obj_t), 8);
+    Pointer funcReturn = funcCall.Call(NEWCALL_EAX);
+    PrintToServer("NewCall calling func(): %i\n", funcReturn.Dereference());
+    free(funcReturn);
+
+    /*
+    struct largeobj_t
+    {
+        int a;
+        int b;
+        int c;
+    };
+
+    largeobj_t func()
+    {
+        largeobj_t obj;
+        obj.a = 3;
+        obj.b = obj.a * 5;
+        obj.c = 2;
+        return obj;
+    }
+
+    // should return:
+    {3, 15, 2}
+    */
+
+    char func2[] = "\x55\x8B\xEC\x8B\x45\x08\xC7\x00\x03\x00\x00\x00\xC7\x40\x04\x0F\x00\x00\x00\xC7\x40\x08\x02\x00\x00\x00\x5D\xC3";
+    SetMemAccess(AddressOfString(func2), sizeof(func2), SH_MEM_ALL);
+
+    PrintToServer("Calling func2().");
+    NewCall func2Call = NewCall(AddressOfString(func2));
+    func2Call.PushReturnPointer(12);
+
+    Pointer func2Return = func2Call.Call(NEWCALL_STACK, 12);
+    PrintToServer("obj.a: %i", func2Return.Dereference());
+    PrintToServer("obj.b: %i", func2Return.Dereference(4));
+    PrintToServer("obj.c: %i\n", func2Return.Dereference(8));
+    free(func2Return);
+
+    // tf2 test
+    if (IsClientInGame(1))
+    {
+        int weapon = GetEntPropEnt(1, Prop_Send, "m_hActiveWeapon");
+        if (IsValidEntity(weapon))
+        {
+            PrintToServer("NewCall_CanScatterGunKnockback: %i", NewCall_CanScatterGunKnockback);
+
+            NewCall CanScatterGunKnockback = NewCall(NewCall_CanScatterGunKnockback);
+            CanScatterGunKnockback.PushFloat(300.00);
+            CanScatterGunKnockback.PushFloat(12.00);
+            CanScatterGunKnockback.Push(GetEntityAddress(weapon));
+            Pointer result = CanScatterGunKnockback.Call(NEWCALL_AL);
+            PrintToChatAll("CanScatterGunKnockback: %i", result.Dereference(.bits = NumberType_Int8));
+            free(result);
+        }
+
+        CBaseEntity address = CBaseEntity.FromIndex(1);
+        
+        CTakeDamageInfo damageInfo = CTakeDamageInfo.Malloc(address, address, address, vec3_origin, vec3_origin, 300.00, DMG_BLAST & DMG_HALF_FALLOFF, TF_CUSTOM_STICKBOMB_EXPLOSION, vec3_origin);
+        NewCall CBaseEntity_TakeDamage = NewCall(NewCall_CBaseEntity_TakeDamage);
+        CBaseEntity_TakeDamage.Push(damageInfo);
+        if (SMTC.GetOperatingSystem() == OSTYPE_WINDOWS)
+            CBaseEntity_TakeDamage.MoveToRegister(address, ECX);
+        else
+            CBaseEntity_TakeDamage.Push(address);
+        CBaseEntity_TakeDamage.Call();
+
+        free(damageInfo);
+
+        // vtable call
+        Vector posSrc = STACK_GETRETURN(Vector.StackAlloc(3.00, 5.00, 7.00));
+        NewCall CBaseEntity_BodyTarget = NewCall(NewCall.GetVirtualProc(address, NewCall_CBaseEntity_BodyTarget));
+        CBaseEntity_BodyTarget.Push(true);
+        CBaseEntity_BodyTarget.Push(posSrc);
+        if (SMTC.GetOperatingSystem() == OSTYPE_WINDOWS)
+            CBaseEntity_BodyTarget.MoveToRegister(address, ECX);
+        else
+            CBaseEntity_BodyTarget.Push(address);
+        CBaseEntity_BodyTarget.PushReturnPointer(SIZEOF(Vector));
+        
+        Vector returnVector = CBaseEntity_BodyTarget.Call(NEWCALL_STACK, SIZEOF(Vector));
+        PrintToChatAll("returnVector: %f %f %f", returnVector.X, returnVector.Y, returnVector.Z);
+        free(returnVector);
+    }
 }
 
 // CUtlMap operation
