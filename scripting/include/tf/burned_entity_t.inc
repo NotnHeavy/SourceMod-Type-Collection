@@ -76,8 +76,8 @@ methodmap Burned_Entity_t < Pointer
     // Used as a multiplier for flame density while damaging this entity.
     property float m_flDensity
     {
-        public get() { return this.Dereference(BURNED_ENTITY_T_OFFSET_M_FLLASTHIT); }
-        public set(float value) { this.Write(value, BURNED_ENTITY_T_OFFSET_M_FLLASTHIT); }
+        public get() { return this.Dereference(BURNED_ENTITY_T_OFFSET_M_FLDENSITY); }
+        public set(float value) { this.Write(value, BURNED_ENTITY_T_OFFSET_M_FLDENSITY); }
     }
 
     // Constructor - allocate a new burned_entity_t onto the heap. Deallocation will be required when you are finished using this using free().
