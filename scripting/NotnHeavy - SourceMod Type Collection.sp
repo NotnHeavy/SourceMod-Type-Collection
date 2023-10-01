@@ -52,6 +52,7 @@
 #include "tf/WeaponData_t.inc"
 #include "tf/CTFWeaponInfo.inc"
 #include "tf/tf_item_constants.inc"
+#include "tf/burned_entity_t.inc"
 
 #include "SMTC.inc"
 
