@@ -22,10 +22,7 @@
 // because this is completely reverse engineered without any other sources.
 enum
 {
-    BURNED_ENTITY_T_OFFSET_M_HENTITY = 0,                                                   // EHANDLE m_hEntity;
-    BURNED_ENTITY_T_OFFSET_V4 = BURNED_ENTITY_T_OFFSET_M_HENTITY + SIZEOF_CHandle,          // ?
-    BURNED_ENTITY_T_OFFSET_V8 = BURNED_ENTITY_T_OFFSET_V4 + SIZEOF_int,                     // ?
-    BURNED_ENTITY_T_OFFSET_M_FLLASTHIT = BURNED_ENTITY_T_OFFSET_V8 + SIZEOF_float,          // float m_flLastHit;
+    BURNED_ENTITY_T_OFFSET_M_FLLASTHIT = 0,                                                 // float m_flLastHit;
     BURNED_ENTITY_T_OFFSET_M_FLDENSITY = BURNED_ENTITY_T_OFFSET_M_FLLASTHIT + SIZEOF_float, // float m_flDensity;    
 
     SIZEOF_Burned_Entity_t = BURNED_ENTITY_T_OFFSET_M_FLDENSITY + 4                         // sizeof(burned_entity_t);
@@ -43,27 +40,6 @@ methodmap Burned_Entity_t < Pointer
     public Burned_Entity_t(Address address)
     {
         return view_as<Burned_Entity_t>(address);
-    }
-
-    // The handle of the entity that this struct possesses.
-    property CHandle m_hEntity
-    {
-        public get() { return view_as<any>(this) + BURNED_ENTITY_T_OFFSET_M_HENTITY; }
-        public set(CHandle value) { memcmp(view_as<any>(this) + BURNED_ENTITY_T_OFFSET_M_HENTITY, value, SIZEOF_CHandle); }
-    }
-
-    // ?
-    property int v4
-    {
-        public get() { return this.Dereference(BURNED_ENTITY_T_OFFSET_V4); }
-        public set(int value) { this.Write(value, BURNED_ENTITY_T_OFFSET_V4); }
-    }
-
-    // ?
-    property int v8
-    {
-        public get() { return this.Dereference(BURNED_ENTITY_T_OFFSET_V8); }
-        public set(int value) { this.Write(value, BURNED_ENTITY_T_OFFSET_V8); }
     }
 
     // The time that this entity was last hit.

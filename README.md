@@ -51,7 +51,7 @@ These includes have high significance and are required for the vast majority of 
 - tf/WeaponData_t.inc: TF2 weapon info for primary/secondary attacks for each parsed weapon script file. This requires "tf_shareddefs.inc".
 - tf/CTFWeaponInfo.inc: This expands upon FileWeaponInfo_t, providing TF2-specific data, with two WeaponData_t records for both primary and secondary attack information. This requires "FileWeaponInfo_t.inc", "WeaponData_t.inc" and "tf_item_constants.inc".
 - tf/constructor_t.inc: This is a single-use object used for CBaseObject::m_ConstructorList<int, constructor_t>, int being the ent index. 
-- tf/burned_entity_t.inc: This is a single-use object used for CTFFlameManager::m_BurnedEntities<EHANDLE, burned_entity_t>, EHANDLE being the ent handle.
+- tf/burned_entity_t.inc: This is a single-use object used for CTFFlameManager::m_BurnedEntities<EHANDLE, burned_entity_t>, EHANDLE being the ent handle. This requires "CHandle.inc".
 
 ## Removed since previous versions (additions here will be cleared in the update after deprecation):
 - Nothing!
