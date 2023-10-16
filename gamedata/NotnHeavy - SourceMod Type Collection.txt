@@ -36,6 +36,52 @@
 				"read" "0"
 			}
 
+			// /CUserCmd.inc
+			"CUserCmd_vtable"
+			{
+				"windows"
+				{
+					"signature" "CUserCmd::~CUserCmd()"
+					"read"		"12"
+				}
+				"linux"
+				{
+					"signature" "CUserCmd::~CUserCmd()"
+					"read"		"8"
+				}
+				"read" "0"
+			}
+
+			// /CLagCompensationManager.inc
+			"lagcompensation"
+			{
+				"windows"
+				{
+					"signature" "CTFPistol_ScoutPrimary::Push()"
+					"read"		"53"
+				}
+				"linux"
+				{
+					"signature" "lagcompensation"
+				}
+				"read" "0"
+			}
+			
+			// /CSpatialPartition.inc
+			"partition"
+			{
+				"windows"
+				{
+					"signature" "CC_VoxelTreeView()"
+					"read"      "13"
+				}
+				"linux"
+				{
+					"signature" "partition"
+				}
+				"read" "0"
+			}
+
 			// /tf/CTFGameRules.inc
 			"g_pGameRules"
 			{
@@ -94,6 +140,13 @@
 			{
 				"windows" "4"
 				"linux"   "4"
+			}
+
+			// /CSpatialPartition.inc
+			"CSpatialPartition::EnumerateElementsInBox()"
+			{
+				"windows" "13"
+				"linux"   "14"
 			}
 
 			// /tf/tf_point_t.inc
@@ -175,6 +228,53 @@
 				"library" "server"
 				"windows" "\x55\x8B\xEC\x53\x8B\x5D\x0C\x56\x8B\x75\x08\x57\x53" // search vtable for CTraceFilterSimple, vfunc 0
 				"linux"	  "@_ZN18CTraceFilterSimple15ShouldHitEntityEP13IHandleEntityi"
+			}
+			"CFlaggedEntitiesEnum::EnumElement()"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x56\x8B\xF1\x8B\x4D\x08\x8B\x01\xFF\x50\x08\x8B\x00\x85\xC0" // check CFlaggedEntitiesEnum vtable
+				"linux"   "@_ZN20CFlaggedEntitiesEnum11EnumElementEP13IHandleEntity"
+			}
+			"UTIL_EntitiesInBox()"
+			{
+				"library" "server"
+				"windows" "" // get xref of offset aItemHealth ; "item_health*", find function call above first xref
+				"linux"   "_Z18UTIL_EntitiesInBoxRK6VectorS1_P20CFlaggedEntitiesEnum"
+			}
+
+			// /CUserCmd.inc
+			"CUserCmd::~CUserCmd()"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\xF6\x45\x08\x01\x56\x8B\xF1\xC7\x06\x2A\x2A\x2A\x2A\x74\x2A\x6A\x44"
+				"linux"   "@_ZN8CUserCmdD2Ev"
+			}
+
+			// /CLagCompensationManager.inc
+			"CLagCompensationManager::StartLagCompensation()"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x83\xEC\x24\x57\x8B\xF9\x89\x7D\xE8" // offset aTryingToStartA ; "Trying to start a new lag compensation "...
+				"linux"   "@_ZN23CLagCompensationManager20StartLagCompensationEP11CBasePlayerP8CUserCmd"
+			}
+			"CLagCompensationManager::FinishLagCompensation()"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x83\xEC\x38\xA1\x2A\x2A\x2A\x2A\x53" // offset aFinishlagcompe ; "FinishLagCompensation"
+				"linux"   "@_ZN23CLagCompensationManager21FinishLagCompensationEP11CBasePlayer"
+			}
+			"CTFPistol_ScoutPrimary::Push()"
+			{
+				"library" "server"
+				"windows" "\x55\x8B\xEC\x81\xEC\x4C\x01\x00\x00\x56" // offset aWeaponHandsPus_0 ; "Weapon_Hands.PushImpact"
+			}
+
+			// /CSpatialPartition.inc
+			"CC_VoxelTreeView()"
+			{
+				// holy shit i am fucking lucky with this signature
+				"library" "server"
+				"windows" "\x68\x2A\x2A\x2A\x2A\xFF\x15\x2A\x2A\x2A\x2A\x8B\x0D\x2A\x2A\x2A\x2A\xD9\x05\x2A\x2A\x2A\x2A" // offset aVoxeltreeview ; "VoxelTreeView\n"
 			}
 
 			// /tf/TFPlayerClassData_t.inc

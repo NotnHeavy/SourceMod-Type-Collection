@@ -22,7 +22,7 @@ enum
 	TF_POINT_T_OFFSET_VTABLE = 0,                                                       // void* vtable;
 	TF_POINT_T_OFFSET_M_VECSTARTPOS = TF_POINT_T_OFFSET_VTABLE + 4,                     // Vector m_vecStartPos;
 	TF_POINT_T_OFFSET_M_VECVELOCITY = TF_POINT_T_OFFSET_M_VECSTARTPOS + SIZEOF_Vector,  // Vector m_vecVelocity;
-	TF_POINT_T_OFFSET_M_FLSPAWNTIME = TF_POINT_T_OFFSET_M_VECVELOCITY + SIZEOF_Vector,  // Vector m_flSpawnTime;
+	TF_POINT_T_OFFSET_M_FLSPAWNTIME = TF_POINT_T_OFFSET_M_VECVELOCITY + SIZEOF_Vector,  // float m_flSpawnTime;
 	TF_POINT_T_OFFSET_M_FLLIFETIME = TF_POINT_T_OFFSET_M_FLSPAWNTIME + 4,               // float m_flLifeTime;
 	TF_POINT_T_OFFSET_M_IINDEX = TF_POINT_T_OFFSET_M_FLLIFETIME + 4,                    // int m_iIndex;
 	TF_POINT_T_OFFSET_M_NTOUCHES = TF_POINT_T_OFFSET_M_IINDEX + 4,                      // int m_nTouches;

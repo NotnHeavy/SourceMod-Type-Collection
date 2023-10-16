@@ -119,9 +119,11 @@ enum OSType
 
 stock OSType OSTypeUsed;
 
+stock Pointer SMTC_CUserCmd_vtable;
 stock Pointer SMTC_tf_point_t_vtable;
 
 stock Pointer CTraceFilterSimple_ShouldHitEntity;
+stock Pointer CFlaggedEntitiesEnum_EnumElement;
 
 stock DynamicDetour SMTC_DHooks_Signature_CTFPlayer_OnTakeDamage_Alive;
 
@@ -131,10 +133,13 @@ stock DynamicHook SMTC_DHooks_Offset_CTFPlayer_OnTakeDamage_Alive;
 
 stock Handle SMTC_SDKCall_IEngineTrace_ClipRayToEntity;
 stock Handle SMTC_SDKCall_IEngineTrace_TraceRay;
+stock Handle SMTC_SDKCall_CSpatialPartition_EnumerateElementsInBox;
 stock Handle SMTC_SDKCall_CTFPointManager_GetMaxPoints;
 stock Handle SMTC_SDKCall_FileWeaponInfo_t_Parse;
 
 stock Handle SMTC_SDKCall_CBaseEntity_TakeDamage;
+stock Handle SMTC_SDKCall_CLagCompensationManager_StartLagCompensation;
+stock Handle SMTC_SDKCall_CLagCompensationManager_FinishLagCompensation;
 stock Handle SMTC_SDKCall_CTFRadiusDamageInfo_CalculateFalloff;
 stock Handle SMTC_SDKCall_CTFRadiusDamageInfo_ApplyToEntity;
 stock Handle SMTC_SDKCall_CTFGameRules_RadiusDamage;
@@ -157,6 +162,7 @@ char empty_string[] = "";
 stock Pointer aEmptyString;
 
 stock any SMTC_CBaseEntity_m_RefEHandle;
+stock any SMTC_CBasePlayer_m_pCurrentCommand;
 stock any SMTC_CTFWeaponBase_m_iWeaponMode;
 stock any SMTC_CTFWeaponBase_m_pWeaponInfo;
 stock any SMTC_CTFPointManager_m_Points;

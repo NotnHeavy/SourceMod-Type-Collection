@@ -138,6 +138,9 @@ stock void SMTC_Initialize()
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TFPLAYERCLASSDATA_T
     g_pTFPlayerClassDataMgr = config.GetAddress("g_pTFPlayerClassDataMgr");
 #endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CUSERCMD
+    SMTC_CUserCmd_vtable = config.GetAddress("SMTC_CUserCmd_vtable");
+#endif
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TF_POINT_T
     SMTC_tf_point_t_vtable = config.GetAddress("tf_point_t_vtable");
 #endif
@@ -150,12 +153,21 @@ stock void SMTC_Initialize()
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CGLOBALVARS
     gpGlobals = CGlobalVars(config.GetAddress("gpGlobals"));
 #endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CLAGCOMPENSATIONMANAGER
+    lagcompensation = CLagCompensationManager(config.GetAddress("lagcompensation"));
+#endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CSPATIALPARTITION
+    partition = CSpatialPartition(config.GetAddress("partition"));
+#endif
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CUTLRBTREE
     SMTC_pDefaultLessFunc = AddressOfString(s_aDefaultLessFunc);
     SetMemAccess(AddressOfString(s_aDefaultLessFunc), sizeof(s_aDefaultLessFunc), SH_MEM_EXEC | SH_MEM_READ | SH_MEM_WRITE);
 #endif
 
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_UTIL
     CTraceFilterSimple_ShouldHitEntity = config.GetMemSig("CTraceFilterSimple::ShouldHitEntity()");
+    CFlaggedEntitiesEnum_EnumElement = config.GetMemSig("CFlaggedEntitiesEnum::EnumElement()");
+#endif
 
     SMTC_DHooks_Signature_CTFPlayer_OnTakeDamage_Alive = DynamicDetour.FromConf(config, "Signature::CTFPlayer::OnTakeDamage_Alive()");
     
@@ -180,6 +192,15 @@ stock void SMTC_Initialize()
     SMTC_SDKCall_IEngineTrace_TraceRay = EndPrepSDKCall();
 
     StartPrepSDKCall(SDKCall_Raw);
+    PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CSpatialPartition::EnumerateElementsInBox()");
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // SpatialPartitionListMask_t listMask;
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const Vector& mins;
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const Vector& maxs;
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // bool coarseTest;
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // IPartitionEnumerator* pIterator;
+    SMTC_SDKCall_CSpatialPartition_EnumerateElementsInBox = EndPrepSDKCall();
+
+    StartPrepSDKCall(SDKCall_Raw);
     PrepSDKCall_SetFromConf(config, SDKConf_Virtual, "CTFPointManager::GetMaxPoints()");
     PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
     SMTC_SDKCall_CTFPointManager_GetMaxPoints = EndPrepSDKCall();
@@ -192,9 +213,20 @@ stock void SMTC_Initialize()
 
     StartPrepSDKCall(SDKCall_Raw);
     PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CBaseEntity::TakeDamage()");
-    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const CTakeDamageInfo&
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const CTakeDamageInfo&;
     PrepSDKCall_SetReturnInfo(SDKType_Float, SDKPass_Plain); // float
     SMTC_SDKCall_CBaseEntity_TakeDamage = EndPrepSDKCall();
+
+    StartPrepSDKCall(SDKCall_Raw);
+    PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CLagCompensationManager::StartLagCompensation()");
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // CBasePlayer* player;
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // CUserCmd* cmd;
+    SMTC_SDKCall_CLagCompensationManager_StartLagCompensation = EndPrepSDKCall();
+
+    StartPrepSDKCall(SDKCall_Raw);
+    PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CLagCompensationManager::FinishLagCompensation()");
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // CBasePlayer* player;
+    SMTC_SDKCall_CLagCompensationManager_FinishLagCompensation = EndPrepSDKCall();
 
     StartPrepSDKCall(SDKCall_Raw);
     PrepSDKCall_SetFromConf(config, SDKConf_Signature, "CTFRadiusDamageInfo::CalculateFalloff()");
@@ -228,6 +260,10 @@ stock void SMTC_Initialize()
         ThrowError("Could not calculate offset for CBaseEntity::m_RefEHandle.");
     SMTC_CBaseEntity_m_RefEHandle = m_angRotation + 0x0C;
 
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CUSERCMD
+    SMTC_CBasePlayer_m_pCurrentCommand = FindSendPropInfo("CBasePlayer", "m_hViewmodel") + 12;
+#endif
+
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTFWEAPONINFO
     SMTC_CTFWeaponBase_m_iWeaponMode = FindSendPropInfo("CTFWeaponBase", "m_iReloadMode") - SIZEOF_int; 
     SMTC_CTFWeaponBase_m_pWeaponInfo = FindSendPropInfo("CTFWeaponBase", "m_flReloadPriorNextFire") + SIZEOF_float;
@@ -247,6 +283,9 @@ stock void SMTC_Initialize()
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_UTIL
     SMTC_UTILForward();
 #endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_QANGLE
+    SMTC_QAngleForward();
+#endif
 
     g_SMTCInitialized = true;
 }
@@ -257,8 +296,23 @@ stock void SMTC_Initialize()
 
 methodmap SMTC
 {
+    // Get the operating system used.
     public static OSType GetOperatingSystem()
     {
         return OSTypeUsed;
+    }
+
+    // Hook onto entities and invoke forwards whenever a specific event occurs.
+    // Intended to work in similar fashion to SDKHooks, uses DHooks behind the scenes.
+    // The garbage collector is called within this function.
+    public static void HookEntity(int entity, SMTC_ForwardType type, SMTC_ForwardCallback callback)
+    {
+        SMTC_HookEntity(entity, type, callback);
+    }
+
+    // Get hook data for the specified entity.
+    public static void GetHookData(int entity, SMTC_ForwardType type, SMTC_HookData data)
+    {
+        SMTC_GetHookData(entity, type, data);
     }
 }

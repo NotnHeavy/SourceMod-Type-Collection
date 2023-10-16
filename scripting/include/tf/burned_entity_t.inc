@@ -25,7 +25,7 @@ enum
     BURNED_ENTITY_T_OFFSET_M_FLLASTHIT = 0,                                                 // float m_flLastHit;
     BURNED_ENTITY_T_OFFSET_M_FLDENSITY = BURNED_ENTITY_T_OFFSET_M_FLLASTHIT + SIZEOF_float, // float m_flDensity;    
 
-    SIZEOF_Burned_Entity_t = BURNED_ENTITY_T_OFFSET_M_FLDENSITY + 4                         // sizeof(burned_entity_t);
+    SIZEOF_Burned_Entity_t = BURNED_ENTITY_T_OFFSET_M_FLDENSITY + SIZEOF_float              // sizeof(burned_entity_t);
 }
 
 //////////////////////////////////////////////////////////////////////////////

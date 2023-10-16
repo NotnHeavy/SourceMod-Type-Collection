@@ -1,3 +1,5 @@
+// TODO: work on API for getting vtable for specified class using RTTI information
+
 // For testing purposes only. Please refer to ./scripting/include/ for all of the includes available.
 // This is the most hackiest shit I've done in SourceMod so far.
 
@@ -41,6 +43,9 @@
 #include "CUtlMap.inc"
 #include "CUtlRBTree.inc"
 #include "NewCall.inc"
+#include "CUserCmd.inc"
+#include "CLagCompensationManager.inc"
+#include "CSpatialPartition.inc"
 
 #include "tf/CTakeDamageInfo.inc"
 #include "tf/CTFRadiusDamageInfo.inc"
@@ -66,7 +71,7 @@ static Handle SDKCall_CBaseCombatCharacter_Weapon_ShootPosition;
 static int explosionModelIndex;
 
 static any NewCall_CanScatterGunKnockback;
-static any NewCall_CBaseEntity_TakeDamage;
+static stock any NewCall_CBaseEntity_TakeDamage;
 static any NewCall_CBaseEntity_BodyTarget;
 
 public void OnPluginStart()
@@ -138,6 +143,9 @@ public void OnMapStart()
     ctfweaponinfoOperation(); // FileWeaponInfo_t.inc, WeaponData_t.inc, CTFWeaponInfo.inc
     cutlmapOperation(); // base_utlmap_t.inc, CUtlMap.inc
     newcallOperation();
+    cusercmdOperation();
+    clagcompensationmanagerOperation();
+    utilOperation2(); // UTIL_EntitiesInBox();
 
     PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
     PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
@@ -199,6 +207,74 @@ void weaponData(CBaseEntity weapon)
 public void OnClientPutInServer(int client)
 {
     SMTC_HookEntity(client, FORWARDTYPE_ONTAKEDAMAGE, CTFPlayer_OnTakeDamage);
+}
+
+public void utilOperation2()
+{
+    CFlaggedEntitiesEnum test = STACK_GETRETURN(CFlaggedEntitiesEnum.StackAlloc(NULL, 0, 0));
+    PrintToServer("CFlaggedEntitiesEnum::test: %u", test);
+    PrintToServer("CFlaggedEntitiesEnum_EnumElement: %u", CFlaggedEntitiesEnum_EnumElement);
+    PrintToServer("SMTC_SDKCall_CSpatialPartition_EnumerateElementsInBox: %u\n", SMTC_SDKCall_CSpatialPartition_EnumerateElementsInBox);
+
+    // this code is designed to be similar to the 2017 short circuit
+    if (IsClientInGame(1))
+    {
+        // eye angles
+        float eyeanglesbuffer[3];
+        GetClientEyeAngles(1, eyeanglesbuffer);
+        
+        // eye position
+        float eyeanglesposition[3];
+        GetClientEyePosition(1, eyeanglesposition);
+
+        QAngle vecEyeAngles = STACK_GETRETURN(Vector.StackAlloc());
+        Vector vecEye = STACK_GETRETURN(Vector.StackAlloc());
+        Vector vecForward = STACK_GETRETURN(Vector.StackAlloc());
+        Vector vecRight = STACK_GETRETURN(Vector.StackAlloc());
+        Vector vecUp = STACK_GETRETURN(Vector.StackAlloc());
+        Vector vecSize = STACK_GETRETURN(Vector.StackAlloc(128.00, 128.00, 64.00));
+        Vector vecCenter = STACK_GETRETURN(Vector.StackAlloc());
+
+        vecEye.SetFromBuffer(eyeanglesposition);
+        vecEyeAngles.SetFromBuffer(eyeanglesbuffer);
+        AngleVectors(vecEyeAngles, vecForward, vecRight, vecUp);
+
+        float flMaxElement = 0.00;
+        for (int i = 0; i < 3; ++i)
+        {   // you happy now suza?
+            flMaxElement = fmax(flMaxElement, vecSize.Dereference(i * SIZEOF_float));
+        }
+        vecCenter.Assign(vecEye + vecForward * flMaxElement);
+
+        // Get a list of entities in the box defined by vecSize at VecCenter.
+	    // We will then try to deflect everything in the box.
+        const int maxCollectedEntities = 64;
+        Pointer pObjects = malloc(maxCollectedEntities * SIZEOF_Pointer);
+        
+        /*
+        CFlaggedEntitiesEnum boxEnum = STACK_GETRETURN(CFlaggedEntitiesEnum.StackAlloc(pObjects, maxCollectedEntities, FL_GRENADE | FL_CLIENT | FL_FAKECLIENT));
+        int count = UTIL_EntitiesInBox(vecCenter - vecSize, vecCenter + vecSize, boxEnum);
+        */
+        int count = UTIL_EntitiesInBoxInline(pObjects, maxCollectedEntities, vecCenter - vecSize, vecCenter + vecSize, FL_GRENADE | FL_CLIENT | FL_FAKECLIENT);
+        PrintToChatAll("UTIL_EntitiesInBox: %u", count);
+    }
+}
+
+public void clagcompensationmanagerOperation()
+{
+    PrintToServer("lagcompensation: %u\n", lagcompensation);
+
+    if (!IsClientInGame(1))
+        return;
+    CBaseEntity player = CBaseEntity.FromIndex(1);
+    lagcompensation.StartLagCompensation(player, view_as<any>(player) + SMTC_CBasePlayer_m_pCurrentCommand);
+    PrintToChatAll("Player %N is being lag compensated.", 1);
+    lagcompensation.FinishLagCompensation(player);
+}
+
+public void cusercmdOperation()
+{
+    PrintToServer("sizeof(CUserCmd): %u\n", SIZEOF_CUserCmd);
 }
 
 public void newcallOperation()
@@ -387,6 +463,7 @@ public void newcallOperation()
 
         CBaseEntity address = CBaseEntity.FromIndex(1);
         
+        /*
         CTakeDamageInfo damageInfo = CTakeDamageInfo.Malloc(address, address, address, vec3_origin, vec3_origin, 300.00, DMG_BLAST & DMG_HALF_FALLOFF, TF_CUSTOM_STICKBOMB_EXPLOSION, vec3_origin);
         NewCall CBaseEntity_TakeDamage = NewCall(NewCall_CBaseEntity_TakeDamage);
         CBaseEntity_TakeDamage.Push(damageInfo);
@@ -397,6 +474,7 @@ public void newcallOperation()
         CBaseEntity_TakeDamage.Call();
 
         free(damageInfo);
+        */
 
         // vtable call
         Vector posSrc = STACK_GETRETURN(Vector.StackAlloc(3.00, 5.00, 7.00));

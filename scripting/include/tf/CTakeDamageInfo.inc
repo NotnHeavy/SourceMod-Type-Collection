@@ -9,7 +9,9 @@
 #endif
 #define NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTAKEDAMAGEINFO
 
+// Requires "Vector.inc" and "CBaseEntity.inc".
 #include "Vector.inc"
+#include "CBaseEntity.inc"
 
 #pragma semicolon true 
 #pragma newdecls required
@@ -339,19 +341,19 @@ static MRESReturn SMTC_CTFPlayer_OnTakeDamage_Alive(int entity, DHookReturn retu
 // HOOKS                                                                    //
 //////////////////////////////////////////////////////////////////////////////
 
-MRESReturn SMTC_Offset_CTFPlayer_OnTakeDamage(int index, DHookReturn returnValue, DHookParam parameters)
+stock MRESReturn SMTC_Offset_CTFPlayer_OnTakeDamage(int index, DHookReturn returnValue, DHookParam parameters)
 {
     return callback(index, returnValue, parameters, FORWARDTYPE_ONTAKEDAMAGE);
 }
-MRESReturn SMTC_Offset_CTFPlayer_OnTakeDamage_Post(int index, DHookReturn returnValue, DHookParam parameters)
+stock MRESReturn SMTC_Offset_CTFPlayer_OnTakeDamage_Post(int index, DHookReturn returnValue, DHookParam parameters)
 {
     return callback(index, returnValue, parameters, FORWARDTYPE_ONTAKEDAMAGE_POSTCALL);
 }
-MRESReturn SMTC_Offset_CTFPlayer_OnTakeDamage_Alive(int index, DHookReturn returnValue, DHookParam parameters)
+stock MRESReturn SMTC_Offset_CTFPlayer_OnTakeDamage_Alive(int index, DHookReturn returnValue, DHookParam parameters)
 {
     return callback(index, returnValue, parameters, FORWARDTYPE_ONTAKEDAMAGE_ALIVE);
 }
-MRESReturn SMTC_Offset_CTFPlayer_OnTakeDamage_Alive_Post(int index, DHookReturn returnValue, DHookParam parameters)
+stock MRESReturn SMTC_Offset_CTFPlayer_OnTakeDamage_Alive_Post(int index, DHookReturn returnValue, DHookParam parameters)
 {
     return callback(index, returnValue, parameters, FORWARDTYPE_ONTAKEDAMAGE_ALIVE_POSTCALL);
 }

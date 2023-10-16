@@ -2,7 +2,7 @@
 // MADE BY NOTNHEAVY. USES GPL-3, AS PER REQUEST OF SOURCEMOD               //
 //////////////////////////////////////////////////////////////////////////////
 
-// Requires "Ray_t.inc", "Vector.inc", "CGameTrace.inc", "CEngineTrace.inc" and "vtable.inc".
+// Requires "Ray_t.inc", "Vector.inc", "CGameTrace.inc", "CEngineTrace.inc", "CSpatialPartition.inc" and "vtable.inc".
 
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_UTIL
 #endinput
@@ -13,6 +13,7 @@
 #include "Vector.inc"
 #include "CGameTrace.inc"
 #include "CEngineTrace.inc"
+#include "CSpatialPartition.inc"
 #include "vtable.inc"
 
 #pragma semicolon true 
@@ -178,6 +179,15 @@ enum TraceType_t
 	TRACE_EVERYTHING_FILTER_PROPS,	// NOTE: This version will pass the IHandleEntity for props through the filter, unlike all other filters
 };
 
+// Clients that want to know about all elements within a particular
+// volume must inherit from this
+enum IterationRetval_t
+{
+	ITERATION_CONTINUE = 0,
+	ITERATION_STOP,
+};
+
+// Trace filter data
 enum
 {
     ITRACEFILTER_OFFSET_VTABLE = 0,                                                                                     // void* vtable;
@@ -193,7 +203,19 @@ enum
     CTRACEFILTERSIMPLE_OFFSET_M_COLLISIONGROUP = CTRACEFILTERSIMPLE_OFFSET_M_PPASSENT + SIZEOF_Pointer,                 // int m_collisionGroup;
     CTRACEFILTERSIMPLE_OFFSET_M_PEXTRASHOULDHITCHECKFUNCTION = CTRACEFILTERSIMPLE_OFFSET_M_COLLISIONGROUP + SIZEOF_int, // bool (__cdecl*)(IHandleEntity* pHandleEntity, int contentsMask);
     SIZEOF_CTraceFilterSimple = CTRACEFILTERSIMPLE_OFFSET_M_PEXTRASHOULDHITCHECKFUNCTION + SIZEOF_Pointer               // sizeof(CTraceFilterSimple);
-}
+};
+
+// CFlaggedEntitiesEnum members
+enum
+{
+    CFLAGGEDENTITIESENUM_OFFSET_VTABLE = 0,                                                       // void* vtable;
+    CFLAGGEDENTITIESENUM_OFFSET_M_PLIST = CFLAGGEDENTITIESENUM_OFFSET_VTABLE + SIZEOF_Pointer,    // CBaseEntity** m_pList;
+    CFLAGGEDENTITIESENUM_OFFSET_M_LISTMAX = CFLAGGEDENTITIESENUM_OFFSET_M_PLIST + SIZEOF_Pointer, // int m_listMax;
+    CFLAGGEDENTITIESENUM_OFFSET_M_FLAGMASK = CFLAGGEDENTITIESENUM_OFFSET_M_LISTMAX + SIZEOF_int,  // int m_flagMask;
+    CFLAGGEDENTITIESENUM_OFFSET_M_COUNT = CFLAGGEDENTITIESENUM_OFFSET_M_FLAGMASK + SIZEOF_int,    // int m_count;
+
+    SIZEOF_CFlaggedEntitiesEnum = CFLAGGEDENTITIESENUM_OFFSET_M_COUNT + SIZEOF_int                // sizeof(CFlaggedEntitiesEnum);
+};
 
 static char CTraceFilter_GetTraceType[] = "\x33\xC0\xC3";
 
@@ -226,6 +248,10 @@ public void SMTC_UTILForward()
     > that seriously seems like over-engineering
     that's basically NotnHeavy's code in a nutshell every time
     */
+
+    //////////////////////////////////////////////////////////////////////////////
+    // TRACES                                                                   //
+    //////////////////////////////////////////////////////////////////////////////
 
     SetMemAccess(AddressOfString(CTraceFilter_GetTraceType), sizeof(CTraceFilter_GetTraceType), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
     SetMemAccess(AddressOfString(CTraceFilterEntitiesOnly_GetTraceType), sizeof(CTraceFilterEntitiesOnly_GetTraceType), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
@@ -271,6 +297,11 @@ public void SMTC_UTILForward()
     VTable.RegisterVPointer("CTraceFilterSimple", 0, CTraceFilterSimple_ShouldHitEntity);
     VTable.RegisterVPointer("CTraceFilterSimple", 2, ((SMTC.GetOperatingSystem() == OSTYPE_WINDOWS) ? AddressOfString(CTraceFilterSimple_SetPassEntity_Windows) : AddressOfString(CTraceFilterSimple_SetPassEntity_Linux)));
     VTable.RegisterVPointer("CTraceFilterSimple", 3, ((SMTC.GetOperatingSystem() == OSTYPE_WINDOWS) ? AddressOfString(CTraceFilterSimple_SetCollisionGroup_Windows) : AddressOfString(CTraceFilterSimple_SetCollisionGroup_Linux)));
+
+    // class CFlaggedEntitiesEnum : public IPartitionEnumerator
+    // todo: use actual vtable object when vtable object retrieval api comes
+    VTable.CreateVTable("CFlaggedEntitiesEnum", 1);
+    VTable.RegisterVPointer("CFlaggedEntitiesEnum", 0, CFlaggedEntitiesEnum_EnumElement);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -551,6 +582,100 @@ methodmap CTraceFilterSimple < CTraceFilter
 }
 
 //////////////////////////////////////////////////////////////////////////////
+// CFlaggedEntitiesEnum methodmap                                           //
+//////////////////////////////////////////////////////////////////////////////
+
+// enumerate entities that match a set of edict flags into a static array
+// Although this derives from IPartitionEnumerator, the class only has a pure
+// virtual function and nothing else. This is the only deriving class.
+methodmap CFlaggedEntitiesEnum < Pointer
+{
+    // Constructor - wrap around an existing address to make way for an CFlaggedEntitiesEnum object.
+    public CFlaggedEntitiesEnum(Address address)
+    {
+        return view_as<CFlaggedEntitiesEnum>(address);
+    }
+
+    // CFlaggedEntitiesEnum's vtable.
+    property Pointer vtable
+    {
+        public get() { return this.Dereference(CFLAGGEDENTITIESENUM_OFFSET_VTABLE); }
+        public set(Pointer value) { this.Write(value, CFLAGGEDENTITIESENUM_OFFSET_VTABLE); }
+    }
+
+    // Two-dimensional entity list.
+    property Pointer m_pList
+    {
+        public get() { return this.Dereference(CFLAGGEDENTITIESENUM_OFFSET_M_PLIST); }
+        public set(Pointer value) { this.Write(value, CFLAGGEDENTITIESENUM_OFFSET_M_PLIST); }
+    }
+
+    // The maximum list count.
+    property int m_listMax
+    {
+        public get() { return this.Dereference(CFLAGGEDENTITIESENUM_OFFSET_M_LISTMAX); }
+        public set(int value) { this.Write(value, CFLAGGEDENTITIESENUM_OFFSET_M_LISTMAX); }
+    }
+
+    //  The flag mask.
+    property int m_flagMask
+    {
+        public get() { return this.Dereference(CFLAGGEDENTITIESENUM_OFFSET_M_FLAGMASK); }
+        public set(int value) { this.Write(value, CFLAGGEDENTITIESENUM_OFFSET_M_FLAGMASK); }
+    }
+
+    // The number of entities in the list.
+    property int m_count
+    {
+        public get() { return this.Dereference(CFLAGGEDENTITIESENUM_OFFSET_M_COUNT); }
+        public set(int value) { this.Write(value, CFLAGGEDENTITIESENUM_OFFSET_M_COUNT); }
+    }
+
+    // Get the entity count.
+    public int GetCount()
+    {
+        return this.m_count;
+    }
+
+    // Add an entity to the list.
+    public bool AddToList(any pEntity)
+    {
+        if (this.m_count >= this.m_listMax) // reached enumerated list limit
+            return false;
+        this.m_pList.Write(pEntity, this.m_count * 4);
+        ++this.m_count;
+        return true;
+    }
+
+    // Call constructor on existing type.
+    public void ctor(any pList, int listMax, int flagMask)
+    {
+        // todo: use actual vtable object when vtable object retrieval api comes
+        VTable.HookOntoObject("CFlaggedEntitiesEnum", this.Address);
+        this.m_pList = pList;
+        this.m_listMax = listMax;
+        this.m_flagMask = flagMask;
+        this.m_count = 0;
+    }
+
+    // Constructor - allocate a new CFlaggedEntitiesEnum onto the heap. Deallocation will be required when you are finished using this using free().
+    public static CFlaggedEntitiesEnum Malloc(any pList, int listMax, int flagMask)
+    {
+        CFlaggedEntitiesEnum pointer = malloc(SIZEOF_CFlaggedEntitiesEnum);
+        pointer.ctor(pList, listMax, flagMask);
+        return pointer;
+    }
+
+    // Constructor - allocate a new CFlaggedEntitiesEnum onto the stack. When using the return value, you must use STACK_GETRETURN().
+    public static STACK StackAlloc(any pList, int listMax, int flagMask)
+    {
+        char buffer[SIZEOF_CFlaggedEntitiesEnum];
+        view_as<CFlaggedEntitiesEnum>(AddressOfString(buffer)).ctor(pList, listMax, flagMask);
+        return buffer;
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////////
 // UITL.INC GLOBALS                                                         //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -572,4 +697,17 @@ stock void UTIL_TraceRay(const Ray_t ray, int mask, const int ignore, int collis
 {
     CTraceFilterSimple traceFilter = STACK_GETRETURN(CTraceFilterSimple.StackAlloc(GetEntityAddress(ignore), collisionGroup, pExtraShouldHitCheckFn));
     enginetrace.TraceRay(ray, mask, traceFilter, ptr);
+}
+
+stock int UTIL_EntitiesInBox(const Vector mins, const Vector maxs, CFlaggedEntitiesEnum pEnum)
+{
+    partition.EnumerateElementsInABox(PARTITION_ENGINE_NON_STATIC_EDICTS, mins, maxs, false, pEnum);
+    return pEnum.GetCount();
+}
+
+// Meant to be a function overload of UTIL_EntitiesInBox().
+stock int UTIL_EntitiesInBoxInline(any pList, int listMax, const Vector mins, const Vector maxs, int flagMask)
+{
+    CFlaggedEntitiesEnum boxEnum = STACK_GETRETURN(CFlaggedEntitiesEnum.StackAlloc(pList, listMax, flagMask));
+    return UTIL_EntitiesInBox(mins, maxs, boxEnum);
 }
