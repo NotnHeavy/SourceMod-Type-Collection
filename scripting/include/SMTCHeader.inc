@@ -646,20 +646,20 @@ stock void CopyConstruct(Pointer memory, Pointer source, int typeSize = 4)
 
 stock any max(any a, any b)
 {
-    return a < b ? a : b;
+    return a > b ? a : b;
 }
 
 stock any min(any a, any b)
 {
-    return a < b ? b : a;
+    return a > b ? b : a;
 }
 
 stock float fmax(float a, float b)
 {
-    return a < b ? a : b;
+    return a > b ? a : b;
 }
 
 stock float fmin(float a, float b)
 {
-    return a < b ? b : a;
+    return a > b ? b : a;
 }

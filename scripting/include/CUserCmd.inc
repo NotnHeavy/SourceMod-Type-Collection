@@ -64,8 +64,8 @@ methodmap CUserCmd < Pointer
     // CUserCmd vtable.
     property Pointer vtable
     {
-        public get() { return this.Dereference(TF_POINT_T_OFFSET_VTABLE); }
-        public set(Pointer value) { this.Write(value, TF_POINT_T_OFFSET_VTABLE); }
+        public get() { return this.Dereference(CUSERCMD_OFFSET_VTABLE); }
+        public set(Pointer value) { this.Write(value, CUSERCMD_OFFSET_VTABLE); }
     }
 
     // For matching server and client commands for debugging

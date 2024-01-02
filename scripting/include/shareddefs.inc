@@ -85,3 +85,37 @@ enum
 #define DAMAGE_EVENTS_ONLY		1		// Call damage functions, but don't modify health
 #define	DAMAGE_YES				2
 #define	DAMAGE_AIM				3
+
+//
+// Enumerations for setting player animation.
+//
+enum PLAYER_ANIM
+{
+	PLAYER_IDLE,
+	PLAYER_WALK,
+	PLAYER_JUMP,
+	PLAYER_SUPERJUMP,
+	PLAYER_DIE,
+	PLAYER_ATTACK1,
+	PLAYER_IN_VEHICLE,
+
+	// TF Player animations
+	PLAYER_RELOAD,
+	PLAYER_START_AIMING,
+	PLAYER_LEAVE_AIMING,
+};
+
+//===================================================================================================================
+// Team Defines
+#define TEAM_ANY				-2
+#define	TEAM_INVALID			-1
+#define TEAM_UNASSIGNED			0	// not assigned to a team
+#define TEAM_SPECTATOR			1	// spectator team
+// Start your team numbers after this
+#define LAST_SHARED_TEAM		TEAM_SPECTATOR
+
+// The first team that's game specific (i.e. not unassigned / spectator)
+#define FIRST_GAME_TEAM			(LAST_SHARED_TEAM+1)
+
+#define MAX_TEAMS				32	// Max number of teams in a game
+#define MAX_TEAM_NAME_LENGTH	32	// Max length of a team's name
