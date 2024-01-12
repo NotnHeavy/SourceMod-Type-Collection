@@ -13,6 +13,7 @@
 #include <sdkhooks>
 #include <tf2_stocks>
 #include <smmem> // https://github.com/Scags/SM-Memory
+#include <smmem/dynlib> // https://github.com/Scags/SM-Memory
 #include <dhooks> // Not actually needed, just used for tests.
 
 #define SMTC_UPDATEMEMACCESS_WHILEWRITING_BYDEFAULT false
@@ -29,7 +30,6 @@
 #include "csurface_t.inc"
 #include "CGameTrace.inc"
 #include "shareddefs.inc"
-#include "vtable.inc"
 #include "VectorAligned.inc"
 #include "Ray_t.inc"
 #include "UTIL.inc"
@@ -42,7 +42,6 @@
 #include "FileWeaponInfo_t.inc"
 #include "CUtlMap.inc"
 #include "CUtlRBTree.inc"
-#include "NewCall.inc"
 #include "CUserCmd.inc"
 #include "CLagCompensationManager.inc"
 #include "CSpatialPartition.inc"
@@ -58,6 +57,10 @@
 #include "tf/CTFWeaponInfo.inc"
 #include "tf/tf_item_constants.inc"
 #include "tf/burned_entity_t.inc"
+
+#include "api/vtable.inc"
+#include "api/NewCall.inc"
+#include "api/runtimevtable.inc"
 
 #include "SMTC.inc"
 
@@ -146,6 +149,7 @@ public void OnMapStart()
     cusercmdOperation();
     clagcompensationmanagerOperation();
     utilOperation2(); // UTIL_EntitiesInBox();
+    runtimevtableOperation();
 
     PrintToServer("\n\"%s\" has loaded.\n------------------------------------------------------------------", "NotnHeavy - SourceMod Type Collection");
     PrintToChatAll("THE TEST PLUGIN FOR NOTNHEAVY'S SOURCEMOD TYPE COLLECTION IS CURRENTLY RUNNING.");
@@ -209,11 +213,26 @@ public void OnClientPutInServer(int client)
     SMTC_HookEntity(client, FORWARDTYPE_ONTAKEDAMAGE, CTFPlayer_OnTakeDamage);
 }
 
+public void runtimevtableOperation()
+{
+    any vtable[1];
+    if (SMTC.GetOperatingSystem() == OSTYPE_WINDOWS)
+    {
+        RuntimeVTable.Find(g_ServerPath, ".?AVCTFFlameThrower@@", vtable);
+        PrintToServer("windows - complete flamethrower vtable: 0x%X\n", vtable[0]);
+    }
+    else
+    {
+        RuntimeVTable.Find(g_ServerPath, "_ZTI15CTFFlameThrower", vtable);
+        PrintToServer("linux - complete flamethrower vtable: 0x%X\n", vtable[0]);
+    }
+}
+
 public void utilOperation2()
 {
     CFlaggedEntitiesEnum test = STACK_GETRETURN(CFlaggedEntitiesEnum.StackAlloc(NULL, 0, 0));
     PrintToServer("CFlaggedEntitiesEnum::test: %u", test);
-    PrintToServer("CFlaggedEntitiesEnum_EnumElement: %u", CFlaggedEntitiesEnum_EnumElement);
+    //PrintToServer("CFlaggedEntitiesEnum_EnumElement: %u", CFlaggedEntitiesEnum_EnumElement); // irrelevant since 2024.01.12 (runtimevtable.inc)
     PrintToServer("SMTC_SDKCall_CSpatialPartition_EnumerateElementsInBox: %u\n", SMTC_SDKCall_CSpatialPartition_EnumerateElementsInBox);
 
     // this code is designed to be similar to the 2017 short circuit
@@ -318,13 +337,14 @@ public void newcallOperation()
     char cwd[PLATFORM_MAX_PATH];
     SetMemAccess(AddressOfString(cwd), sizeof(cwd), SH_MEM_ALL);
 
+    char buffer[256];
+    int length;
+    /*
     NewCall interrupt = NewCall(0x80);
     interrupt.MoveToRegister(183, EAX); // sys_getcwd; see https://faculty.nps.edu/cseagle/assembly/sys_call.html
     interrupt.MoveToRegister(AddressOfString(cwd), EBX);
     interrupt.MoveToRegister(sizeof(cwd), ECX);
     
-    char buffer[256];
-    int length;
     interrupt.DumpStringBuilder(buffer, sizeof(buffer), length);
     PrintToServer("interrupt dump:");
     for (int i = 0; i < length; ++i)
@@ -342,6 +362,7 @@ public void newcallOperation()
     else
         interrupt.Reset();
     PrintToServer("\n");
+    */
 
     // test constructing a function for the following definition:
     /*
@@ -444,8 +465,8 @@ public void newcallOperation()
     PrintToServer("obj.c: %i\n", func2Return.Dereference(8));
     free(func2Return);
 
-    // tf2 test
-    if (IsClientInGame(1))
+    // tf2 test (MUST BE ON WINDOWS)
+    if (IsClientInGame(1) && SMTC.GetOperatingSystem() == OSTYPE_WINDOWS)
     {
         int weapon = GetEntPropEnt(1, Prop_Send, "m_hActiveWeapon");
         if (IsValidEntity(weapon))
@@ -765,8 +786,9 @@ static void utilOperation()
     PrintToServer("trace type of CTraceFilterEntitiesOnly: %i", type);
     PrintToServer("");
 
-    // check global trace
-    PrintToServer("global trace: %u\n", enginetrace);
+    // check global trace and vtables
+    PrintToServer("global trace: %u", enginetrace);
+    PrintToServer("CTraceFilterSimple vtable: 0x%X\n", SMTC_CTraceFilterSimple_vtable);
 
     if (IsClientInGame(1))
     {
@@ -789,7 +811,7 @@ static void utilOperation()
         CGameTrace trace = STACK_GETRETURN(CGameTrace.StackAlloc());
         CTraceFilterSimple filter = STACK_GETRETURN(CTraceFilterSimple.StackAlloc(GetEntityAddress(client), COLLISION_GROUP_NONE));
         UTIL_TraceHull(vecStart, vecEnd, -Vector.Cache(24.00, 24.00, 24.00), Vector.Cache(24.00, 24.00, 24.00), MASK_SOLID, filter, trace);
-        PrintToChatAll("TRACE HULL ATTEMPT! trace->m_pEnt: %i", trace.m_pEnt);
+        PrintToChatAll("TRACE HULL ATTEMPT! trace->m_pEnt: %i (entindex %i)", trace.m_pEnt, ((trace.m_pEnt) ? trace.m_pEnt.entindex() : -1));
     }
 }
 

@@ -14,8 +14,7 @@
 #pragma semicolon true 
 #pragma newdecls required
 
-#include "CBaseEntity.inc"
-
+// must be defined before CBaseEntity!!!!
 #define EHANDLE CHandle
 
 // How many bits to use to encode an edict.
@@ -30,6 +29,8 @@
 #define INVALID_EHANDLE_INDEX	0xFFFFFFFF
 
 #define NUM_SERIAL_NUM_BITS		(32 - NUM_ENT_ENTRY_BITS)
+
+#include "CBaseEntity.inc"
 
 //////////////////////////////////////////////////////////////////////////////
 // CHANDLE DATA                                                             //

@@ -11,6 +11,8 @@
 #include <sdktools>
 #include <dhooks>
 
+#tryinclude <smmem/dynlib> // https://github.com/Scags/SM-Memory
+
 #pragma semicolon true 
 #pragma newdecls required
 
@@ -120,10 +122,9 @@ enum OSType
 stock OSType OSTypeUsed;
 
 stock Pointer SMTC_CUserCmd_vtable;
+stock Pointer SMTC_CTraceFilterSimple_vtable;
+stock Pointer SMTC_CFlaggedEntitiesEnum_vtable;
 stock Pointer SMTC_tf_point_t_vtable;
-
-stock Pointer CTraceFilterSimple_ShouldHitEntity;
-stock Pointer CFlaggedEntitiesEnum_EnumElement;
 
 stock DynamicDetour SMTC_DHooks_Signature_CTFPlayer_OnTakeDamage_Alive;
 
@@ -151,12 +152,17 @@ static char func_strcmp[] = "\x55\x8B\xEC\x8B\x4D\x0C\x56\x8B\x75\x08\x8A\x16\x8
 static char func_strncmp[] = "\x55\x8B\xEC\x8B\x4D\x10\x53\x56\x85\xC9\x74\x1B\x8B\x75\x0C\x8B\x45\x08\x8A\x1E\x8D\x76\x01\x8A\x10\x3A\xD3\x75\x10\x40\x84\xD2\x74\x05\x83\xE9\x01\x75\xEB\x5E\x33\xC0\x5B\x5D\xC3\x0F\xB6\xCB\x0F\xB6\xC2\x5E\x2B\xC1\x5B\x5D\xC3";
 static char func_strchr[] = "\x55\x8B\xEC\x8A\x45\x0C\x53\x8B\x5D\x08\x56\xF6\xC3\x03\x74\x14\x8A\x0B\x3A\xC8\x0F\x84\x86\x00\x00\x00\x84\xC9\x74\x7C\x43\xF6\xC3\x03\x75\xEC\x0F\xB6\xC0\x8B\xF0\xC1\xE6\x08\x0B\xF0\x8B\xC6\xC1\xE0\x10\x0B\xF0\x8B\x0B\x8B\xC3\x89\x4D\x08\x83\xC3\x04\x8D\x91\xFF\xFE\xFE\x7E\xF7\xD1\x33\xD1\xF7\xC2\x00\x01\x01\x81\x75\x17\x8B\x55\x08\x33\xD6\x8D\x8A\xFF\xFE\xFE\x7E\xF7\xD2\x33\xCA\xF7\xC1\x00\x01\x01\x81\x74\xCD\x8A\x4D\x0C\x8B\x55\x08\x3A\xD1\x74\x2A\x84\xD2\x74\x24\x8A\x50\x01\x40\x3A\xD1\x74\x1E\x84\xD2\x74\x18\x8A\x50\x01\x40\x3A\xD1\x74\x12\x84\xD2\x74\x0C\x8A\x50\x01\x40\x3A\xD1\x74\x06\x84\xD2\x75\x9B\x33\xC0\x5E\x5B\x5D\xC3\x5E\x8B\xC3\x5B\x5D\xC3";
 static char func_strstr[] = "\x55\x8B\xEC\x53\x56\x8B\x75\x08\x57\x8A\x0E\x84\xC9\x74\x33\x8B\x7D\x0C\x8B\xD6\x2B\xD7\x8A\x1F\x3A\xCB\x75\x1D\x8B\xC7\x84\xC9\x74\x12\x8A\x08\x84\xC9\x74\x21\x38\x0C\x02\x75\x0C\x40\x80\x3C\x02\x00\x75\xEE\x80\x38\x00\x74\x10\x8A\x4E\x01\x46\x42\x84\xC9\x75\xD6\x5F\x5E\x33\xC0\x5B\x5D\xC3\x5F\x8B\xC6\x5E\x5B\x5D\xC3";
+
+static char func_findsignatures[] = "\x55\x8B\xEC\x8B\x55\x0C\x56\x8B\x75\x08\x57\x33\xFF\x3B\xF2\x73\x50\x8B\x45\x14\x53\x8B\x5D\x10\x2B\xDE\x66\x0F\x1F\x44\x00\x00\x3B\x7D\x1C\x73\x35\x33\xC9\x85\xC0\x74\x1E\x8B\xC6\x0F\x1F\x00\x8A\x14\x03\x80\xFA\x2A\x74\x04\x3A\x10\x75\x07\x41\x40\x3B\x4D\x14\x72\xED\x8B\x45\x14\x8B\x55\x0C\x3B\xC8\x75\x07\x8B\x4D\x18\x89\x34\xB9\x47\x46\x4B\x3B\xF2\x72\xC6\x5B\x8B\xC7\x5F\x5E\x5D\xC3\x8B\xC7\x5F\x5E\x5D\xC3";
+
 static Handle SMTC_SDKCall_strlen;
 static Handle SMTC_SDKCall_strnlen;
 static Handle SMTC_SDKCall_strcmp;
 static Handle SMTC_SDKCall_strncmp;
 static Handle SMTC_SDKCall_strchr;
 static Handle SMTC_SDKCall_strstr;
+
+static Handle SMTC_SDKCall_FindSignatures;
 
 char empty_string[] = "";
 stock Pointer aEmptyString;
@@ -505,36 +511,9 @@ stock Pointer operator=(Address value)
     return view_as<Pointer>(value);
 }
 
-// Re-allocates a block of memory for an array of num elements. Each byte is initialized as 0.
-stock any recalloc(Pointer memory, int num, int size, int old)
-{
-    Pointer buffer = calloc(num, size);
-    memcpy(buffer, memory, old * size);
-    free(memory);
-    return buffer;
-}
-
-// Swap fast between two blocks of memory. You must specify the size of the type used with this global using the typeSize parameter.
-stock void V_swap(Pointer x, Pointer y, int typeSize = 4)
-{
-    Pointer temp = malloc(typeSize);
-    memcpy(temp, x, typeSize);
-    memcpy(x, y, typeSize);
-    memcpy(y, temp, typeSize);
-    free(temp);
-}
-
-// Return absolute of int.
-stock any abs(any x)
-{
-    return (x + 0xFFFFFFFF) ^ 0xFFFFFFFF; // sm uses cells which are 32-bit so we can just use 0xFFFFFFFF as our bitmask
-}
-
-// Valve fabs() implementation. You should use FloatAbs().
-stock float FloatMakePositive(float f)
-{
-    return view_as<float>(view_as<int>(f) & 0x7FFFFFFF); // evil floating point bit level hacking
-}
+//////////////////////////////////////////////////////////////////////////////
+// GLOBALS - SDKCALLS                                                       //
+//////////////////////////////////////////////////////////////////////////////
 
 // Generate the string function and CKeyLess SDKCalls beforehand.
 stock void SMTC_GenerateSDKCallInfo()
@@ -545,6 +524,7 @@ stock void SMTC_GenerateSDKCallInfo()
     SMTC_SDKCall_strncmp = null;
     SMTC_SDKCall_strchr = null;
     SMTC_SDKCall_strstr = null;
+    SMTC_SDKCall_FindSignatures = null;
 
     STACK_ALLOC(str1, Pointer, 1);
     STACK_ALLOC(str2, Pointer, 1);
@@ -557,10 +537,26 @@ stock void SMTC_GenerateSDKCallInfo()
 
     aEmptyString = AddressOfString(empty_string);
 
+    SetMemAccess(AddressOfString(func_findsignatures), sizeof(func_findsignatures), SH_MEM_ALL);
+    StartPrepSDKCall(SDKCall_Static);
+    PrepSDKCall_SetAddress(AddressOfString(func_findsignatures));
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // size_t imageBase;
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // size_t end;
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // const char* signature;
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // size_t siglength;
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // size_t* addresses;
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // size_t maxlength;
+    PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // int
+    SMTC_SDKCall_FindSignatures = EndPrepSDKCall();
+
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CUTLRBTREE
     SMTC_CallCKeyLess(NULL, NULL, NULL);
 #endif
 }
+
+//////////////////////////////////////////////////////////////////////////////
+// GLOBALS - FUNCTIONS                                                      //
+//////////////////////////////////////////////////////////////////////////////
 
 enum struct SMTCFunction_t
 {
@@ -604,7 +600,48 @@ stock Function SMTC_GetValueAsFunction(any index)
 // SourceMod function, or if it points to a compiled subroutine.
 stock bool SMTC_IsSMFunction(any value)
 {
-    return value < VALID_MINIMUM_MEMORY_ADDRESS;
+    return 0 <= value < VALID_MINIMUM_MEMORY_ADDRESS;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// GLOBALS - MISCELLANEOUS                                                  //
+//////////////////////////////////////////////////////////////////////////////
+
+// Scans through a block of memory and returns all addresses for a matching signature.
+stock int SMTC_FindSignatures(any imageBase, any end, const char[] signature, const int siglength, any[] addresses, const int maxlength)
+{
+    return SDKCall(SMTC_SDKCall_FindSignatures, imageBase, end, AddressOfString(signature), siglength, AddressOfArray(addresses), maxlength);
+}
+
+// Re-allocates a block of memory for an array of num elements. Each byte is initialized as 0.
+stock any recalloc(Pointer memory, int num, int size, int old)
+{
+    Pointer buffer = calloc(num, size);
+    memcpy(buffer, memory, old * size);
+    free(memory);
+    return buffer;
+}
+
+// Swap fast between two blocks of memory. You must specify the size of the type used with this global using the typeSize parameter.
+stock void V_swap(Pointer x, Pointer y, int typeSize = 4)
+{
+    Pointer temp = malloc(typeSize);
+    memcpy(temp, x, typeSize);
+    memcpy(x, y, typeSize);
+    memcpy(y, temp, typeSize);
+    free(temp);
+}
+
+// Return absolute of int.
+stock any abs(any x)
+{
+    return (x + 0xFFFFFFFF) ^ 0xFFFFFFFF; // sm uses cells which are 32-bit so we can just use 0xFFFFFFFF as our bitmask
+}
+
+// Valve fabs() implementation. You should use FloatAbs().
+stock float FloatMakePositive(float f)
+{
+    return view_as<float>(view_as<int>(f) & 0x7FFFFFFF); // evil floating point bit level hacking
 }
 
 // Convert bit count to NumberType.

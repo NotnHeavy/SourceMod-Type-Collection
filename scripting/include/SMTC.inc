@@ -132,42 +132,10 @@ stock void SMTC_Initialize()
 
     // Set up hooks from the config file.
     GameData config = LoadGameConfigFile("NotnHeavy - SourceMod Type Collection");
+    char keyvalue[128];
+    any vtables[1];
     
     OSTypeUsed = view_as<OSType>(config.GetOffset("OSTypeUsed"));
-
-#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TFPLAYERCLASSDATA_T
-    g_pTFPlayerClassDataMgr = config.GetAddress("g_pTFPlayerClassDataMgr");
-#endif
-#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CUSERCMD
-    SMTC_CUserCmd_vtable = config.GetAddress("SMTC_CUserCmd_vtable");
-#endif
-#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TF_POINT_T
-    SMTC_tf_point_t_vtable = config.GetAddress("tf_point_t_vtable");
-#endif
-#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CENGINETRACE
-    enginetrace = CEngineTrace(config.GetAddress("enginetrace"));
-#endif
-#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTFGAMERULES
-    g_pGameRules = CTFGameRules(config.GetAddress("g_pGameRules"));
-#endif
-#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CGLOBALVARS
-    gpGlobals = CGlobalVars(config.GetAddress("gpGlobals"));
-#endif
-#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CLAGCOMPENSATIONMANAGER
-    lagcompensation = CLagCompensationManager(config.GetAddress("lagcompensation"));
-#endif
-#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CSPATIALPARTITION
-    partition = CSpatialPartition(config.GetAddress("partition"));
-#endif
-#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CUTLRBTREE
-    SMTC_pDefaultLessFunc = AddressOfString(s_aDefaultLessFunc);
-    SetMemAccess(AddressOfString(s_aDefaultLessFunc), sizeof(s_aDefaultLessFunc), SH_MEM_EXEC | SH_MEM_READ | SH_MEM_WRITE);
-#endif
-
-#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_UTIL
-    CTraceFilterSimple_ShouldHitEntity = config.GetMemSig("CTraceFilterSimple::ShouldHitEntity()");
-    CFlaggedEntitiesEnum_EnumElement = config.GetMemSig("CFlaggedEntitiesEnum::EnumElement()");
-#endif
 
     SMTC_DHooks_Signature_CTFPlayer_OnTakeDamage_Alive = DynamicDetour.FromConf(config, "Signature::CTFPlayer::OnTakeDamage_Alive()");
     
@@ -243,13 +211,57 @@ stock void SMTC_Initialize()
     PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // CTFRadiusDamageInfo& info
     SMTC_SDKCall_CTFGameRules_RadiusDamage = EndPrepSDKCall();
 
+    // Generate SDKCalls used around the code: see function definition.
+    SMTC_GenerateSDKCallInfo();
+
+    // Read final config data specific to certain headers.
+
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TFPLAYERCLASSDATA_T
+    g_pTFPlayerClassDataMgr = config.GetAddress("g_pTFPlayerClassDataMgr");
+#endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CUSERCMD
+    config.GetKeyValue("CUserCmd_vtable", keyvalue, sizeof(keyvalue));
+    RuntimeVTable.Find(g_ServerPath, keyvalue, vtables);
+    SMTC_tf_point_t_vtable = vtables[0];
+#endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TF_POINT_T
+    config.GetKeyValue("tf_point_t_vtable", keyvalue, sizeof(keyvalue));
+    RuntimeVTable.Find(g_ServerPath, keyvalue, vtables);
+    SMTC_tf_point_t_vtable = vtables[0];
+#endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CENGINETRACE
+    enginetrace = CEngineTrace(config.GetAddress("enginetrace"));
+#endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTFGAMERULES
+    g_pGameRules = CTFGameRules(config.GetAddress("g_pGameRules"));
+#endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CGLOBALVARS
+    gpGlobals = CGlobalVars(config.GetAddress("gpGlobals"));
+#endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CLAGCOMPENSATIONMANAGER
+    lagcompensation = CLagCompensationManager(config.GetAddress("lagcompensation"));
+#endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CSPATIALPARTITION
+    partition = CSpatialPartition(config.GetAddress("partition"));
+#endif
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CUTLRBTREE
+    SMTC_pDefaultLessFunc = AddressOfString(s_aDefaultLessFunc);
+    SetMemAccess(AddressOfString(s_aDefaultLessFunc), sizeof(s_aDefaultLessFunc), SH_MEM_EXEC | SH_MEM_READ | SH_MEM_WRITE);
+#endif
+
+#if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_UTIL
+    config.GetKeyValue("CTraceFilterSimple_vtable", keyvalue, sizeof(keyvalue));
+    RuntimeVTable.Find(g_ServerPath, keyvalue, vtables);
+    SMTC_CTraceFilterSimple_vtable = vtables[0];
+    config.GetKeyValue("CFlaggedEntitiesEnum_vtable", keyvalue, sizeof(keyvalue));
+    RuntimeVTable.Find(g_ServerPath, keyvalue, vtables);
+    SMTC_CFlaggedEntitiesEnum_vtable = vtables[0];
+#endif
+
     delete config;
 
     // Instantiate g_Hooks.
     g_Hooks = new ArrayList(sizeof(SMTC_HookData));
-
-    // Generate SDKCalls used around the code: see function definition.
-    SMTC_GenerateSDKCallInfo();
 
     // For generating an offset on plugin start, getting datamap props from the world entity will not work 
     // because the world entity has not yet been initialised. Instead, I decided to go with getting the props

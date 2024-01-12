@@ -4,6 +4,34 @@
 {
     "tf"
     {
+		"Keys"
+		{
+			// /CUserCmd.inc
+			"CUserCmd_vtable"
+			{
+				"windows" ".?AVCUserCmd@@"
+				"linux"   "_ZTV8CUserCmd"
+			}
+
+			// /UTIL.inc
+			"CTraceFilterSimple_vtable"
+			{
+				"windows" ".?AVCTraceFilterSimple@@"
+				"linux"   "_ZTV18CTraceFilterSimple"
+			}
+			"CFlaggedEntitiesEnum_vtable"
+			{
+				"windows" ".?AVCFlaggedEntitiesEnum@@"
+				"linux"   "_ZTV20CFlaggedEntitiesEnum"
+			}
+
+			// /tf/tf_point_t.inc
+			"tf_point_t_vtable"
+			{
+				"windows" ".?AUtf_point_t@@"
+				"linux"   "_ZTV10tf_point_t"
+			}
+		}
 		"Addresses"
 		{
 			// /CEngineTrace.inc
@@ -32,22 +60,6 @@
 				"linux"
 				{
 					"signature" "gpGlobals"
-				}
-				"read" "0"
-			}
-
-			// /CUserCmd.inc
-			"CUserCmd_vtable"
-			{
-				"windows"
-				{
-					"signature" "CUserCmd::~CUserCmd()"
-					"read"		"12"
-				}
-				"linux"
-				{
-					"signature" "CUserCmd::~CUserCmd()"
-					"read"		"8"
 				}
 				"read" "0"
 			}
@@ -108,22 +120,6 @@
 				"linux"
 				{
 					"signature" "g_pTFPlayerClassDataMgr"
-				}
-				"read" "0"
-			}
-			
-			// /tf/tf_point_t.inc
-			"tf_point_t_vtable"
-			{
-				"windows"
-				{
-					"signature" "tf_point_t::~tf_point_t()"
-					"read"		"12"
-				}
-				"linux"
-				{
-					"signature" "tf_point_t::~tf_point_t()"
-					"read"		"8"
 				}
 				"read" "0"
 			}
@@ -222,35 +218,12 @@
 				"linux"   "@_ZN11CBaseEntity10TakeDamageERK15CTakeDamageInfo"
 			}
 
-			// /UTIL.inc
-			"CTraceFilterSimple::ShouldHitEntity()"
-			{
-				"library" "server"
-				"windows" "\x55\x8B\xEC\x53\x8B\x5D\x0C\x56\x8B\x75\x08\x57\x53" // search vtable for CTraceFilterSimple, vfunc 0
-				"linux"	  "@_ZN18CTraceFilterSimple15ShouldHitEntityEP13IHandleEntityi"
-			}
-			"CFlaggedEntitiesEnum::EnumElement()"
-			{
-				"library" "server"
-				"windows" "\x55\x8B\xEC\x56\x8B\xF1\x8B\x4D\x08\x8B\x01\xFF\x50\x08\x8B\x00\x85\xC0" // check CFlaggedEntitiesEnum vtable
-				"linux"   "@_ZN20CFlaggedEntitiesEnum11EnumElementEP13IHandleEntity"
-			}
-			"UTIL_EntitiesInBox()"
-			{
-				"library" "server"
-				"windows" "" // get xref of offset aItemHealth ; "item_health*", find function call above first xref
-				"linux"   "_Z18UTIL_EntitiesInBoxRK6VectorS1_P20CFlaggedEntitiesEnum"
-			}
-
-			// /CUserCmd.inc
-			"CUserCmd::~CUserCmd()"
-			{
-				"library" "server"
-				"windows" "\x55\x8B\xEC\xF6\x45\x08\x01\x56\x8B\xF1\xC7\x06\x2A\x2A\x2A\x2A\x74\x2A\x6A\x44"
-				"linux"   "@_ZN8CUserCmdD2Ev"
-			}
-
 			// /CLagCompensationManager.inc
+			"lagcompensation"
+			{
+				"library" "server"
+				"linux"   "@lagcompensation"
+			}
 			"CLagCompensationManager::StartLagCompensation()"
 			{
 				"library" "server"
@@ -270,6 +243,11 @@
 			}
 
 			// /CSpatialPartition.inc
+			"partition"
+			{
+				"library" "server"
+				"linux"   "@partition"
+			}
 			"CC_VoxelTreeView()"
 			{
 				// holy shit i am fucking lucky with this signature
@@ -287,14 +265,6 @@
 			{
 				"library" "server"
 				"linux"   "@g_pTFPlayerClassDataMgr"
-			}
-
-			// /tf/tf_point_t.inc
-			"tf_point_t::~tf_point_t()"
-			{
-				"library" "server"
-				"windows" "\x55\x8B\xEC\xF6\x45\x08\x01\x56\x8B\xF1\xC7\x06\x2A\x2A\x2A\x2A\x74\x2A\x6A\x38" // walk through tf_point_t vtable, go to first function
-				"linux"   "@_ZN10tf_point_tD2Ev"
 			}
 
 			// /tf/CTakeDamageInfo.inc

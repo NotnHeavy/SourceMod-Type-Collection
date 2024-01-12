@@ -2,7 +2,7 @@
 // MADE BY NOTNHEAVY. USES GPL-3, AS PER REQUEST OF SOURCEMOD               //
 //////////////////////////////////////////////////////////////////////////////
 
-// Requires "Ray_t.inc", "Vector.inc", "CGameTrace.inc", "CEngineTrace.inc", "CSpatialPartition.inc" and "vtable.inc".
+// Requires "Ray_t.inc", "Vector.inc", "CGameTrace.inc", "CEngineTrace.inc", "CSpatialPartition.inc" and "api/vtable.inc".
 
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_UTIL
 #endinput
@@ -14,7 +14,8 @@
 #include "CGameTrace.inc"
 #include "CEngineTrace.inc"
 #include "CSpatialPartition.inc"
-#include "vtable.inc"
+
+#include "api/vtable.inc"
 
 #pragma semicolon true 
 #pragma newdecls required
@@ -291,17 +292,6 @@ public void SMTC_UTILForward()
     // class CTraceFilterHitAll : public CTraceFilter
     VTable.CreateVTable("CTraceFilterHitAll", 2, "CTraceFilter");
     VTable.RegisterVPointer("CTraceFilterHitAll", 0, AddressOfString(CTraceFilterHitAll_ShouldHitEntity));
-
-    // class CTraceFilterSimple : public CTraceFilter
-    VTable.CreateVTable("CTraceFilterSimple", 4, "CTraceFilter");
-    VTable.RegisterVPointer("CTraceFilterSimple", 0, CTraceFilterSimple_ShouldHitEntity);
-    VTable.RegisterVPointer("CTraceFilterSimple", 2, ((SMTC.GetOperatingSystem() == OSTYPE_WINDOWS) ? AddressOfString(CTraceFilterSimple_SetPassEntity_Windows) : AddressOfString(CTraceFilterSimple_SetPassEntity_Linux)));
-    VTable.RegisterVPointer("CTraceFilterSimple", 3, ((SMTC.GetOperatingSystem() == OSTYPE_WINDOWS) ? AddressOfString(CTraceFilterSimple_SetCollisionGroup_Windows) : AddressOfString(CTraceFilterSimple_SetCollisionGroup_Linux)));
-
-    // class CFlaggedEntitiesEnum : public IPartitionEnumerator
-    // todo: use actual vtable object when vtable object retrieval api comes
-    VTable.CreateVTable("CFlaggedEntitiesEnum", 1);
-    VTable.RegisterVPointer("CFlaggedEntitiesEnum", 0, CFlaggedEntitiesEnum_EnumElement);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -315,6 +305,13 @@ methodmap ITraceFilter < Pointer
     public ITraceFilter(Address address)
     {
         return view_as<ITraceFilter>(address);
+    }
+
+    // ITraceFilter's vtable.
+    property Pointer vtable
+    {
+        public get() { return this.Dereference(CFLAGGEDENTITIESENUM_OFFSET_VTABLE); }
+        public set(Pointer value) { this.Write(value, CFLAGGEDENTITIESENUM_OFFSET_VTABLE); }
     }
 
     // Call constructor on existing type.
@@ -558,7 +555,7 @@ methodmap CTraceFilterSimple < CTraceFilter
     // Call constructor on existing type.
     public void ctor(Pointer passentity, int collisionGroup, Pointer pExtraShouldHitCheckFn = NULL)
     {
-        VTable.HookOntoObject("CTraceFilterSimple", this.Address);
+        this.vtable = SMTC_CTraceFilterSimple_vtable;
         this.m_pPassEnt = passentity;
         this.m_collisionGroup = collisionGroup;
         this.m_pExtraShouldHitCheckFunction = pExtraShouldHitCheckFn;
@@ -650,8 +647,7 @@ methodmap CFlaggedEntitiesEnum < Pointer
     // Call constructor on existing type.
     public void ctor(any pList, int listMax, int flagMask)
     {
-        // todo: use actual vtable object when vtable object retrieval api comes
-        VTable.HookOntoObject("CFlaggedEntitiesEnum", this.Address);
+        this.vtable = SMTC_CFlaggedEntitiesEnum_vtable;
         this.m_pList = pList;
         this.m_listMax = listMax;
         this.m_flagMask = flagMask;
