@@ -26,13 +26,19 @@ methodmap CLagCompensationManager < Pointer
     // Called during player movement to set up/restore after lag compensation
     public void StartLagCompensation(any player, any cmd)
     {
-        SDKCall(SMTC_SDKCall_CLagCompensationManager_StartLagCompensation, this, player, cmd);
+        SDKCall(SMTC_SDKCall_CLagCompensationManager_StartLagCompensation, this + SMTC_CLagCompensationManager_m_thisOffset, player, cmd);
     }
 
     // Called during player movement to set up/restore after lag compensation
     public void FinishLagCompensation(any player)
     {
-        SDKCall(SMTC_SDKCall_CLagCompensationManager_FinishLagCompensation, this, player);
+        SDKCall(SMTC_SDKCall_CLagCompensationManager_FinishLagCompensation, this + SMTC_CLagCompensationManager_m_thisOffset, player);
+    }
+
+    // Is the manager currently in the midst of lag compensating another entity?
+    public bool IsCurrentlyDoingLagCompensation()
+    {
+        return this.Dereference(SMTC_CLagCompensationManager_m_isCurrentlyDoingCompensation, NumberType_Int8);
     }
 }
 

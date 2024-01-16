@@ -4,6 +4,10 @@
 
 // god
 
+// NOTE! THIS IS NOT RECOMMENDED FOR GENUINE, SERIOUS USE!
+// Multiple inheritance is currently not supported, nor is RTTI information
+// currently generated.
+
 // vtable structure:
 /*
 struct obj

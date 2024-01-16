@@ -167,6 +167,9 @@ static Handle SMTC_SDKCall_FindSignatures;
 char empty_string[] = "";
 stock Pointer aEmptyString;
 
+stock any SMTC_CLagCompensationManager_m_thisOffset;
+stock any SMTC_CLagCompensationManager_m_isCurrentlyDoingCompensation;
+
 stock any SMTC_CBaseEntity_m_RefEHandle;
 stock any SMTC_CBasePlayer_m_pCurrentCommand;
 stock any SMTC_CTFWeaponBase_m_iWeaponMode;

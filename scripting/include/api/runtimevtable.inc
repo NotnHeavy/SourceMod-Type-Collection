@@ -18,7 +18,7 @@
 // For more information on how RTTI is compiled on Windows, check out the following url:
 // https://www.lukaszlipski.dev/post/rtti-msvc/
 
-#include <smmem/dynlib>
+#tryinclude <smmem/dynlib>
 
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_RUNTIMEVTABLE
 #endinput
@@ -31,8 +31,6 @@
 //////////////////////////////////////////////////////////////////////////////
 // GLOBALS                                                                  //
 //////////////////////////////////////////////////////////////////////////////
-
-static char g_MapsPath[PLATFORM_MAX_PATH * 2];
 
 char g_ServerPath[PLATFORM_MAX_PATH];
 
@@ -179,7 +177,7 @@ static int Windows_ScanSection(any imageBase, const char[] sectionName, const ch
 // as a consequence of multiple inheritance. As a result, a vtable address is not returned.
 // Instead, you must reference an array of a specific length where all vtable addresses will
 // be stored. Theoretically, the base vtable object should be the first located one.
-static int Windows(any imageBase, const char[] name, any[] vtables, int maxlength)
+static int Windows(any imageBase, const char[] name, any[] vtables, int maxlength, int vtableOffset)
 {
     // Locate all references to the mangled name provided (see RuntimeVTable.Mangle() if you do not have the mangled name on hand).
     // There should only be one reference theoretically, but this is just for robustness.
@@ -203,16 +201,22 @@ static int Windows(any imageBase, const char[] name, any[] vtables, int maxlengt
     
         // Walk through each address found.
         int vtableindex = 0;
-        for (int col = 0; col < COLcount && vtableindex < maxlength; ++col)
+        for (int col = 0; col < COLcount && vtableindex < maxlength && (!vtableindex || (vtableindex && vtableOffset == -1)); ++col)
         {
             // Verify that this is a COL.
             any pClassDescriptor = LoadFromAddress(COLs[col] + 0x04, NumberType_Int32); // _s_RTTICompleteObjectLocator->pClassDescriptor; (suspected)
             if (pClassDescriptor < 0x10000) // in theory it should not exceed this number
                 continue;
+
+            // Discard if the vtable offset does not match.
+            // maxlength will be made irrelevant if vtableOffset > -1!
+            any base = COLs[col] - 0x0C;
+            if (vtableOffset > -1 && LoadFromAddress(base + 0x04, NumberType_Int32) != vtableOffset)
+                continue;
             
             // Build a signature for the beginning of the COL and locate the address that references it.
             // Theoretically there should only be one reference.
-            BuildSignatureFromInt(COLs[col] - 0x0C, signature);
+            BuildSignatureFromInt(base, signature);
             any colref[1];
             int found = Windows_ScanSection(imageBase, ".rdata", signature, sizeof(signature), colref, sizeof(colref));
             if (found != 1)
@@ -237,16 +241,14 @@ static int Windows(any imageBase, const char[] name, any[] vtables, int maxlengt
 // at runtime.
 methodmap RuntimeVTable
 {
-    // Locate all vtables within a specific binary. See RuntimeVTable.Mangle() if you
-    // do not have a mangled name available.
-    // 
     // Due to how Windows vtables work,
     // there may be multiple vtables for the same object as a consequence of multiple
-    // inheritance. Usually the base and complete vtable will be the first one scanned
-    // however; if you do not need the rest, keep maxlength at 1.
+    // inheritance. Usually the base vtable will have an offset of 0, and will be first.
+    // If you do not need the rest, keep maxlength at 1. If vtableOffset is specified, 
+    // maxlength will be ignored and the vtable returned must have the exact offset.
     //
-    // On Linux, maxlength is ignored as it uses symbol lookup instead.
-    public static int Find(const char[] image, const char[] mangledname, any[] vtables, const int maxlength = 1)
+    // On Linux, maxlength and vtableOffset are ignored as it uses symbol lookup instead. 
+    public static int Find(const char[] image, const char[] mangledname, any[] vtables, const int maxlength = 1, const int vtableOffset = -1)
     {
         // Solve global paths if they currently point to NULL.
         if (!g_ServerPath[0])
@@ -272,22 +274,8 @@ methodmap RuntimeVTable
         if (lib == null && SMTC.GetOperatingSystem() == OSTYPE_LINUX)
         {
             // Open /proc/self/maps/
-            // Because OpenFile() is deranged and Not Recommended due to Killing More than 5.4 Billion People,
-            // I will have to write terrorist code here. Sorry.
             PrintToServer("[SMTC] Walking through /proc/self/maps to find absolute path for \"%s\"", buffer);
-            File file;
-            if (g_MapsPath[0])
-                file = OpenFile(g_MapsPath, "r");
-            else
-            {
-                char maps[PLATFORM_MAX_PATH * 2] = "proc/self/maps";
-                while (file == null)
-                {
-                    Format(maps, sizeof(maps), "../%s", maps);
-                    file = OpenFile(maps, "r");
-                }
-                g_MapsPath = maps;
-            }
+            File file = OpenFile("file:///proc/self/maps", "r");
             
             // Walk through each line and check if image can be resolved.
             char line[PLATFORM_MAX_PATH + 1024];
@@ -314,7 +302,7 @@ methodmap RuntimeVTable
 
         // Windows - load image address and call Windows().
         if (SMTC.GetOperatingSystem() == OSTYPE_WINDOWS)
-            count = Windows(lib.BaseAddr, mangledname, vtables, maxlength);
+            count = Windows(lib.BaseAddr, mangledname, vtables, maxlength, vtableOffset);
 
         // Linux - resolve the vtable's symbol.
         else
@@ -328,5 +316,14 @@ methodmap RuntimeVTable
 
         delete lib;
         return count;
+    }
+
+    // Same as ::Find(), however it will only return a single vtable object.
+    public static any FindSingle(const char[] image, const char[] mangledname, const int vtableOffset = -1)
+    {
+        any vtables[1];
+        if (!RuntimeVTable.Find(image, mangledname, vtables, sizeof(vtables), vtableOffset))
+            return NULL;
+        return vtables[0];
     }
 }

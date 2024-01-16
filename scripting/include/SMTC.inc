@@ -133,7 +133,6 @@ stock void SMTC_Initialize()
     // Set up hooks from the config file.
     GameData config = LoadGameConfigFile("NotnHeavy - SourceMod Type Collection");
     char keyvalue[128];
-    any vtables[1];
     
     OSTypeUsed = view_as<OSType>(config.GetOffset("OSTypeUsed"));
 
@@ -211,6 +210,9 @@ stock void SMTC_Initialize()
     PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // CTFRadiusDamageInfo& info
     SMTC_SDKCall_CTFGameRules_RadiusDamage = EndPrepSDKCall();
 
+    SMTC_CLagCompensationManager_m_thisOffset = config.GetOffset("CLagCompensationManager::m_thisOffset");
+    SMTC_CLagCompensationManager_m_isCurrentlyDoingCompensation = config.GetOffset("CLagCompensationManager::m_isCurrentlyDoingCompensation");
+
     // Generate SDKCalls used around the code: see function definition.
     SMTC_GenerateSDKCallInfo();
 
@@ -221,13 +223,11 @@ stock void SMTC_Initialize()
 #endif
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CUSERCMD
     config.GetKeyValue("CUserCmd_vtable", keyvalue, sizeof(keyvalue));
-    RuntimeVTable.Find(g_ServerPath, keyvalue, vtables);
-    SMTC_tf_point_t_vtable = vtables[0];
+    SMTC_tf_point_t_vtable = RuntimeVTable.FindSingle(g_ServerPath, keyvalue);
 #endif
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_TF_POINT_T
     config.GetKeyValue("tf_point_t_vtable", keyvalue, sizeof(keyvalue));
-    RuntimeVTable.Find(g_ServerPath, keyvalue, vtables);
-    SMTC_tf_point_t_vtable = vtables[0];
+    SMTC_tf_point_t_vtable = RuntimeVTable.FindSingle(g_ServerPath, keyvalue);
 #endif
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CENGINETRACE
     enginetrace = CEngineTrace(config.GetAddress("enginetrace"));
@@ -251,11 +251,9 @@ stock void SMTC_Initialize()
 
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_UTIL
     config.GetKeyValue("CTraceFilterSimple_vtable", keyvalue, sizeof(keyvalue));
-    RuntimeVTable.Find(g_ServerPath, keyvalue, vtables);
-    SMTC_CTraceFilterSimple_vtable = vtables[0];
+    SMTC_CTraceFilterSimple_vtable = SMTC_tf_point_t_vtable = RuntimeVTable.FindSingle(g_ServerPath, keyvalue);
     config.GetKeyValue("CFlaggedEntitiesEnum_vtable", keyvalue, sizeof(keyvalue));
-    RuntimeVTable.Find(g_ServerPath, keyvalue, vtables);
-    SMTC_CFlaggedEntitiesEnum_vtable = vtables[0];
+    SMTC_CFlaggedEntitiesEnum_vtable = SMTC_tf_point_t_vtable = RuntimeVTable.FindSingle(g_ServerPath, keyvalue);
 #endif
 
     delete config;
@@ -273,7 +271,7 @@ stock void SMTC_Initialize()
     SMTC_CBaseEntity_m_RefEHandle = m_angRotation + 0x0C;
 
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CUSERCMD
-    SMTC_CBasePlayer_m_pCurrentCommand = FindSendPropInfo("CBasePlayer", "m_hViewmodel") + 12;
+    SMTC_CBasePlayer_m_pCurrentCommand = FindSendPropInfo("CBasePlayer", "m_hViewModel") + 76;
 #endif
 
 #if defined NOTNHEAVY_SOURCEMOD_TYPE_COLLECTION_CTFWEAPONINFO

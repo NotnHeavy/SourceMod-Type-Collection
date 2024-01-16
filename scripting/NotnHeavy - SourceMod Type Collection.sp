@@ -70,6 +70,7 @@ stock static DHookSetup DHooks_CTFPlayer_OnTakeDamage;
 static Handle SDKCall_CTFGameRules_RadiusDamage;
 static DHookSetup DHooks_CTFPlayer_TraceAttack;
 static Handle SDKCall_CBaseCombatCharacter_Weapon_ShootPosition;
+static DHookSetup DHooks_CTFWeaponBase_PrimaryAttack;
 
 static int explosionModelIndex;
 
@@ -115,6 +116,8 @@ public void OnPluginStart()
     NewCall_CanScatterGunKnockback = config.GetMemSig("CanScatterGunKnockback");
     NewCall_CBaseEntity_TakeDamage = config.GetMemSig("CBaseEntity::TakeDamage");
     NewCall_CBaseEntity_BodyTarget = config.GetOffset("CBaseEntity::BodyTarget()");
+
+    DHooks_CTFWeaponBase_PrimaryAttack = DHookCreateFromConf(config, "CTFWeaponBase::PrimaryAttack()");
 
     delete config;
 
@@ -181,6 +184,10 @@ public void OnEntityCreated(int entity, const char[] classname)
         if (entity > MaxClients && entity <= 2048 && IsValidEntity(entity))
             RequestFrame(weaponData, CBaseEntity.FromIndex(entity));
     }
+
+    // CLagCompensationManager.inc
+    if (StrContains(classname, "tf_weapon") == 0)
+        DHookEntity(DHooks_CTFWeaponBase_PrimaryAttack, false, entity, .callback = CTFWeaponBase_PrimaryAttack);
 }
 
 void weaponData(CBaseEntity weapon)
@@ -218,8 +225,9 @@ public void runtimevtableOperation()
     any vtable[1];
     if (SMTC.GetOperatingSystem() == OSTYPE_WINDOWS)
     {
-        RuntimeVTable.Find(g_ServerPath, ".?AVCTFFlameThrower@@", vtable);
-        PrintToServer("windows - complete flamethrower vtable: 0x%X\n", vtable[0]);
+        //RuntimeVTable.Find(g_ServerPath, ".?AVCTFFlameThrower@@", vtable);
+        //PrintToServer("windows - complete flamethrower vtable: 0x%X\n", vtable[0]);
+        PrintToServer("windows - complete flamethrower vtable: 0x%X\n", RuntimeVTable.FindSingle(g_ServerPath, ".?AVCTFFlameThrower@@", 0));
     }
     else
     {
@@ -281,14 +289,22 @@ public void utilOperation2()
 
 public void clagcompensationmanagerOperation()
 {
-    PrintToServer("lagcompensation: %u\n", lagcompensation);
-
-    if (!IsClientInGame(1))
-        return;
-    CBaseEntity player = CBaseEntity.FromIndex(1);
-    lagcompensation.StartLagCompensation(player, view_as<any>(player) + SMTC_CBasePlayer_m_pCurrentCommand);
-    PrintToChatAll("Player %N is being lag compensated.", 1);
+    PrintToServer("lagcompensation: %u", lagcompensation);
+    PrintToServer("lagcompensation this offset: %i\n", SMTC_CLagCompensationManager_m_thisOffset);
+    PrintToServer("test: %u\n", SMTC_CBasePlayer_m_pCurrentCommand);
+}
+MRESReturn CTFWeaponBase_PrimaryAttack(int entity)
+{
+    int owner = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
+    if (!IsValidEntity(owner) || lagcompensation.IsCurrentlyDoingLagCompensation())
+        return MRES_Ignored;
+    
+    CBaseEntity player = CBaseEntity.FromIndex(owner);
+    lagcompensation.StartLagCompensation(player, player.Dereference(SMTC_CBasePlayer_m_pCurrentCommand));
+    PrintToServer("Now lag compensating user %N.", owner);
+    PrintToChatAll("Now lag compensating user %N.", owner);
     lagcompensation.FinishLagCompensation(player);
+    return MRES_Ignored;
 }
 
 public void cusercmdOperation()

@@ -29,6 +29,11 @@
 				"windows" "140"
 				"linux"   "141"
 			}
+			"CTFWeaponBase::PrimaryAttack()"
+			{
+				"windows" "286"
+				"linux"   "292"
+			}
         }
         "Signatures"
         {
@@ -123,6 +128,13 @@
 						"type"	"int"
 					}
 				}	
+			}
+			"CTFWeaponBase::PrimaryAttack()"
+			{
+				"offset"		"CTFWeaponBase::PrimaryAttack()"
+				"hooktype"		"entity"
+				"this"			"entity"
+				"return"		"void"
 			}
         }
     }

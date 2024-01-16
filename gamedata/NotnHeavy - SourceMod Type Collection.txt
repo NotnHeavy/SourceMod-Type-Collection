@@ -145,6 +145,22 @@
 				"linux"   "14"
 			}
 
+			// /CLagCompensationManager.inc
+			"CLagCompensationManager::m_thisOffset"
+			{
+				// this is probably the most suitable method i've decided (for now, at least)
+				// i.e. use signatures and read vtable info on linux to figure out the this offset
+				"windows" "0"
+				"linux"   "-12"
+			}
+			"CLagCompensationManager::m_isCurrentlyDoingCompensation"
+			{
+				// windows: find last func call in 2nd vtable (as a result of multiple inheritance), grab offset
+				// linux: just look up the function CLagCompensationManager::IsCurrentlyDoingLagCompensation() 
+				"windows" "85276"
+				"linux"   "85288"
+			}
+
 			// /tf/tf_point_t.inc
 			"CTFPointManager::AddPoint()"
 			{
