@@ -1,5 +1,7 @@
-# SourceMod Type Collection
+# NOTE
+Due to 64-bit TF2 currently being on the way, this project is now **on hold**.
 
+# SourceMod Type Collection
 This is basically just a dump of random methodmaps that I decided to make over time. ~~Yes, that includes CUtlVector, all of your sins in one methodmap~~ Yes, that includes all sorts of atrocities such as my own small vtable API. Have fun!
 
 Note that this is only tested with TF2. For other games, you'll have to tweak the gamedata for the non-TF2 includes to your likings.
