@@ -1,5 +1,3 @@
-// TODO: work on API for getting vtable for specified class using RTTI information
-
 // For testing purposes only. Please refer to ./scripting/include/ for all of the includes available.
 // This is the most hackiest shit I've done in SourceMod so far.
 
@@ -302,7 +300,6 @@ MRESReturn CTFWeaponBase_PrimaryAttack(int entity)
     CBaseEntity player = CBaseEntity.FromIndex(owner);
     lagcompensation.StartLagCompensation(player, player.Dereference(SMTC_CBasePlayer_m_pCurrentCommand));
     PrintToServer("Now lag compensating user %N.", owner);
-    PrintToChatAll("Now lag compensating user %N.", owner);
     lagcompensation.FinishLagCompensation(player);
     return MRES_Ignored;
 }

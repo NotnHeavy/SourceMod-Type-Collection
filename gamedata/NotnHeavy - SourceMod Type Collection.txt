@@ -40,7 +40,7 @@
 				"windows"
 				{
 					"signature" "CBaseEntity::HandleShotImpactingWater()"
-					"read"      "55"
+					"read"      "2024" // 55 -> 2024. what.
 				}
 				"linux"
 				{
@@ -70,7 +70,7 @@
 				"windows"
 				{
 					"signature" "CTFPistol_ScoutPrimary::Push()"
-					"read"		"53"
+					"read"		"72"
 				}
 				"linux"
 				{
@@ -158,7 +158,7 @@
 				// windows: find last func call in 2nd vtable (as a result of multiple inheritance), grab offset
 				// linux: just look up the function CLagCompensationManager::IsCurrentlyDoingLagCompensation() 
 				"windows" "85276"
-				"linux"   "85288"
+				"linux"   "85276"
 			}
 
 			// /tf/tf_point_t.inc
@@ -211,7 +211,7 @@
 			"CBaseEntity::HandleShotImpactingWater()"
 			{
 				"library" "server"
-				"windows" "\x53\x8B\xDC\x83\xEC\x08\x83\xE4\xF0\x83\xC4\x04\x55\x8B\x6B\x04\x89\x6C\x24\x04\x8B\xEC\x8B\x43\x08\x81\xEC\x08\x01\x00\x00\x83\xC0\x04"  // xrefs to "gunshotsplash"
+				"windows" "\x53\x8B\xDC\x83\xEC\x08\x83\xE4\xF0\x83\xC4\x04\x55\x8B\x6B\x04\x89\x6C\x24\x04\x8B\xEC\x81\xEC\x68\x03\x00\x00\x56\x57"  // xrefs to "gunshotsplash"
 			}
 
 			// /CGlobalVars.inc
@@ -223,14 +223,14 @@
 			"CTFPlayer::RuneRegenThink()" // xref to string "RuneRegenThink", one with smaller offset
 			{
 				"library" "server"
-				"windows" "\x55\x8B\xEC\x83\xEC\x70\x57\x8B\xF9\x8B\x07"
+				"windows" "\x55\x8B\xEC\x83\xEC\x74\x56\x8B\xF1\x8B\x06"
 			}
 
 			// /CBaseEntity.inc
 			"CBaseEntity::TakeDamage()"
 			{
 				"library" "server"
-				"windows" "\x55\x8B\xEC\x81\xEC\x98\x00\x00\x00\x53\x8B\xD9" // offset aCbaseentityTak ; "CBaseEntity::TakeDamage:  with inputInf"...
+				"windows" "\x55\x8B\xEC\x81\xEC\x98\x00\x00\x00\x53\x56\x57\x8B\xF9\x8B\x0D\x2A\x2A\x2A\x2A" // offset aCbaseentityTak ; "CBaseEntity::TakeDamage:  with inputInf"...
 				"linux"   "@_ZN11CBaseEntity10TakeDamageERK15CTakeDamageInfo"
 			}
 
@@ -243,19 +243,19 @@
 			"CLagCompensationManager::StartLagCompensation()"
 			{
 				"library" "server"
-				"windows" "\x55\x8B\xEC\x83\xEC\x24\x57\x8B\xF9\x89\x7D\xE8" // offset aTryingToStartA ; "Trying to start a new lag compensation "...
+				"windows" "\x55\x8B\xEC\x83\xEC\x28\x57\x8B\xF9\x89\x7D\xE4" // offset aTryingToStartA ; "Trying to start a new lag compensation "...
 				"linux"   "@_ZN23CLagCompensationManager20StartLagCompensationEP11CBasePlayerP8CUserCmd"
 			}
 			"CLagCompensationManager::FinishLagCompensation()"
 			{
 				"library" "server"
-				"windows" "\x55\x8B\xEC\x83\xEC\x38\xA1\x2A\x2A\x2A\x2A\x53" // offset aFinishlagcompe ; "FinishLagCompensation"
+				"windows" "\x55\x8B\xEC\x83\xEC\x40\x8B\x15\x2A\x2A\x2A\x2A\x53\x56\x33\xF6\x8B\xD9" // offset aFinishlagcompe ; "FinishLagCompensation"
 				"linux"   "@_ZN23CLagCompensationManager21FinishLagCompensationEP11CBasePlayer"
 			}
 			"CTFPistol_ScoutPrimary::Push()"
 			{
 				"library" "server"
-				"windows" "\x55\x8B\xEC\x81\xEC\x4C\x01\x00\x00\x56" // offset aWeaponHandsPus_0 ; "Weapon_Hands.PushImpact"
+				"windows" "\x53\x8B\xDC\x83\xEC\x08\x83\xE4\xF0\x83\xC4\x04\x55\x8B\x6B\x04\x89\x6C\x24\x04\x8B\xEC\x81\xEC\x68\x01\x00\x00\x56\x8B\xC1" // offset aWeaponHandsPus_0 ; "Weapon_Hands.PushImpact"
 			}
 
 			// /CSpatialPartition.inc
@@ -272,7 +272,7 @@
 			}
 
 			// /tf/TFPlayerClassData_t.inc
-			"GetPlayerClassData()" // offset aMultPlayerAimi ; "mult_player_aiming_movespeed", called twice at the top
+			"GetPlayerClassData()" // offset aMultPlayerAimi ; "mult_player_aiming_movespeed", first call since last checked, subroutine has number 2288 last checked
 			{
 				"library" "server"
 				"windows" "\x55\x8B\xEC\x69\x4D\x08\xF0\x08\x00\x00"
@@ -287,7 +287,7 @@
             "CTFPlayer::OnTakeDamage_Alive()"
 			{
 				"library" "server"
-				"windows" "\x55\x8B\xEC\x83\xEC\x7C\x56\x57" // offset aBleedingDurati ; "bleeding_duration"
+				"windows" "\x55\x8B\xEC\x81\xEC\x80\x01\x00\x00\x56" // offset aBleedingDurati ; "bleeding_duration"
 				"linux"   "@_ZN9CTFPlayer18OnTakeDamage_AliveERK15CTakeDamageInfo"
 			}
 
@@ -295,13 +295,13 @@
 			"CTFRadiusDamageInfo::CalculateFalloff()"
 			{
 				"library" "server"
-				"windows" "\x55\x8B\xEC\x51\x56\x8B\xF1\x8B\x0E" // offset aMultDmgFalloff ; "mult_dmg_falloff"
+				"windows" "\x55\x8B\xEC\x51\xF3\x0F\x10\x05\x2A\x2A\x2A\x2A\x57" // offset aMultDmgFalloff ; "mult_dmg_falloff"
 				"linux"	  "@_ZN19CTFRadiusDamageInfo16CalculateFalloffEv"
 			}
 			"CTFRadiusDamageInfo::ApplyToEntity()"
 			{
 				"library" "server"
-				"windows" "\x55\x8B\xEC\x81\xEC\x3C\x01\x00\x00\x8B\xD1" // offset aAddHealthOnRad ; "add_health_on_radius_damage", 2nd call above (call above GetTFWpnData)
+				"windows" "\x55\x8B\xEC\x81\xEC\x3C\x01\x00\x00\x56" // offset aProjectileDire ; "projectile_direct_hit", xref to subroutine that has no strings
 				"linux"   "@_ZN19CTFRadiusDamageInfo13ApplyToEntityEP11CBaseEntity"
 			}
 			"CTFGameRules::RadiusDamage()" 
@@ -317,7 +317,7 @@
 				"library" "server"
 				"linux"   "@g_pGameRules"
 			}
-			"cc_ShowRespawnTimes()" // offset aShowTheMinResp ; "Show the min respawn times for the team", call below
+			"cc_ShowRespawnTimes()" // (offset aShowTheMinResp ; "Show the min respawn times for the team", call below) OR (offset aRedMinSpawn22f ; "Red:  Min Spawn %2.2f, Scalar %2.2f, Ne"...)
 			{
 				"library" "server"
 				"windows" "\x55\x8B\xEC\x81\xEC\x18\x01\x00\x00\x56\x57\x8B\x3D\x2A\x2A\x2A\x2A"

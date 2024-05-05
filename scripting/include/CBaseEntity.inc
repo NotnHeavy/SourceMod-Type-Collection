@@ -150,7 +150,7 @@ methodmap CBaseEntity < Pointer
 //////////////////////////////////////////////////////////////////////////////
 
 // As determined by CWorld::RequiredEdictIndex(), the world entity always has entity index 0.
-public CBaseEntity GetWorldEntity()
+stock CBaseEntity GetWorldEntity()
 {
     return CBaseEntity.FromIndex(0);
 }
@@ -158,4 +158,8 @@ public CBaseEntity GetWorldEntity()
 stock CBaseEntity operator=(CHandle value)
 {
     return value.Get();
+}
+stock CBaseEntity operator=(int value)
+{
+    return CBaseEntity.FromIndex(value);
 }
